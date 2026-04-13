@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/cart_item_card.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -64,22 +65,9 @@ class CartScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(l10n.translate('orderSuccess')),
-                              content: Text(l10n.translate('orderMessage')),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    cart.clearCart();
-                                    Navigator.of(ctx).pop();
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: Text('OK', style: TextStyle(color: Colors.blue[900])),
-                                )
-                              ],
-                            ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CheckoutScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

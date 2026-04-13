@@ -1,32 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
-import '../../../core/localization/localization_provider.dart';
-import '../../cart/providers/cart_provider.dart';
+import 'food_detail_dialog.dart';
 
 class RestaurantCard extends StatelessWidget {
   final Restaurant restaurant;
 
   const RestaurantCard({super.key, required this.restaurant});
 
+  void _openDetail(BuildContext context) {
+    // Create a temporary FoodItem from Restaurant data
+    final food = FoodItem(
+      id: restaurant.id,
+      name: 'Հատուկ կերակուր ${restaurant.name}',
+      price: restaurant.price,
+      imageUrl: restaurant.imageUrl,
+      category: restaurant.category,
+      sizes: ['Փոքր', 'Մեծ'],
+      sizePrices: [restaurant.price, restaurant.price * 1.7],
+      slicePrice: restaurant.category.toLowerCase().contains('pizza') ? 250 : null,
+      availableOptions: ['Կծու', 'Կրկնակի բաժին', 'Առանց սոխի'],
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => FoodDetailDialog(food: food),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: GestureDetector(
-        onTap: () {
-          Provider.of<CartProvider>(context, listen: false).addItem(
-            FoodItem(
-              id: restaurant.id,
-              name: 'Հատուկ կերակուր ${restaurant.name}',
-              price: restaurant.price,
-              imageUrl: restaurant.imageUrl,
-            ),
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(Provider.of<LocalizationProvider>(context, listen: false).translate('addedToCart'))),
-          );
-        },
+        onTap: () => _openDetail(context),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

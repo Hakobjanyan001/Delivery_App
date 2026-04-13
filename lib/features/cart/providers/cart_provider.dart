@@ -18,49 +18,45 @@ class CartProvider with ChangeNotifier {
   double get totalAmount {
     double total = 0.0;
     _items.forEach((key, cartItem) {
-      total += cartItem.foodItem.price * cartItem.quantity;
+      total += cartItem.effectiveUnitPrice * cartItem.quantity;
     });
     return total;
   }
 
-  void addItem(FoodItem item) {
-    if (_items.containsKey(item.id)) {
-      // If item already in cart, increment quantity
-      _items.update(
-        item.id,
-        (existingItem) => CartItem(
-          foodItem: existingItem.foodItem,
-          quantity: existingItem.quantity + 1,
-        ),
-      );
+  void addItem(FoodItem item, {String? selectedSize, List<String>? selectedOptions, double? effectiveUnitPrice}) {
+    final size = selectedSize ?? (item.sizes.isNotEmpty ? item.sizes[0] : 'Standard');
+    final options = selectedOptions ?? [];
+    final unitPrice = effectiveUnitPrice ?? item.price;
+
+    // Create a temporary item to get the unique key
+    final tempItem = CartItem(foodItem: item, selectedSize: size, selectedOptions: options, effectiveUnitPrice: unitPrice);
+    final key = tempItem.uniqueKey;
+
+    if (_items.containsKey(key)) {
+      _items[key]!.quantity += 1;
     } else {
-      // Add new item
-      _items.putIfAbsent(
-        item.id,
-        () => CartItem(foodItem: item),
+      _items[key] = CartItem(
+        foodItem: item,
+        selectedSize: size,
+        selectedOptions: options,
+        effectiveUnitPrice: unitPrice,
       );
     }
     notifyListeners();
   }
 
-  void removeItem(String id) {
-    _items.remove(id);
+  void removeItem(String key) {
+    _items.remove(key);
     notifyListeners();
   }
 
-  void decreaseQuantity(String id) {
-    if (!_items.containsKey(id)) return;
+  void decreaseQuantity(String key) {
+    if (!_items.containsKey(key)) return;
 
-    if (_items[id]!.quantity > 1) {
-      _items.update(
-        id,
-        (existingItem) => CartItem(
-          foodItem: existingItem.foodItem,
-          quantity: existingItem.quantity - 1,
-        ),
-      );
+    if (_items[key]!.quantity > 1) {
+      _items[key]!.quantity -= 1;
     } else {
-      _items.remove(id);
+      _items.remove(key);
     }
     notifyListeners();
   }

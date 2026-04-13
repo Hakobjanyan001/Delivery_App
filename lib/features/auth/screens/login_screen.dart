@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'register_screen.dart';
 import '../../home/screens/home_screen.dart';
+import '../../../core/localization/widgets/language_selector.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
@@ -34,6 +36,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = Provider.of<LocalizationProvider>(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: const [
+          LanguageSelector(color: Colors.white),
+        ],
+      ),
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -115,11 +125,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   child: TextFormField(
                                     controller: _passwordController,
-                                    obscureText: true,
+                                    obscureText: !_isPasswordVisible,
                                     decoration: InputDecoration(
                                       hintText: l10n.translate('password'),
                                       hintStyle: const TextStyle(color: Colors.grey),
-                                      border: InputBorder.none
+                                      border: InputBorder.none,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                          color: Colors.grey,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isPasswordVisible = !_isPasswordVisible;
+                                          });
+                                        },
+                                      ),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) return l10n.translate('requiredField');
