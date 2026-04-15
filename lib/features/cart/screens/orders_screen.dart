@@ -1,0 +1,99 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/orders_provider.dart';
+
+class OrdersScreen extends StatelessWidget {
+  const OrdersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ordersProvider = Provider.of<OrdersProvider>(context);
+    final orders = ordersProvider.orders;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Պատվերների պատմություն', style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        iconTheme: IconThemeData(color: Colors.blue[900]),
+      ),
+      body: orders.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text('Դուք դեռ պատվերներ չեք կատարել', style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: orders.length,
+              itemBuilder: (ctx, i) {
+                final order = orders[i];
+                final dateStr = "${order.date.day.toString().padLeft(2, '0')}/${order.date.month.toString().padLeft(2, '0')}/${order.date.year} ${order.date.hour.toString().padLeft(2, '0')}:${order.date.minute.toString().padLeft(2, '0')}";
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Պատվեր #${order.id.substring(order.id.length - 6)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              '${order.totalAmount.toStringAsFixed(0)} ֏',
+                              style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dateStr,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 12),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        ...order.items.map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${item.quantity}x ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Expanded(
+                                    child: Text('${item.foodItem.name} (${item.selectedSize})'),
+                                  ),
+                                  Text('${(item.effectiveUnitPrice * item.quantity).toStringAsFixed(0)} ֏'),
+                                ],
+                              ),
+                            )),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            order.status,
+                            style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}

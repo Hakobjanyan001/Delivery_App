@@ -397,14 +397,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       ]),
                     ),
                   )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredFoodItems.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      return _buildFoodCard(filteredFoodItems[index]);
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      int crossAxisCount;
+                      double childAspectRatio;
+                      final width = constraints.maxWidth;
+                      if (width > 1100) {
+                        crossAxisCount = 4;
+                        childAspectRatio = 0.78;
+                      } else if (width > 750) {
+                        crossAxisCount = 3;
+                        childAspectRatio = 0.80;
+                      } else if (width > 520) {
+                        crossAxisCount = 2;
+                        childAspectRatio = 0.82;
+                      } else {
+                        crossAxisCount = 1;
+                        childAspectRatio = 1.8;
+                      }
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filteredFoodItems.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: childAspectRatio,
+                        ),
+                        itemBuilder: (context, index) {
+                          return _buildFoodCard(filteredFoodItems[index]);
+                        },
+                      );
                     },
                   ),
 

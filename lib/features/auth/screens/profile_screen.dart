@@ -8,6 +8,8 @@ import '../../cart/providers/payment_provider.dart';
 import '../../cart/models/payment_card.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'login_screen.dart';
+import '../../support/widgets/support_hub_sheet.dart';
+import '../../cart/screens/orders_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -130,6 +132,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
 
+            _buildInfoCard(
+              title: 'Պատվերներ',
+              items: [
+                ListTile(
+                  leading: Icon(Icons.history, color: Colors.blue[900]),
+                  title: const Text('Պատվերների պատմություն', style: TextStyle(fontSize: 16)),
+                  trailing: const Icon(Icons.chevron_right),
+                  contentPadding: EdgeInsets.zero,
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+                  },
+                ),
+              ],
+            ),
+
             const SizedBox(height: 20),
 
             _buildInfoCard(
@@ -166,6 +183,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const SupportHubSheet(),
+          );
+        },
+        backgroundColor: Colors.blue[900],
+        child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
   }

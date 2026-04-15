@@ -4,6 +4,7 @@ import '../../../core/localization/localization_provider.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/cart_item_card.dart';
 import 'checkout_screen.dart';
+import '../../support/widgets/support_hub_sheet.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -84,6 +85,18 @@ class CartScreen extends StatelessWidget {
                 ),
               ],
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const SupportHubSheet(),
+          );
+        },
+        backgroundColor: Colors.blue[900],
+        child: const Icon(Icons.support_agent, color: Colors.white),
+      ),
     );
   }
 }

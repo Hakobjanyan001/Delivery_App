@@ -6,6 +6,8 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
+import 'features/cart/providers/orders_provider.dart';
+import 'features/cart/providers/address_provider.dart';
 
 void main() {
   runApp(
@@ -15,6 +17,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => LocalizationProvider()),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
+        ChangeNotifierProvider(create: (_) => OrdersProvider()),
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
       ],
       child: const DeliveryApp(),
     ),
@@ -27,7 +31,7 @@ class DeliveryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DigiCraft-ի առաքում',
+      title: 'Delivery App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const LoginScreen(),

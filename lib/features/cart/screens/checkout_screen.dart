@@ -10,6 +10,9 @@ import '../models/payment_card.dart';
 import '../widgets/location_picker_dialog.dart';
 import 'payment_webview_screen.dart';
 import '../../../core/services/payment_service.dart';
+import '../../support/widgets/support_hub_sheet.dart';
+import '../providers/orders_provider.dart';
+import '../providers/address_provider.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -22,7 +25,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
   String _paymentMethod = 'cash'; // 'cash' or 'card'
   final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
   final _cashController = TextEditingController();
   
   // Card details
@@ -31,14 +33,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _cvvController = TextEditingController();
 
   double _change = 0.0;
-  bool _isFetchingLocation = false;
   bool _showNewCardForm = false;
   bool _isProcessingPayment = false;
 
   @override
   void dispose() {
     _phoneController.dispose();
-    _addressController.dispose();
     _cashController.dispose();
     _cardNumberController.dispose();
     _expiryController.dispose();
@@ -57,9 +57,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  Future<void> _getCurrentLocation(LocalizationProvider l10n) async {
-    setState(() => _isFetchingLocation = true);
-
+  Future<void> _fetchLocationForAddress(LocalizationProvider l10n, TextEditingController addrController, Function(bool) setFetching) async {
+    setFetching(true);
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -95,8 +94,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           pickedLocation.latitude,
           pickedLocation.longitude,
         );
-        if (!mounted) return;
-        _addressController.text = address;
+        addrController.text = address;
       }
     } catch (e) {
       if (!mounted) return;
@@ -104,11 +102,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         SnackBar(content: Text(l10n.translate('locationError'))),
       );
     } finally {
-      if (mounted) setState(() => _isFetchingLocation = false);
+      setFetching(false);
     }
   }
 
+  void _showAddAddressDialog(BuildContext context, AddressProvider provider, LocalizationProvider l10n) {
+    final titleController = TextEditingController();
+    final addrController = TextEditingController();
+    bool isFetching = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateBuilder) => AlertDialog(
+          title: const Text('Ավելացնել նոր հասցե'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Անվանում (օր․ Տուն)', hintText: 'Տուն'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: addrController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Հասցե',
+                    suffixIcon: isFetching
+                        ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
+                        : IconButton(
+                            icon: const Icon(Icons.my_location, color: Colors.blue),
+                            onPressed: () => _fetchLocationForAddress(l10n, addrController, (val) => setStateBuilder(() => isFetching = val)),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Չեղարկել')),
+            ElevatedButton(
+              onPressed: () {
+                if (addrController.text.isNotEmpty) {
+                  provider.addAddress(titleController.text, addrController.text);
+                  Navigator.pop(ctx);
+                }
+              },
+              child: const Text('Պահպանել'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitOrder(BuildContext context, CartProvider cart, LocalizationProvider l10n) async {
+    final addressProvider = Provider.of<AddressProvider>(context, listen: false);
+    if (addressProvider.selectedAddressId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Խնդրում ենք ընտրել կամ ավելացնել առաքման հասցե')));
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final paymentProvider = Provider.of<PaymentProvider>(context, listen: false);
@@ -122,6 +178,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         return;
       }
+      if (context.mounted) Provider.of<OrdersProvider>(context, listen: false).addOrder(cart.items, cart.totalAmount);
       _showSuccessDialog(context, cart, l10n);
     } else {
       // Payment Card Flow
@@ -158,7 +215,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 expiryDate: _expiryController.text,
               ));
             }
-            if (context.mounted) _showSuccessDialog(context, cart, l10n);
+            if (context.mounted) {
+              Provider.of<OrdersProvider>(context, listen: false).addOrder(cart.items, cart.totalAmount);
+              _showSuccessDialog(context, cart, l10n);
+            }
           } else if (context.mounted) {
             messenger.showSnackBar(
               const SnackBar(content: Text('Վճարումը չհաջողվեց')),
@@ -232,27 +292,65 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 20),
                 
                 _buildSectionTitle(l10n.translate('address')),
-                TextFormField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    hintText: 'Street, Building, Apartment',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Icon(Icons.location_on),
-                    suffixIcon: _isFetchingLocation
-                        ? const Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.my_location, color: Colors.blue),
-                            onPressed: () => _getCurrentLocation(l10n),
+                Consumer<AddressProvider>(
+                  builder: (context, addrProv, child) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (addrProv.addresses.isNotEmpty) ...[
+                          ...addrProv.addresses.map((addr) => Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: addrProv.selectedAddressId == addr.id ? Colors.blue[50] : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: addrProv.selectedAddressId == addr.id ? Colors.blue[900]! : Colors.grey[300]!),
+                                ),
+                                child: ListTile(
+                                  leading: Icon(Icons.location_on, color: addrProv.selectedAddressId == addr.id ? Colors.blue[900] : Colors.grey),
+                                  title: Text(addr.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text(addr.address),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                                        onPressed: () => addrProv.removeAddress(addr.id),
+                                      ),
+                                      if (addrProv.selectedAddressId == addr.id) const Icon(Icons.check_circle, color: Colors.blue),
+                                    ],
+                                  ),
+                                  onTap: () => addrProv.selectAddress(addr.id),
+                                ),
+                              )),
+                          TextButton.icon(
+                            onPressed: () => _showAddAddressDialog(context, addrProv, l10n),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Ավելացնել նոր հասցե'),
                           ),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? l10n.translate('requiredField') : null,
+                        ] else ...[
+                          InkWell(
+                            onTap: () => _showAddAddressDialog(context, addrProv, l10n),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[400]!),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.location_on, color: Colors.grey[600]),
+                                  const SizedBox(width: 10),
+                                  Text('Ավելացրեք հասցե', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                                  const Spacer(),
+                                  const Icon(Icons.add_location_alt, color: Colors.blue),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -425,6 +523,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const SupportHubSheet(),
+          );
+        },
+        backgroundColor: Colors.blue[900],
+        child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
   }
