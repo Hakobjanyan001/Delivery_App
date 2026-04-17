@@ -5,6 +5,9 @@ import '../providers/cart_provider.dart';
 import '../widgets/cart_item_card.dart';
 import 'checkout_screen.dart';
 import '../../support/widgets/support_hub_sheet.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
+
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -12,6 +15,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
     final l10n = Provider.of<LocalizationProvider>(context);
 
     return Scaffold(
@@ -65,11 +69,23 @@ class CartScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-                          );
+                        onPressed: () async {
+                          if (authProvider.isAnonymous) {
+                            final loggedIn = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(isCheckoutFlow: true),
+                              ),
+                            );
+                            if (loggedIn != true) return;
+                          }
+                          
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[900],
@@ -85,6 +101,7 @@ class CartScreen extends StatelessWidget {
                 ),
               ],
             ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(

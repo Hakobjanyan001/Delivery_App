@@ -30,18 +30,40 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   // ======================================
-  // Restaurant List (shown when catAll)
+  // Restaurant List
   // ======================================
+
   final List<Restaurant> allRestaurants = [
-    Restaurant(id: '1', name: 'Tashir Pizza', rating: 4.5,
-        imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
-        category: 'Pizza', price: 700),
-    Restaurant(id: '2', name: 'Burger House', rating: 4.2,
-        imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
-        category: 'Burger', price: 900),
-    Restaurant(id: '3', name: 'Jazz Sushi', rating: 4.8,
-        imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80',
-        category: 'Sushi', price: 1500),
+    Restaurant(
+      id: '1',
+      name: 'Տաշիր Պիցցա',
+      nameEn: 'Tashir Pizza',
+      nameRu: 'Ташир Пицца',
+      rating: 4.5,
+      imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+      category: 'Pizza',
+      price: 700,
+    ),
+    Restaurant(
+      id: '2',
+      name: 'Բուրգեր Հաուս',
+      nameEn: 'Burger House',
+      nameRu: 'Бургер Хаус',
+      rating: 4.2,
+      imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+      category: 'Burger',
+      price: 900,
+    ),
+    Restaurant(
+      id: '3',
+      name: 'Ջազ Սուշի',
+      nameEn: 'Jazz Sushi',
+      nameRu: 'Джаз Суши',
+      rating: 4.8,
+      imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80',
+      category: 'Sushi',
+      price: 1500,
+    ),
   ];
 
   // ======================================
@@ -49,33 +71,77 @@ class _HomeScreenState extends State<HomeScreen> {
   // ======================================
   final Map<String, List<FoodItem>> _foodByCategory = {
     'Shaurma': [
-      FoodItem(id: 'sh_1', name: 'Հավի Շաուրմա (Մեծ)', price: 1100, category: 'Shaurma',
-          imageUrl: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=500&q=80',
-          availableOptions: ['Կծու', 'Առանց սոխի', 'Լրացուցիչ մայոնեզ']),
-      FoodItem(id: 'sh_2', name: 'Տավարի Շաուրմա (Մեծ)', price: 1400, category: 'Shaurma',
-          imageUrl: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=500&q=80',
-          availableOptions: ['Կծու', 'Պանիրով', 'Կրկնակի միս']),
+      FoodItem(
+        id: 'sh_1',
+        name: 'Հավի Շաուրմա (Մեծ)',
+        nameEn: 'Chicken Shawarma (Large)',
+        nameRu: 'Шаурма с курицей (Большая)',
+        price: 1100,
+        category: 'Shaurma',
+        imageUrl: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=500&q=80',
+        availableOptions: ['Կծու', 'Առանց սոխի', 'Լրացուցիչ մայոնեզ'],
+      ),
+      FoodItem(
+        id: 'sh_2',
+        name: 'Տավարի Շաուրմա (Մեծ)',
+        nameEn: 'Beef Shawarma (Large)',
+        nameRu: 'Шаурма с говядиной (Большая)',
+        price: 1400,
+        category: 'Shaurma',
+        imageUrl: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=500&q=80',
+        availableOptions: ['Կծու', 'Պանիրով', 'Կրկնակի միս'],
+      ),
     ],
     'Barbecue': [
-      FoodItem(id: 'bbq_1', name: 'Խոզի Խորոված (Չալաղաջ)', price: 3500, category: 'Barbecue',
-          imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80',
-          availableOptions: ['Սոխով', 'Առանց սոխի', 'Կծու աջիկա']),
-      FoodItem(id: 'bbq_2', name: 'Տավարի Քյաբաբ', price: 900, category: 'Barbecue',
-          imageUrl: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=500&q=80',
-          availableOptions: ['Լավաշով', 'Պանիրով']),
+      FoodItem(
+        id: 'bbq_1',
+        name: 'Խոզի Խորոված (Չալաղաջ)',
+        nameEn: 'Pork Barbecue (Chalagach)',
+        nameRu: 'Шашлык из свинины (Чалагач)',
+        price: 3500,
+        category: 'Barbecue',
+        imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80',
+        availableOptions: ['Սոխով', 'Առանց սոխի', 'Կծու աջիկա'],
+      ),
+      FoodItem(
+        id: 'bbq_2',
+        name: 'Տավարի Քյաբաբ',
+        nameEn: 'Beef Kebab',
+        nameRu: 'Люля-кебаб из говядины',
+        price: 900,
+        category: 'Barbecue',
+        imageUrl: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=500&q=80',
+        availableOptions: ['Լավաշով', 'Պանիրով'],
+      ),
     ],
     'KFC': [
-      FoodItem(id: 'kfc_1', name: 'Sanders Bucket', price: 5500, category: 'KFC',
-          imageUrl: 'https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=500&q=80',
-          availableOptions: ['Կծու', 'Original']),
-      FoodItem(id: 'kfc_2', name: 'Zinger Burger', price: 1300, category: 'KFC',
-          imageUrl: 'https://images.unsplash.com/photo-1513185158878-8d8c182b013f?w=500&q=80',
-          availableOptions: ['Կրկնակի պանիր', 'Կծու']),
+      FoodItem(
+        id: 'kfc_1',
+        name: 'Sanders Bucket',
+        nameEn: 'Sanders Bucket',
+        nameRu: 'Баскет Сандерс',
+        price: 5500,
+        category: 'KFC',
+        imageUrl: 'https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?w=500&q=80',
+        availableOptions: ['Կծու', 'Original'],
+      ),
+      FoodItem(
+        id: 'kfc_2',
+        name: 'Zinger Burger',
+        nameEn: 'Zinger Burger',
+        nameRu: 'Зингер Бургер',
+        price: 1300,
+        category: 'KFC',
+        imageUrl: 'https://images.unsplash.com/photo-1513185158878-8d8c182b013f?w=500&q=80',
+        availableOptions: ['Կրկնակի պանիր', 'Կծու'],
+      ),
     ],
     'Pizza': [
       FoodItem(
         id: 'pizza_1',
         name: 'Մարգարիտա',
+        nameEn: 'Margherita',
+        nameRu: 'Маргарита',
         price: 1800,
         category: 'Pizza',
         imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=80',
@@ -87,6 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
       FoodItem(
         id: 'pizza_2',
         name: 'Pepperoni',
+        nameEn: 'Pepperoni',
+        nameRu: 'Пепперони',
         price: 2200,
         category: 'Pizza',
         imageUrl: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&q=80',
@@ -98,6 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
       FoodItem(
         id: 'pizza_3',
         name: '4 Cheese',
+        nameEn: '4 Cheese',
+        nameRu: '4 Сыра',
         price: 2500,
         category: 'Pizza',
         imageUrl: 'https://images.unsplash.com/photo-1548600916-dc8492f8e845?w=500&q=80',
@@ -109,6 +179,8 @@ class _HomeScreenState extends State<HomeScreen> {
       FoodItem(
         id: 'pizza_4',
         name: 'Veggie',
+        nameEn: 'Veggie',
+        nameRu: 'Вегетарианская',
         price: 1600,
         category: 'Pizza',
         imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
@@ -119,81 +191,200 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ],
     'Burger': [
-      FoodItem(id: 'burger_1', name: 'Classic Burger', price: 1200, category: 'Burger',
-          imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
-          sizes: ['Փոքր', 'Մեծ'],
-          availableOptions: ['Կծու', 'Կրկնակի կոտլետ', 'Առանց կոճապղպեղ', 'Կրկնակի պանիր']),
-      FoodItem(id: 'burger_2', name: 'Cheese Burger', price: 1400, category: 'Burger',
-          imageUrl: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=500&q=80',
-          sizes: ['Փոքր', 'Մեծ'],
-          availableOptions: ['Կծու', 'Կրկնակի պանիր', 'Առանց թթու վարունգ']),
-      FoodItem(id: 'burger_3', name: 'BBQ Burger', price: 1600, category: 'Burger',
-          imageUrl: 'https://images.unsplash.com/photo-1596662951482-0bc71f5e0ea0?w=500&q=80',
-          sizes: ['Փոքր', 'Մեծ'],
-          availableOptions: ['Կծու', 'Կրկնակի BBQ sauce']),
-      FoodItem(id: 'burger_4', name: 'Chicken Burger', price: 1100, category: 'Burger',
-          imageUrl: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=500&q=80',
-          sizes: ['Փոքր', 'Մեծ'],
-          availableOptions: ['Կծու', 'Crispy', 'Grilled']),
+      FoodItem(
+        id: 'burger_1',
+        name: 'Դասական Բուրգեր',
+        nameEn: 'Classic Burger',
+        nameRu: 'Классический бургер',
+        price: 1200,
+        category: 'Burger',
+        imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
+        sizes: ['Փոքր', 'Մեծ'],
+        availableOptions: ['Կծու', 'Կրկնակի կոտլետ', 'Առանց կոճապղպեղ', 'Կրկնակի պանիր'],
+      ),
+      FoodItem(
+        id: 'burger_2',
+        name: 'Չիզբուրգեր',
+        nameEn: 'Cheese Burger',
+        nameRu: 'Чизбургер',
+        price: 1400,
+        category: 'Burger',
+        imageUrl: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=500&q=80',
+        sizes: ['Փոքր', 'Մեծ'],
+        availableOptions: ['Կծու', 'Կրկնակի պանիր', 'Առանց թթու վարունգ'],
+      ),
+      FoodItem(
+        id: 'burger_3',
+        name: 'BBQ Բուրգեր',
+        nameEn: 'BBQ Burger',
+        nameRu: 'BBQ Бургер',
+        price: 1600,
+        category: 'Burger',
+        imageUrl: 'https://images.unsplash.com/photo-1596662951482-0bc71f5e0ea0?w=500&q=80',
+        sizes: ['Փոքր', 'Մեծ'],
+        availableOptions: ['Կծու', 'Կրկնակի BBQ sauce'],
+      ),
+      FoodItem(
+        id: 'burger_4',
+        name: 'Հավի Բուրգեր',
+        nameEn: 'Chicken Burger',
+        nameRu: 'Чикен Бургер',
+        price: 1100,
+        category: 'Burger',
+        imageUrl: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=500&q=80',
+        sizes: ['Փոքր', 'Մեծ'],
+        availableOptions: ['Կծու', 'Crispy', 'Grilled'],
+      ),
     ],
     'Sushi': [
-      FoodItem(id: 'sushi_1', name: 'Salmon Roll', price: 3200, category: 'Sushi',
-          imageUrl: 'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=500&q=80',
-          sizes: ['6 հատ', '12 հատ'],
-          availableOptions: ['Կծու', 'Կրկնակի salmon', 'Wasabi-ով']),
-      FoodItem(id: 'sushi_2', name: 'Rainbow Roll', price: 4500, category: 'Sushi',
-          imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80',
-          sizes: ['6 հատ', '12 հատ'],
-          availableOptions: ['Կծու', 'Wasabi-ով', 'Cucumber ավելացնել']),
-      FoodItem(id: 'sushi_3', name: 'Dragon Roll', price: 5000, category: 'Sushi',
-          imageUrl: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=500&q=80',
-          sizes: ['6 հատ', '12 հատ'],
-          availableOptions: ['Կծու', 'Avocado-ով']),
+      FoodItem(
+        id: 'sushi_1',
+        name: 'Սաղմոնի Ռոլլ',
+        nameEn: 'Salmon Roll',
+        nameRu: 'Ролл с лососем',
+        price: 3200,
+        category: 'Sushi',
+        imageUrl: 'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=500&q=80',
+        sizes: ['6 հատ', '12 հատ'],
+        availableOptions: ['Կծու', 'Կրկնակի salmon', 'Wasabi-ով'],
+      ),
+      FoodItem(
+        id: 'sushi_2',
+        name: 'Ռեյնբոու Ռոլլ',
+        nameEn: 'Rainbow Roll',
+        nameRu: 'Радужный ролл',
+        price: 4500,
+        category: 'Sushi',
+        imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80',
+        sizes: ['6 հատ', '12 հատ'],
+        availableOptions: ['Կծու', 'Wasabi-ով', 'Cucumber ավելացնել'],
+      ),
+      FoodItem(
+        id: 'sushi_3',
+        name: 'Դրագոն Ռոլլ',
+        nameEn: 'Dragon Roll',
+        nameRu: 'Ролл Дракон',
+        price: 5000,
+        category: 'Sushi',
+        imageUrl: 'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=500&q=80',
+        sizes: ['6 հատ', '12 հատ'],
+        availableOptions: ['Կծու', 'Avocado-ով'],
+      ),
     ],
     'FastFood': [
-      FoodItem(id: 'ff_1', name: 'French Fries', price: 600, category: 'FastFood',
-          imageUrl: 'https://images.unsplash.com/photo-1630384066272-1177f6f53d8d?w=500&q=80',
-          availableOptions: ['Կետչուպով', 'Մայոնեզով', 'Պանրի սոուսով']),
+      FoodItem(
+        id: 'ff_1',
+        name: 'Ֆրի',
+        nameEn: 'French Fries',
+        nameRu: 'Картофель фри',
+        price: 600,
+        category: 'FastFood',
+        imageUrl: 'https://images.unsplash.com/photo-1630384066272-1177f6f53d8d?w=500&q=80',
+        availableOptions: ['Կետչուպով', 'Մայոնեզով', 'Պանրի սոուսով'],
+      ),
     ],
     'Combo': [
-      FoodItem(id: 'combo_1', name: 'Family Combo Deal', price: 8500, category: 'Combo',
-          imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
-          availableOptions: ['Pepsi', 'Coca-Cola', 'Fanta']),
+      FoodItem(
+        id: 'combo_1',
+        name: 'Family Combo Deal',
+        nameEn: 'Family Combo Deal',
+        nameRu: 'Семейный комбо',
+        price: 8500,
+        category: 'Combo',
+        imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
+        availableOptions: ['Pepsi', 'Coca-Cola', 'Fanta'],
+      ),
     ],
     'Italian': [
-      FoodItem(id: 'ital_1', name: 'Lasagna alla Bolognese', price: 2800, category: 'Italian',
-          imageUrl: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=500&q=80',
-          availableOptions: ['Լրացուցիչ պանիր', 'Կծու']),
-      FoodItem(id: 'ital_2', name: 'Spaghetti Carbonara', price: 2400, category: 'Italian',
-          imageUrl: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500&q=80'),
+      FoodItem(
+        id: 'ital_1',
+        name: 'Լազանյա Բոլոնեզե',
+        nameEn: 'Lasagna alla Bolognese',
+        nameRu: 'Лазанья Болоньезе',
+        price: 2800,
+        category: 'Italian',
+        imageUrl: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=500&q=80',
+        availableOptions: ['Լրացուցիչ պանիր', 'Կծու'],
+      ),
+      FoodItem(
+        id: 'ital_2',
+        name: 'Սպագետտի Կարբոնարա',
+        nameEn: 'Spaghetti Carbonara',
+        nameRu: 'Спагетти Карбонара',
+        price: 2400,
+        category: 'Italian',
+        imageUrl: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500&q=80',
+      ),
     ],
     'Korean': [
-      FoodItem(id: 'kor_1', name: 'Bibimbap', price: 3200, category: 'Korean',
-          imageUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500&q=80',
-          availableOptions: ['Կծու', 'Ձվով']),
+      FoodItem(
+        id: 'kor_1',
+        name: 'Բիբիմբապ',
+        nameEn: 'Bibimbap',
+        nameRu: 'Пибимпап',
+        price: 3200,
+        category: 'Korean',
+        imageUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500&q=80',
+        availableOptions: ['Կծու', 'Ձվով'],
+      ),
     ],
     'Sandwiches': [
-      FoodItem(id: 'sw_1', name: 'Sub Club Sandwich', price: 1200, category: 'Sandwiches',
-          imageUrl: 'https://images.unsplash.com/photo-1554433607-66b5efe9d304?w=500&q=80',
-          availableOptions: ['Տավարի մսով', 'Հավի մսով']),
+      FoodItem(
+        id: 'sw_1',
+        name: 'Sub Club Sandwich',
+        nameEn: 'Sub Club Sandwich',
+        nameRu: 'Саб Клаб Сэндвич',
+        price: 1200,
+        category: 'Sandwiches',
+        imageUrl: 'https://images.unsplash.com/photo-1554433607-66b5efe9d304?w=500&q=80',
+        availableOptions: ['Տավարի մսով', 'Հավի մսով'],
+      ),
     ],
     'HotMeals': [
-      FoodItem(id: 'hm_1', name: 'Beef Stroganoff', price: 2500, category: 'HotMeals',
-          imageUrl: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=500&q=80'),
+      FoodItem(
+        id: 'hm_1',
+        name: 'Beef Stroganoff',
+        nameEn: 'Beef Stroganoff',
+        nameRu: 'Бефстроганов',
+        price: 2500,
+        category: 'HotMeals',
+        imageUrl: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=500&q=80',
+      ),
     ],
     'Dessert': [
-      FoodItem(id: 'dessert_1', name: 'Chocolate Lava Cake', price: 800, category: 'Dessert',
-          imageUrl: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&q=80',
-          sizes: ['1 հատ', '2 հատ'],
-          availableOptions: ['Ice cream-ով', 'Վanilla sauce-ով']),
-      FoodItem(id: 'dessert_2', name: 'Tiramisu', price: 900, category: 'Dessert',
-          imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500&q=80',
-          sizes: ['1 հատ'],
-          availableOptions: ['Կրկնակի cocoa', 'Raspberry-ով']),
-      FoodItem(id: 'dessert_3', name: 'Cheesecake', price: 850, category: 'Dessert',
-          imageUrl: 'https://images.unsplash.com/photo-1524351199678-941a58a3df50?w=500&q=80',
-          sizes: ['1 հատ'],
-          availableOptions: ['Strawberry-ով', 'Blueberry-ով', 'Caramel sauce-ով']),
+      FoodItem(
+        id: 'dessert_1',
+        name: 'Շոկոլադե Լավա Քեյք',
+        nameEn: 'Chocolate Lava Cake',
+        nameRu: 'Шоколадный торт Лава',
+        price: 800,
+        category: 'Dessert',
+        imageUrl: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&q=80',
+        sizes: ['1 հատ', '2 հատ'],
+        availableOptions: ['Ice cream-ով', 'Վanilla sauce-ով'],
+      ),
+      FoodItem(
+        id: 'dessert_2',
+        name: 'Տիրամիսու',
+        nameEn: 'Tiramisu',
+        nameRu: 'Тирамису',
+        price: 900,
+        category: 'Dessert',
+        imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500&q=80',
+        sizes: ['1 հատ'],
+        availableOptions: ['Կրկնակի cocoa', 'Raspberry-ով'],
+      ),
+      FoodItem(
+        id: 'dessert_3',
+        name: 'Չիզքեյք',
+        nameEn: 'Cheesecake',
+        nameRu: 'Чизкейк',
+        price: 850,
+        category: 'Dessert',
+        imageUrl: 'https://images.unsplash.com/photo-1524351199678-941a58a3df50?w=500&q=80',
+        sizes: ['1 հատ'],
+        availableOptions: ['Strawberry-ով', 'Blueberry-ով', 'Caramel sauce-ով'],
+      ),
     ],
   };
 
@@ -218,19 +409,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Restaurant> get filteredRestaurants {
     return allRestaurants.where((res) {
-      return res.name.toLowerCase().contains(searchQuery.toLowerCase());
+      final query = searchQuery.toLowerCase();
+      return res.name.toLowerCase().contains(query) ||
+             res.nameEn.toLowerCase().contains(query) ||
+             res.nameRu.toLowerCase().contains(query);
     }).toList();
   }
 
   List<FoodItem> get filteredFoodItems {
+    final query = searchQuery.toLowerCase();
     final List<FoodItem> allItems = _foodByCategory.values.expand((list) => list).toList();
+    
+    List<FoodItem> results;
     if (selectedCategoryKey == 'catAll') {
-      return allItems.where((f) => f.name.toLowerCase().contains(searchQuery.toLowerCase())).toList();
+      results = allItems;
+    } else {
+      final category = _mapToInternal(selectedCategoryKey);
+      results = _foodByCategory[category] ?? [];
     }
-    final category = _mapToInternal(selectedCategoryKey);
-    final items = _foodByCategory[category] ?? [];
-    return items.where((f) => f.name.toLowerCase().contains(searchQuery.toLowerCase())).toList();
+
+    return results.where((f) {
+      return f.name.toLowerCase().contains(query) ||
+             f.nameEn.toLowerCase().contains(query) ||
+             f.nameRu.toLowerCase().contains(query);
+    }).toList();
   }
+
+  String get _currentLang => Provider.of<LocalizationProvider>(context, listen: false).currentLocale.languageCode;
 
   void _openFoodDetail(BuildContext context, FoodItem food) {
     showModalBottomSheet(
@@ -244,6 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -413,7 +619,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         childAspectRatio = 0.82;
                       } else {
                         crossAxisCount = 1;
-                        childAspectRatio = 1.8;
+                        childAspectRatio = 1.15;
                       }
                       return GridView.builder(
                         shrinkWrap: true,
@@ -427,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           childAspectRatio: childAspectRatio,
                         ),
                         itemBuilder: (context, index) {
-                          return _buildFoodCard(filteredFoodItems[index]);
+                          return _buildFoodCard(filteredFoodItems[index], lang);
                         },
                       );
                     },
@@ -452,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFoodCard(FoodItem food) {
+  Widget _buildFoodCard(FoodItem food, String lang) {
     return GestureDetector(
       onTap: () => _openFoodDetail(context, food),
       child: Container(
@@ -469,11 +675,11 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.network(
                 food.imageUrl,
-                height: 180,
+                height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  height: 180,
+                  height: 220,
                   color: Colors.grey[200],
                   child: Icon(Icons.fastfood, color: Colors.grey[400], size: 50),
                 ),
@@ -489,7 +695,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(food.name,
+                        Text(food.localizedName(lang),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis),

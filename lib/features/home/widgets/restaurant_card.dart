@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
+import '../../../core/localization/localization_provider.dart';
 import 'food_detail_dialog.dart';
 
 class RestaurantCard extends StatelessWidget {
@@ -7,11 +9,14 @@ class RestaurantCard extends StatelessWidget {
 
   const RestaurantCard({super.key, required this.restaurant});
 
-  void _openDetail(BuildContext context) {
+  void _openDetail(BuildContext context, LocalizationProvider l10n) {
+    final lang = l10n.currentLocale.languageCode;
     // Create a temporary FoodItem from Restaurant data
     final food = FoodItem(
       id: restaurant.id,
       name: 'Հատուկ կերակուր ${restaurant.name}',
+      nameEn: 'Special Dish ${restaurant.nameEn}',
+      nameRu: 'Специальное блюдо ${restaurant.nameRu}',
       price: restaurant.price,
       imageUrl: restaurant.imageUrl,
       category: restaurant.category,
@@ -31,10 +36,13 @@ class RestaurantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: GestureDetector(
-        onTap: () => _openDetail(context),
+        onTap: () => _openDetail(context, l10n),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -65,7 +73,7 @@ class RestaurantCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            restaurant.name,
+                            restaurant.localizedName(lang),
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(

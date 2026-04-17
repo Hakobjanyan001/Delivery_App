@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../../home/screens/home_screen.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/localization/widgets/language_selector.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final bool isCheckoutFlow;
+  const RegisterScreen({super.key, this.isCheckoutFlow = false});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
+
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -21,24 +25,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  void _submit() {
-    final l10n = Provider.of<LocalizationProvider>(context, listen: false);
+  void _submit() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     if (_formKey.currentState!.validate()) {
-      Provider.of<AuthProvider>(context, listen: false).register(
+      final navigator = Navigator.of(context);
+      final messenger = ScaffoldMessenger.of(context);
+      final l10n = Provider.of<LocalizationProvider>(context, listen: false);
+      
+      // Check if email or username already exists
+      final emailExists = await authProvider.checkIfIdentifierExists(email: _emailController.text);
+      if (emailExists) {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Այս էլ. հասցեն արդեն գրանցված է:')),
+        );
+        return;
+      }
+
+      final usernameExists = await authProvider.checkIfIdentifierExists(username: _usernameController.text);
+      if (usernameExists) {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Այս մուտքանունը արդեն զբաղված է:')),
+        );
+        return;
+      }
+      
+      final success = await authProvider.register(
         _nameController.text,
+        _usernameController.text,
         _emailController.text,
         _passwordController.text,
       );
-      Navigator.of(context).pop(); // Go back to login screen on success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.translate('registrationSuccess'))),
-      );
+      
+      if (success) {
+        if (!mounted) return;
+        if (widget.isCheckoutFlow) {
+          navigator.pop(true);
+        } else {
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            (route) => false,
+          );
+        }
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.translate('registrationSuccess'))),
+        );
+      }
+
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,13 +89,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           LanguageSelector(),
         ],
       ),
-      body: Padding(
+      body: authProvider.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+        child: AutofillGroup(
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
             child: Column(
               children: [
+                if (authProvider.errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Text(
+                      authProvider.errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
                 const SizedBox(height: 20),
                 const Icon(Icons.person_add_outlined, size: 80, color: Colors.blue),
                 const SizedBox(height: 30),
@@ -64,6 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.person),
                   ),
+                  autofillHints: const [AutofillHints.name],
                   validator: (value) {
                     if (value == null || value.isEmpty) return l10n.translate('requiredField');
                     return null;
@@ -90,6 +144,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.email),
                   ),
+                  autofillHints: const [AutofillHints.email],
+                  keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) return l10n.translate('requiredField');
                     if (!value.contains('@')) return l10n.translate('invalidEmail');
@@ -116,6 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                   ),
+                  autofillHints: const [AutofillHints.newPassword],
                   validator: (value) {
                     if (value == null || value.isEmpty) return l10n.translate('requiredField');
                     if (value.length < 6) return l10n.translate('shortPassword');
@@ -142,6 +199,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                   ),
+                  autofillHints: const [AutofillHints.password],
+                  onEditingComplete: () => TextInput.finishAutofillContext(),
                   validator: (value) {
                     if (value == null || value.isEmpty) return l10n.translate('requiredField');
                     if (value != _passwordController.text) return l10n.translate('passwordMismatch');
@@ -164,6 +223,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
+}
+

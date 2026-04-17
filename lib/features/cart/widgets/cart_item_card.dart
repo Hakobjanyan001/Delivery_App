@@ -78,7 +78,7 @@ class CartItemCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name,
+                    Text(item.localizedName(l10n.currentLocale.languageCode),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                     const SizedBox(height: 4),
 

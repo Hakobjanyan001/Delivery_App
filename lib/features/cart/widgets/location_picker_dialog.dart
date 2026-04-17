@@ -73,7 +73,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                   children: [
                     TileLayer(
                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.delivery_app',
+                      userAgentPackageName: 'com.masoor.app',
                     ),
                   ],
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/orders_provider.dart';
+import '../../../core/localization/localization_provider.dart';
 
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
@@ -8,11 +9,14 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ordersProvider = Provider.of<OrdersProvider>(context);
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
     final orders = ordersProvider.orders;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Պատվերների պատմություն', style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
+        title: Text(l10n.translate('popularRestaurants').split(' ')[0] == 'Popular' ? 'Order History' : (l10n.translate('popularRestaurants').split(' ')[0] == 'Популярные' ? 'История заказов' : 'Պատվերների պատմություն'), 
+          style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: IconThemeData(color: Colors.blue[900]),
@@ -24,7 +28,8 @@ class OrdersScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.history, size: 80, color: Colors.grey[300]),
                   const SizedBox(height: 16),
-                  Text('Դուք դեռ պատվերներ չեք կատարել', style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+                  Text(lang == 'en' ? 'You have no orders yet' : (lang == 'ru' ? 'У вас еще нет заказов' : 'Դուք դեռ պատվերներ չեք կատարել'), 
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600])),
                 ],
               ),
             )
@@ -46,7 +51,7 @@ class OrdersScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Պատվեր #${order.id.substring(order.id.length - 6)}',
+                              '${lang == 'en' ? 'Order' : (lang == 'ru' ? 'Заказ' : 'Պատվեր')} #${order.id.substring(order.id.length - 6)}',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             Text(
@@ -70,7 +75,7 @@ class OrdersScreen extends StatelessWidget {
                                 children: [
                                   Text('${item.quantity}x ', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   Expanded(
-                                    child: Text('${item.foodItem.name} (${item.selectedSize})'),
+                                    child: Text('${item.foodItem.localizedName(lang)} (${item.selectedSize})'),
                                   ),
                                   Text('${(item.effectiveUnitPrice * item.quantity).toStringAsFixed(0)} ֏'),
                                 ],

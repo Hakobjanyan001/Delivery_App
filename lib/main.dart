@@ -4,12 +4,17 @@ import 'core/localization/localization_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/home/screens/home_screen.dart';
 import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
 import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
+import 'core/services/firebase_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseService.initialize();
+  
   runApp(
     MultiProvider(
       providers: [
@@ -20,21 +25,25 @@ void main() {
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
       ],
-      child: const DeliveryApp(),
+      child: const MasoorApp(),
     ),
   );
 }
 
-class DeliveryApp extends StatelessWidget {
-  const DeliveryApp({super.key});
+class MasoorApp extends StatelessWidget {
+  const MasoorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    
     return MaterialApp(
-      title: 'Delivery App',
+      title: 'MASOOR',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      home: authProvider.isAuthenticated 
+          ? const HomeScreen() 
+          : const LoginScreen(),
     );
   }
 }

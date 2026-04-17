@@ -387,75 +387,94 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (payment.cards.isNotEmpty && !_showNewCardForm) ...[
-                            _buildSectionTitle('Կցված քարտեր'),
-                            ...payment.cards.map((card) => _buildCardItem(card, payment)),
                             const SizedBox(height: 10),
-                            TextButton.icon(
-                              onPressed: () => setState(() => _showNewCardForm = true),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Ավելացնել նոր քարտ'),
+                            ...payment.cards.map((card) => _buildCardItem(card, payment)),
+                            const SizedBox(height: 5),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () => setState(() => _showNewCardForm = true),
+                                icon: const Icon(Icons.add_card, size: 20),
+                                label: const Text('Ավելացնել նոր քարտ', style: TextStyle(fontSize: 14)),
+                              ),
                             ),
                           ],
                           if (payment.cards.isEmpty || _showNewCardForm) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildSectionTitle(l10n.translate('cardNumber')),
-                                if (payment.cards.isNotEmpty)
-                                  IconButton(
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () => setState(() => _showNewCardForm = false),
-                                  ),
-                              ],
-                            ),
-                            TextFormField(
-                              controller: _cardNumberController,
-                              decoration: InputDecoration(
-                                hintText: 'XXXX XXXX XXXX XXXX',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50]?.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: Colors.blue[100]!),
                               ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
-                            ),
-                            const SizedBox(height: 15),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      _buildSectionTitle(l10n.translate('expiryDate')),
-                                      TextFormField(
-                                        controller: _expiryController,
-                                        decoration: InputDecoration(
-                                          hintText: 'MM/YY',
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      const Text('Նոր քարտի տվյալներ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      if (payment.cards.isNotEmpty)
+                                        IconButton(
+                                          icon: const Icon(Icons.close, size: 20),
+                                          onPressed: () => setState(() => _showNewCardForm = false),
                                         ),
-                                        validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildSectionTitle(l10n.translate('cardNumber')),
+                                  TextFormField(
+                                    controller: _cardNumberController,
+                                    decoration: InputDecoration(
+                                      hintText: 'XXXX XXXX XXXX XXXX',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
+                                  ),
+                                  const SizedBox(height: 15),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildSectionTitle(l10n.translate('expiryDate')),
+                                            TextFormField(
+                                              controller: _expiryController,
+                                              decoration: InputDecoration(
+                                                hintText: 'MM/YY',
+                                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              ),
+                                              validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 15),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildSectionTitle(l10n.translate('cvv')),
+                                            TextFormField(
+                                              controller: _cvvController,
+                                              decoration: InputDecoration(
+                                                hintText: '123',
+                                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                              ),
+                                              keyboardType: TextInputType.number,
+                                              obscureText: true,
+                                              validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(width: 15),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildSectionTitle(l10n.translate('cvv')),
-                                      TextFormField(
-                                        controller: _cvvController,
-                                        decoration: InputDecoration(
-                                          hintText: '123',
-                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        obscureText: true,
-                                        validator: (value) => _paymentMethod == 'card' && _showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ],
@@ -463,7 +482,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     },
                   ),
                 ]
- else ...[
+                else ...[
                    _buildSectionTitle(l10n.translate('cashAmount')),
                    TextFormField(
                     controller: _cashController,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../../core/localization/localization_provider.dart';
 
 class FoodDetailDialog extends StatefulWidget {
   final FoodItem food;
@@ -50,6 +51,9 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final food = widget.food;
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       maxChildSize: 0.92,
@@ -96,7 +100,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(food.name,
+                          child: Text(food.localizedName(lang),
                               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                         ),
                         Column(
@@ -108,7 +112,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                             ),
                             if (_selectedSize != food.sizes.first)
                               Text(
-                                'Բազային: ${food.price.toStringAsFixed(0)} ֏',
+                                '${l10n.translate('total')}: ${food.price.toStringAsFixed(0)} ֏',
                                 style: TextStyle(fontSize: 12, color: Colors.grey[500], decoration: TextDecoration.lineThrough),
                               ),
                           ],
@@ -237,7 +241,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('${food.name} ավելացվեց զամբյուղ'),
+                        content: Text('${food.localizedName(lang)} ${l10n.translate('addedToCart')}'),
                         backgroundColor: Colors.green,
                         duration: const Duration(seconds: 2),
                       ),
@@ -250,7 +254,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
-                    'Ավելացնել զամբյուղ • ${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
+                    '${l10n.translate('addedToCart').split(' ')[0]} • ${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),

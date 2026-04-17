@@ -30,7 +30,7 @@ class GeocodingHelper {
       final response = await http.get(
         url,
         headers: {
-          'User-Agent': 'DeliveryApp/1.0',
+          'User-Agent': 'Masoor/1.0',
           'Accept-Language': 'hy,en,ru',
         },
       );

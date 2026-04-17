@@ -20,6 +20,20 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _picker = ImagePicker();
+  bool _isAddingCard = false;
+  
+  // Card Form Controllers
+  final _cardNumberController = TextEditingController();
+  final _expiryController = TextEditingController();
+  final _cvvController = TextEditingController();
+
+  @override
+  void dispose() {
+    _cardNumberController.dispose();
+    _expiryController.dispose();
+    _cvvController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(AuthProvider auth) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -65,7 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.blue[900],
         elevation: 1,
       ),
-      body: SingleChildScrollView(
+      body: auth.isAnonymous
+          ? _buildGuestView(context)
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -114,20 +130,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildInfoItem(
                   icon: Icons.person_outline,
                   label: 'Անուն',
-                  value: auth.userName ?? '-',
-                  onTap: () => _showEditField(context, auth, 'Անուն', auth.userName!, (v) => auth.updateProfile(name: v)),
+                  value: auth.userName ?? 'Մուտքագրեք անուն',
+                  onTap: () => _showEditField(context, auth, 'Անուն', auth.userName ?? '', (v) => auth.updateProfile(name: v)),
                 ),
                 _buildInfoItem(
                   icon: Icons.email_outlined,
                   label: 'Էլ. փոստ',
-                  value: auth.email ?? '-',
-                  onTap: () => _showEditField(context, auth, 'Էլ. փոստ', auth.email!, (v) => auth.updateProfile(email: v)),
+                  value: auth.email ?? 'Մուտքագրեք էլ. փոստ',
+                  onTap: () => _showEditField(context, auth, 'Էլ. փոստ', auth.email ?? '', (v) => auth.updateProfile(email: v)),
                 ),
                 _buildInfoItem(
                   icon: Icons.phone_outlined,
                   label: 'Հեռախոս',
-                  value: auth.phone ?? '-',
-                  onTap: () => _showEditField(context, auth, 'Հեռախոս', auth.phone!, (v) => auth.updateProfile(phone: v)),
+                  value: auth.phone ?? 'Մուտքագրեք հեռախոս',
+                  onTap: () => _showEditField(context, auth, 'Հեռախոս', auth.phone ?? '', (v) => auth.updateProfile(phone: v)),
                 ),
               ],
             ),
@@ -151,14 +167,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             _buildInfoCard(
               title: 'Վճարման քարտեր',
-              items: payment.cards.isEmpty
-                  ? [
-                      const ListTile(
-                        leading: Icon(Icons.credit_card_off),
-                        title: Text('Կցված քարտեր չկան'),
-                      )
-                    ]
-                  : payment.cards.map((card) => _buildCardItem(card, payment)).toList(),
+              items: [
+                if (payment.cards.isEmpty && !_isAddingCard)
+                  const ListTile(
+                    leading: Icon(Icons.credit_card_off),
+                    title: Text('Կցված քարտեր չկան'),
+                  ),
+                ...payment.cards.map((card) => _buildCardItem(card, payment)),
+                
+                if (_isAddingCard)
+                  _buildInlineAddCardForm(payment)
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: TextButton.icon(
+                      onPressed: () => setState(() => _isAddingCard = true),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Ավելացնել քարտ'),
+                    ),
+                  ),
+              ],
             ),
 
             const SizedBox(height: 40),
@@ -245,6 +273,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildInlineAddCardForm(PaymentProvider provider) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(),
+          const Text('Ավելացնել նոր քարտ', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _cardNumberController,
+            decoration: InputDecoration(
+              hintText: 'Քարտի համարը',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixIcon: const Icon(Icons.credit_card),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _expiryController,
+                  decoration: InputDecoration(
+                    hintText: 'MM/YY',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _cvvController,
+                  decoration: InputDecoration(
+                    hintText: 'CVV',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  obscureText: true,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => setState(() => _isAddingCard = false),
+                  child: const Text('Չեղարկել'),
+                ),
+              ),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_cardNumberController.text.length >= 4) {
+                      provider.addCard(PaymentCard(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        last4: _cardNumberController.text.substring(_cardNumberController.text.length - 4),
+                        brand: 'Visa', // Dummy brand
+                        expiryDate: _expiryController.text,
+                      ));
+                      _cardNumberController.clear();
+                      _expiryController.clear();
+                      _cvvController.clear();
+                      setState(() => _isAddingCard = false);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[900],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Պահպանել'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmDeleteCard(BuildContext context, PaymentProvider provider, PaymentCard card) {
     showDialog(
       context: context,
@@ -261,6 +373,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Ջնջել', style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGuestView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.account_circle_outlined, size: 100, color: Colors.blue[100]),
+            const SizedBox(height: 20),
+            const Text(
+              'Մուտք գործեք պրոֆիլը տեսնելու համար',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Գրանցվեք կամ մուտք գործեք ձեր հաշիվ՝ պատվերների պատմությունը և պահպանված քարտերը կառավարելու համար։',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[900],
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Մուտք գործել / Գրանցվել', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 class FoodItem {
   final String id;
-  final String name;
+  final String name; // Armenian (Default)
+  final String nameEn;
+  final String nameRu;
   final double price;
   final String imageUrl;
   final String category;
@@ -12,6 +14,8 @@ class FoodItem {
   FoodItem({
     required this.id,
     required this.name,
+    required this.nameEn,
+    required this.nameRu,
     required this.price,
     required this.imageUrl,
     required this.category,
@@ -20,11 +24,19 @@ class FoodItem {
     this.slicePrice,
     this.availableOptions = const [],
   });
+
+  String localizedName(String langCode) {
+    if (langCode == 'en') return nameEn;
+    if (langCode == 'ru') return nameRu;
+    return name;
+  }
 }
 
 class Restaurant {
   final String id;
-  final String name;
+  final String name; // Armenian (Default)
+  final String nameEn;
+  final String nameRu;
   final double rating;
   final String imageUrl;
   final String category;
@@ -33,9 +45,17 @@ class Restaurant {
   Restaurant({
     required this.id,
     required this.name,
+    required this.nameEn,
+    required this.nameRu,
     required this.rating,
     required this.imageUrl,
     required this.category,
     required this.price,
   });
+
+  String localizedName(String langCode) {
+    if (langCode == 'en') return nameEn;
+    if (langCode == 'ru') return nameRu;
+    return name;
+  }
 }
