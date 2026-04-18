@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/profile_screen.dart';
 import '../../features/cart/screens/cart_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -19,6 +22,18 @@ class NavigationWrapper extends StatefulWidget {
 class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
   String? _currentRoute;
 
+  @override
+  void initState() {
+    super.initState();
+    // Set initial route based on authentication state
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      setState(() {
+        _currentRoute = auth.isAuthenticated ? 'HomeScreen' : 'LoginScreen';
+      });
+    });
+  }
+
   // Track the current route to hide the button on ProfileScreen
   void updateRoute(String? routeName) {
     // Default to 'HomeScreen' if name is null (typical for initial route)
@@ -34,8 +49,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
     }
   }
 
-  void _navigateToProfile() {
-    if (_currentRoute == 'ProfileScreen') return;
+  void _navigateToProfile(bool isAuthenticated) {
+    if (!isAuthenticated || _currentRoute == 'ProfileScreen') return;
     widget.navigatorKey.currentState?.push(
       MaterialPageRoute(
         settings: const RouteSettings(name: 'ProfileScreen'),
@@ -56,8 +71,13 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    // Hide button if we are in ProfileScreen or if it's the LoginScreen (optional but recommended)
-    final bool showProfileButton = _currentRoute != 'ProfileScreen' && _currentRoute != 'LoginScreen';
+    final authProvider = context.watch<AuthProvider>();
+    final bool isAuthenticated = authProvider.isAuthenticated;
+
+    // Hide button if we are in ProfileScreen, or not authenticated, or on LoginScreen
+    final bool showProfileButton = isAuthenticated && 
+                                   _currentRoute != 'ProfileScreen' && 
+                                   _currentRoute != 'LoginScreen';
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -66,7 +86,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
         
         if (details.primaryVelocity! > 500) {
           // Swipe Right -> Profile
-          _navigateToProfile();
+          _navigateToProfile(isAuthenticated);
         } else if (details.primaryVelocity! < -500) {
           // Swipe Left -> Cart
           _navigateToCart();
@@ -81,8 +101,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
               left: 20,
               bottom: 20,
               child: FloatingActionButton(
-                onPressed: _navigateToProfile,
-                backgroundColor: Colors.blue[900],
+                onPressed: () => _navigateToProfile(isAuthenticated),
+                backgroundColor: AppColors.primary,
                 mini: true, // Smaller as requested "նշանը"
                 heroTag: null,
                 child: const Icon(Icons.person, color: Colors.white),

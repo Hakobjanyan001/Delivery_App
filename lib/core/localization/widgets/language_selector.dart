@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../localization_provider.dart';
+import '../../theme/app_theme.dart';
 
 class LanguageSelector extends StatelessWidget {
   final Color? color;
@@ -12,7 +13,7 @@ class LanguageSelector extends StatelessWidget {
     final l10n = Provider.of<LocalizationProvider>(context);
 
     return PopupMenuButton<Locale>(
-      icon: Icon(Icons.language, color: color ?? Colors.blue),
+      icon: Icon(Icons.language, color: color ?? AppColors.primary),
       onSelected: (Locale locale) {
         l10n.setLocale(locale);
       },

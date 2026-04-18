@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../../core/localization/localization_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class FoodDetailDialog extends StatefulWidget {
   final FoodItem food;
@@ -61,7 +62,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -70,7 +71,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
               const SizedBox(height: 10),
               Container(
                 width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
               ),
               // Content
               Expanded(
@@ -108,7 +109,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                           children: [
                             Text(
                               '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
-                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900]),
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                             ),
                             if (_selectedSize != food.sizes.first)
                               Text(
@@ -140,9 +141,9 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                               _selectedSize = size;
                               if (size != 'Մեծ') _isPieceMode = false;
                             }),
-                            selectedColor: Colors.blue[900],
+                            selectedColor: AppColors.primary,
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           );
@@ -155,16 +156,16 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         Container(
                           margin: const EdgeInsets.only(top: 5),
                           decoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: AppColors.inputFill,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue[100]!),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: CheckboxListTile(
                             title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏'),
                             value: _isPieceMode,
                             onChanged: (val) => setState(() => _isPieceMode = val ?? false),
-                            activeColor: Colors.blue[900],
+                            activeColor: AppColors.primary,
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                         ),
@@ -181,7 +182,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                           title: Text(option),
                           value: isSelected,
                           contentPadding: EdgeInsets.zero,
-                          activeColor: Colors.blue[900],
+                          activeColor: AppColors.primary,
                           onChanged: (val) {
                             setState(() {
                               if (val == true) {
@@ -203,7 +204,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         IconButton(
                           onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
                           icon: const Icon(Icons.remove_circle_outline),
-                          color: Colors.blue[900],
+                          color: AppColors.primary,
                           iconSize: 32,
                         ),
                         Padding(
@@ -214,7 +215,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         IconButton(
                           onPressed: () => setState(() => _quantity++),
                           icon: const Icon(Icons.add_circle_outline),
-                          color: Colors.blue[900],
+                          color: AppColors.primary,
                           iconSize: 32,
                         ),
                       ],
@@ -248,7 +249,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

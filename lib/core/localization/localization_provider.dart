@@ -66,6 +66,10 @@ class LocalizationProvider with ChangeNotifier {
       'locationPermissionDenied': 'Տեղորոշման թույլտվությունը մերժված է',
       'confirmLocation': 'Հաստատել հասցեն',
       'otherOptions': 'Այլ տարբերակներ',
+      'alreadyHaveAccount': 'Արդեն ունե՞ք հաշիվ ։ Մուտք գործել',
+      'emailAlreadyInUse': 'Այս էլ. հասցեն արդեն գրանցված է:',
+      'phoneAlreadyInUse': 'Այս հեռախոսահամարը արդեն գրանցված է:',
+      'usernameAlreadyInUse': 'Այս մուտքանունը արդեն զբաղված է:',
     },
     'en': {
       'appName': 'MASOOR',
@@ -127,6 +131,10 @@ class LocalizationProvider with ChangeNotifier {
       'locationPermissionDenied': 'Location permission denied',
       'confirmLocation': 'Confirm Location',
       'otherOptions': 'Other options',
+      'alreadyHaveAccount': 'Already have an account? Login here',
+      'emailAlreadyInUse': 'This email is already registered.',
+      'phoneAlreadyInUse': 'This phone number is already registered.',
+      'usernameAlreadyInUse': 'This username is already taken.',
     },
     'ru': {
       'appName': 'MASOOR',
@@ -188,6 +196,10 @@ class LocalizationProvider with ChangeNotifier {
       'locationPermissionDenied': 'Доступ к местоположению отклонен',
       'confirmLocation': 'Подтвердить местоположение',
       'otherOptions': 'Другие варианты',
+      'alreadyHaveAccount': 'Уже есть аккаунт? Войти',
+      'emailAlreadyInUse': 'Этот электронный адрес уже зарегистрирован.',
+      'phoneAlreadyInUse': 'Этот номер телефона уже зарегистрирован.',
+      'usernameAlreadyInUse': 'Это имя пользователя уже занято.',
     },
   };
 

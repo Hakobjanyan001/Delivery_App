@@ -10,6 +10,7 @@ import '../../../core/localization/localization_provider.dart';
 import 'login_screen.dart';
 import '../../support/widgets/support_hub_sheet.dart';
 import '../../cart/screens/orders_screen.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -73,11 +74,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Provider.of<LocalizationProvider>(context, listen: false);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Իմ պրոֆիլը', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blue[900],
-        elevation: 1,
+        title: const Text('Իմ պրոֆիլը', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
       body: auth.isAnonymous
           ? _buildGuestView(context)
@@ -91,14 +93,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.blue[50],
+                    backgroundColor: AppColors.inputFill,
                     backgroundImage: auth.profileImagePath != null
                         ? (kIsWeb 
                             ? NetworkImage(auth.profileImagePath!) as ImageProvider
                             : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
                         : null,
                     child: auth.profileImagePath == null
-                        ? Icon(Icons.person, size: 60, color: Colors.blue[900])
+                        ? const Icon(Icons.person, size: 60, color: AppColors.primary)
                         : null,
                   ),
                   Positioned(
@@ -106,10 +108,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     right: 0,
                     child: GestureDetector(
                       onTap: () => _pickImage(auth),
-                      child: CircleAvatar(
+                      child: const CircleAvatar(
                         radius: 18,
-                        backgroundColor: Colors.blue[900],
-                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                        backgroundColor: AppColors.primary,
+                        child: Icon(Icons.camera_alt, color: Colors.white, size: 18),
                       ),
                     ),
                   ),
@@ -152,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: 'Պատվերներ',
               items: [
                 ListTile(
-                  leading: Icon(Icons.history, color: Colors.blue[900]),
+                  leading: const Icon(Icons.history, color: AppColors.primary),
                   title: const Text('Պատվերների պատմություն', style: TextStyle(fontSize: 16)),
                   trailing: const Icon(Icons.chevron_right),
                   contentPadding: EdgeInsets.zero,
@@ -221,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             builder: (context) => const SupportHubSheet(),
           );
         },
-        backgroundColor: Colors.blue[900],
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
@@ -231,17 +233,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const SizedBox(height: 10),
           ...items,
         ],
@@ -251,10 +255,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildInfoItem({required IconData icon, required String label, required String value, required VoidCallback onTap}) {
     return ListTile(
-      leading: Icon(icon, color: Colors.blue[900]),
-      title: Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black)),
-      trailing: const Icon(Icons.edit_outlined, size: 20),
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(label, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+      subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
+      trailing: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textSecondary),
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
     );
@@ -262,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildCardItem(PaymentCard card, PaymentProvider provider) {
     return ListTile(
-      leading: const Icon(Icons.credit_card, color: Colors.blue),
+      leading: const Icon(Icons.credit_card, color: AppColors.primary),
       title: Text('**** **** **** ${card.last4}'),
       subtitle: Text(card.expiryDate),
       trailing: IconButton(
@@ -343,7 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -384,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_circle_outlined, size: 100, color: Colors.blue[100]),
+            const Icon(Icons.account_circle_outlined, size: 100, color: AppColors.primary),
             const SizedBox(height: 20),
             const Text(
               'Մուտք գործեք պրոֆիլը տեսնելու համար',
@@ -406,9 +410,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[900],
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
+                minimumSize: const Size(double.infinity, 55),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Մուտք գործել / Գրանցվել', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

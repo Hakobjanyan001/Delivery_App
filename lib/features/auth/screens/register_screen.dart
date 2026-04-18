@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/localization/widgets/language_selector.dart';
+import '../../../core/theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isCheckoutFlow;
@@ -19,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -38,7 +40,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (emailExists) {
         if (!mounted) return;
         messenger.showSnackBar(
-          const SnackBar(content: Text('Այս էլ. հասցեն արդեն գրանցված է:')),
+          SnackBar(content: Text(l10n.translate('emailAlreadyInUse'))),
+        );
+        return;
+      }
+
+      final phoneExists = await authProvider.checkIfIdentifierExists(phone: _phoneController.text);
+      if (phoneExists) {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.translate('phoneAlreadyInUse'))),
         );
         return;
       }
@@ -47,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (usernameExists) {
         if (!mounted) return;
         messenger.showSnackBar(
-          const SnackBar(content: Text('Այս մուտքանունը արդեն զբաղված է:')),
+          SnackBar(content: Text(l10n.translate('usernameAlreadyInUse'))),
         );
         return;
       }
@@ -57,6 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _usernameController.text,
         _emailController.text,
         _passwordController.text,
+        _phoneController.text,
       );
       
       if (success) {
@@ -83,148 +95,217 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(l10n.translate('register')),
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: Text(
+          l10n.translate('register'),
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: const [
-          LanguageSelector(),
+          LanguageSelector(color: AppColors.textPrimary),
         ],
       ),
-      body: authProvider.isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: AutofillGroup(
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-            child: Column(
-              children: [
-                if (authProvider.errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      authProvider.errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+      body: authProvider.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : SingleChildScrollView(
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20.0, 20.0, 20.0, MediaQuery.of(context).viewInsets.bottom + 40.0),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        if (authProvider.errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: Text(
+                              authProvider.errorMessage!,
+                              style: const TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.person_add_outlined,
+                            size: 60,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        _buildTextField(
+                          controller: _nameController,
+                          label: l10n.translate('name'),
+                          icon: Icons.person,
+                          autofillHints: const [AutofillHints.name],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _phoneController,
+                          label: l10n.translate('phone'),
+                          icon: Icons.phone,
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _usernameController,
+                          label: l10n.translate('username'),
+                          icon: Icons.account_circle,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _emailController,
+                          label: l10n.translate('email'),
+                          icon: Icons.email,
+                          autofillHints: const [AutofillHints.email],
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (!value.contains('@')) return l10n.translate('invalidEmail');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _passwordController,
+                          label: l10n.translate('password'),
+                          icon: Icons.lock,
+                          isPassword: true,
+                          isPasswordVisible: _isPasswordVisible,
+                          onTogglePassword: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                          autofillHints: const [AutofillHints.newPassword],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (value.length < 6) return l10n.translate('shortPassword');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _confirmPasswordController,
+                          label: l10n.translate('confirmPassword'),
+                          icon: Icons.lock_clock,
+                          isPassword: true,
+                          isPasswordVisible: _isConfirmPasswordVisible,
+                          onTogglePassword: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                          autofillHints: const [AutofillHints.password],
+                          onEditingComplete: () => TextInput.finishAutofillContext(),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (value != _passwordController.text) return l10n.translate('passwordMismatch');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 40),
+                        ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 55),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 4,
+                            shadowColor: AppColors.primary.withValues(alpha: 0.4),
+                          ),
+                          child: Text(
+                            l10n.translate('register'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            l10n.translate('alreadyHaveAccount'),
+                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 20),
-                const Icon(Icons.person_add_outlined, size: 80, color: Colors.blue),
-                const SizedBox(height: 30),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.translate('name'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.person),
-                  ),
-                  autofillHints: const [AutofillHints.name],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.translate('requiredField');
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.translate('username'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.account_circle),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.translate('requiredField');
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: l10n.translate('email'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.email),
-                  ),
-                  autofillHints: const [AutofillHints.email],
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.translate('requiredField');
-                    if (!value.contains('@')) return l10n.translate('invalidEmail');
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: l10n.translate('password'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  autofillHints: const [AutofillHints.newPassword],
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.translate('requiredField');
-                    if (value.length < 6) return l10n.translate('shortPassword');
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: !_isConfirmPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: l10n.translate('confirmPassword'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock_clock),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  autofillHints: const [AutofillHints.password],
-                  onEditingComplete: () => TextInput.finishAutofillContext(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.translate('requiredField');
-                    if (value != _passwordController.text) return l10n.translate('passwordMismatch');
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: Text(l10n.translate('register'), style: const TextStyle(fontSize: 18)),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-}
+    );
+  }
 
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+    bool isPasswordVisible = false,
+    VoidCallback? onTogglePassword,
+    List<String>? autofillHints,
+    TextInputType? keyboardType,
+    VoidCallback? onEditingComplete,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword && !isPasswordVisible,
+      style: const TextStyle(color: AppColors.textPrimary),
+      autofillHints: autofillHints,
+      keyboardType: keyboardType,
+      onEditingComplete: onEditingComplete,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.textSecondary),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                  color: AppColors.textSecondary,
+                ),
+                onPressed: onTogglePassword,
+              )
+            : null,
+      ),
+      validator: validator,
+    );
+  }
+}

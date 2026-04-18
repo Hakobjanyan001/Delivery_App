@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../models/cart_item.dart';
 import '../providers/cart_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CartItemCard extends StatelessWidget {
   final CartItem cartItem;
@@ -33,7 +34,8 @@ class CartItemCard extends StatelessWidget {
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 2,
+        elevation: 0,
+        color: AppColors.surface,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -51,8 +53,8 @@ class CartItemCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         width: 65, height: 65,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.fastfood, color: Colors.grey),
+                        color: AppColors.inputFill,
+                        child: const Icon(Icons.fastfood, color: AppColors.textSecondary),
                       ),
                     ),
                   ),
@@ -62,7 +64,7 @@ class CartItemCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue[900],
+                          color: AppColors.primary,
                           borderRadius: const BorderRadius.only(topLeft: Radius.circular(8)),
                         ),
                         child: Text('x${cartItem.quantity}',
@@ -87,9 +89,9 @@ class CartItemCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        TagWidget(label: cartItem.selectedSize, bg: Colors.blue[50]!, fg: Colors.blue[900]!),
+                        TagWidget(label: cartItem.selectedSize, bg: AppColors.inputFill, fg: AppColors.primary),
                         ...cartItem.selectedOptions.map(
-                          (opt) => TagWidget(label: opt, bg: Colors.orange[50]!, fg: Colors.orange[800]!),
+                          (opt) => TagWidget(label: opt, bg: AppColors.primary.withValues(alpha: 0.1), fg: AppColors.primary),
                         ),
                       ],
                     ),
@@ -100,10 +102,10 @@ class CartItemCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('${cartItem.effectiveUnitPrice.toStringAsFixed(0)} ֏',
-                            style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
+                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                         if (cartItem.quantity > 1)
                           Text('${l10n.translate('total')}՝ ${cartItem.totalIndividualPrice.toStringAsFixed(0)} ֏',
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),
                   ],

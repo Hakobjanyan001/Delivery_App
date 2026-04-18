@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class LocationPickerDialog extends StatefulWidget {
   final LatLng initialPosition;
@@ -98,7 +99,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                 Navigator.of(context).pop(_selectedPosition);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[900],
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

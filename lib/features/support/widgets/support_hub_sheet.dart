@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/support_chat_screen.dart';
+import '../../../core/theme/app_theme.dart';
 
 class SupportHubSheet extends StatelessWidget {
   const SupportHubSheet({super.key});
@@ -17,7 +18,7 @@ class SupportHubSheet extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -29,10 +30,10 @@ class SupportHubSheet extends StatelessWidget {
             children: [
               const Text(
                 'Աջակցության կենտրոն',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
               ),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(Icons.close, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -43,7 +44,7 @@ class SupportHubSheet extends StatelessWidget {
             icon: Icons.phone_in_talk,
             title: 'Զանգահարել աջակցության կենտրոն',
             subtitle: '+374 00 000000',
-            color: Colors.green,
+            color: AppColors.primary,
             onTap: _makeCall,
           ),
           const SizedBox(height: 12),
@@ -52,7 +53,7 @@ class SupportHubSheet extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             title: 'Օնլայն օպերատոր',
             subtitle: 'Պատասխանում ենք 5-ից 10 րոպեում',
-            color: Colors.blue[900]!,
+            color: AppColors.primary,
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -81,8 +82,9 @@ class SupportHubSheet extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(15),
+          color: AppColors.surface,
         ),
         child: Row(
           children: [
@@ -95,12 +97,12 @@ class SupportHubSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  Text(subtitle, style: TextStyle(color: Colors.grey[400], fontSize: 13)),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
           ],
         ),
       ),

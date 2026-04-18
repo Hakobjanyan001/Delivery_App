@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'food_detail_dialog.dart';
+import '../../../core/theme/app_theme.dart';
 
 class RestaurantCard extends StatelessWidget {
   final Restaurant restaurant;
@@ -16,9 +17,13 @@ class RestaurantCard extends StatelessWidget {
       name: 'Հատուկ կերակուր ${restaurant.name}',
       nameEn: 'Special Dish ${restaurant.nameEn}',
       nameRu: 'Специальное блюдо ${restaurant.nameRu}',
+      description: 'Մեր լավագույն առաջարկը:',
+      descriptionEn: 'Our best offer.',
+      descriptionRu: 'Наше лучшее предложение.',
       price: restaurant.price,
       imageUrl: restaurant.imageUrl,
       category: restaurant.category,
+      prepTime: 20,
       sizes: ['Փոքր', 'Մեծ'],
       sizePrices: [restaurant.price, restaurant.price * 1.7],
       slicePrice: restaurant.category.toLowerCase().contains('pizza') ? 250 : null,
@@ -44,10 +49,11 @@ class RestaurantCard extends StatelessWidget {
         onTap: () => _openDetail(context, l10n),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: AppColors.border),
             boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+              BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
             ],
           ),
           child: Column(
@@ -82,8 +88,8 @@ class RestaurantCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             '${restaurant.price.toStringAsFixed(0)} ֏',
-                            style: TextStyle(
-                              color: Colors.blue[900],
+                            style: const TextStyle(
+                              color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -94,7 +100,7 @@ class RestaurantCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue[900],
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(

@@ -50,7 +50,7 @@ class _MasoorAppState extends State<MasoorApp> {
       title: 'MASOOR',
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       navigatorObservers: [
         AppNavigatorObserver(
           onRouteChanged: (name) {

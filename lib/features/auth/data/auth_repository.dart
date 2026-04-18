@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -38,16 +39,26 @@ class AuthRepository {
 
   Future<UserCredential> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw Exception('Google Sign-In cancelled');
+      if (kIsWeb) {
+        // Web-um ogtagorcum enq Firebase Auth-i signInWithPopup-y
+        // google_sign_in plugin-y web-um "popup_closed" error e talis
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        return await _auth.signInWithPopup(googleProvider);
+      } else {
+        // Mobile-um ogtagorcum enq google_sign_in plugin-y
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) throw Exception('Google Sign-In cancelled');
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      return await _auth.signInWithCredential(credential);
+        return await _auth.signInWithCredential(credential);
+      }
     } on FirebaseAuthException catch (e) {
       throw AuthRepository.handleAuthError(e);
     }
@@ -82,6 +93,7 @@ class AuthRepository {
     }
   }
 
+  // Mobile: verifyPhoneNumber (OTP flow)
   Future<void> verifyPhone({
     required String phoneNumber,
     required Function(String verificationId, int? resendToken) codeSent,
@@ -94,19 +106,42 @@ class AuthRepository {
         phoneNumber: phoneNumber,
         verificationCompleted: verificationCompleted,
         verificationFailed: (e) {
-          // Exception-y pakum enq mer error handler-ov ete petq lini, 
-          // bayc menq teqsty ktanq UI-in vor cuyc ta.
           verificationFailed(e);
         },
         codeSent: codeSent,
         codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
       );
     } catch (e) {
-      // Ynthanur sxal (verifyPhoneNumber-i koghmic chpahvac)
+      if (e is FirebaseAuthException) {
+        throw AuthRepository.handleAuthError(e);
+      }
       throw 'Կապի սխալ: Ստուգեք ինտերնետը:';
     }
   }
 
+  // Web: signInWithPhoneNumber — Firebase auto-creates invisible reCAPTCHA internally
+  Future<ConfirmationResult> signInWithPhoneNumberWeb(String phoneNumber) async {
+    try {
+      // Firebase-y inqnabern invisible reCAPTCHA e steghtsum ete verifier chi petranvum
+      return await _auth.signInWithPhoneNumber(phoneNumber);
+    } on FirebaseAuthException catch (e) {
+      throw AuthRepository.handleAuthError(e);
+    } catch (e) {
+      throw 'Սխալ (${e.runtimeType}): $e';
+    }
+  }
+
+  // Web: confirm the SMS code using ConfirmationResult
+  Future<UserCredential> confirmPhoneCodeWeb(
+      ConfirmationResult confirmationResult, String smsCode) async {
+    try {
+      return await confirmationResult.confirm(smsCode);
+    } on FirebaseAuthException catch (e) {
+      throw AuthRepository.handleAuthError(e);
+    }
+  }
+
+  // Mobile: confirm using verificationId + smsCode
   Future<UserCredential> signInWithPhone(String verificationId, String smsCode) async {
     try {
       final AuthCredential credential = PhoneAuthProvider.credential(
@@ -163,6 +198,11 @@ class AuthRepository {
       return snapshot.docs.first.get('email') as String?;
     }
     return null;
+  }
+
+  Future<Map<String, dynamic>?> fetchUserData(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data();
   }
 
   Future<void> saveUserData(User user, {String? name, String? phone, String? username}) async {

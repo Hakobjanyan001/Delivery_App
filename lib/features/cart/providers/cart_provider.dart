@@ -61,6 +61,16 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void removeOneItemByFoodId(String foodId) {
+    final key = _items.keys.firstWhere(
+      (k) => _items[k]!.foodItem.id == foodId,
+      orElse: () => '',
+    );
+    if (key.isNotEmpty) {
+      decreaseQuantity(key);
+    }
+  }
+
   void clearCart() {
     _items.clear();
     notifyListeners();

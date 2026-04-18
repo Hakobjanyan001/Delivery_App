@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/orders_provider.dart';
 import '../../../core/localization/localization_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../support/widgets/support_hub_sheet.dart';
 
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
@@ -14,22 +16,23 @@ class OrdersScreen extends StatelessWidget {
     final orders = ordersProvider.orders;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(l10n.translate('popularRestaurants').split(' ')[0] == 'Popular' ? 'Order History' : (l10n.translate('popularRestaurants').split(' ')[0] == 'Популярные' ? 'История заказов' : 'Պատվերների պատմություն'), 
-          style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        iconTheme: IconThemeData(color: Colors.blue[900]),
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: orders.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey[300]),
+                   Icon(Icons.history, size: 80, color: AppColors.textSecondary.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(lang == 'en' ? 'You have no orders yet' : (lang == 'ru' ? 'У вас еще нет заказов' : 'Դուք դեռ պատվերներ չեք կատարել'), 
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600])),
+                    style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
                 ],
               ),
             )
@@ -40,8 +43,12 @@ class OrdersScreen extends StatelessWidget {
                 final order = orders[i];
                 final dateStr = "${order.date.day.toString().padLeft(2, '0')}/${order.date.month.toString().padLeft(2, '0')}/${order.date.year} ${order.date.hour.toString().padLeft(2, '0')}:${order.date.minute.toString().padLeft(2, '0')}";
                 return Card(
+                  color: AppColors.surface,
                   margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -56,7 +63,7 @@ class OrdersScreen extends StatelessWidget {
                             ),
                             Text(
                               '${order.totalAmount.toStringAsFixed(0)} ֏',
-                              style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                           ],
                         ),
@@ -85,12 +92,12 @@ class OrdersScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.green[50],
+                            color: Colors.green.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             order.status,
-                            style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -99,6 +106,18 @@ class OrdersScreen extends StatelessWidget {
                 );
               },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const SupportHubSheet(),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.support_agent, color: Colors.white),
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ import '../../../core/services/payment_service.dart';
 import '../../support/widgets/support_hub_sheet.dart';
 import '../providers/orders_provider.dart';
 import '../providers/address_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -133,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     suffixIcon: isFetching
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
                         : IconButton(
-                            icon: const Icon(Icons.my_location, color: Colors.blue),
+                            icon: const Icon(Icons.my_location, color: AppColors.primary),
                             onPressed: () => _fetchLocationForAddress(l10n, addrController, (val) => setStateBuilder(() => isFetching = val)),
                           ),
                   ),
@@ -251,7 +252,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Navigator.of(ctx).pop();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text('OK', style: TextStyle(color: Colors.blue[900])),
+            child: Text('OK', style: TextStyle(color: AppColors.primary)),
           )
         ],
       ),
@@ -266,12 +267,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.translate('checkout'), style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        iconTheme: IconThemeData(color: Colors.blue[900]),
+        title: Text(l10n.translate('checkout'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
-      body: SingleChildScrollView(
+      body: Container(
+        color: AppColors.background,
+        child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Form(
@@ -351,7 +354,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     _submitOrder(context, cart, l10n);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[900],
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -366,6 +369,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
@@ -375,7 +379,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             builder: (context) => const SupportHubSheet(),
           );
         },
-        backgroundColor: Colors.blue[900],
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
@@ -412,7 +416,7 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
       ),
     );
   }
@@ -439,12 +443,12 @@ class AddressSelectionSection extends StatelessWidget {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue[50] : Colors.white,
+                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Colors.blue[900]! : Colors.grey[300]!),
+                    border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
                   ),
                   child: ListTile(
-                    leading: Icon(Icons.location_on, color: isSelected ? Colors.blue[900] : Colors.grey),
+                    leading: Icon(Icons.location_on, color: isSelected ? AppColors.primary : AppColors.textSecondary),
                     title: Text(addr.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(addr.address),
                     trailing: Row(
@@ -454,7 +458,7 @@ class AddressSelectionSection extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, color: Colors.grey),
                           onPressed: () => addrProv.removeAddress(addr.id),
                         ),
-                        if (isSelected) const Icon(Icons.check_circle, color: Colors.blue),
+                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.primary),
                       ],
                     ),
                     onTap: () => addrProv.selectAddress(addr.id),
@@ -477,11 +481,11 @@ class AddressSelectionSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey[600]),
+                      Icon(Icons.location_on, color: AppColors.textSecondary),
                       const SizedBox(width: 10),
-                      Text('Ավելացրեք հասցե', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+                      Text('Ավելացրեք հասցե', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                       const Spacer(),
-                      const Icon(Icons.add_location_alt, color: Colors.blue),
+                      const Icon(Icons.add_location_alt, color: AppColors.primary),
                     ],
                   ),
                 ),
@@ -519,8 +523,8 @@ class PaymentMethodSection extends StatelessWidget {
                 label: Center(child: Text(l10n.translate('cash'))),
                 selected: selectedMethod == 'cash',
                 onSelected: (selected) => onChanged('cash'),
-                selectedColor: Colors.blue[900]?.withValues(alpha: 0.2),
-                checkmarkColor: Colors.blue[900],
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primary,
               ),
             ),
             const SizedBox(width: 10),
@@ -529,8 +533,8 @@ class PaymentMethodSection extends StatelessWidget {
                 label: Center(child: Text(l10n.translate('card'))),
                 selected: selectedMethod == 'card',
                 onSelected: (selected) => onChanged('card'),
-                selectedColor: Colors.blue[900]?.withValues(alpha: 0.2),
-                checkmarkColor: Colors.blue[900],
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primary,
               ),
             ),
           ],
@@ -574,12 +578,12 @@ class CardSelectionSection extends StatelessWidget {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue[50] : Colors.white,
+                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Colors.blue[900]! : Colors.grey[300]!),
+                    border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
                   ),
                   child: ListTile(
-                    leading: Icon(Icons.credit_card, color: Colors.blue[900]),
+                    leading: Icon(Icons.credit_card, color: AppColors.primary),
                     title: Text('**** **** **** ${card.last4}'),
                     subtitle: Text(card.expiryDate),
                     trailing: Row(
@@ -589,7 +593,7 @@ class CardSelectionSection extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, color: Colors.grey),
                           onPressed: () => onDeleteCard(payment, card),
                         ),
-                        if (isSelected) const Icon(Icons.check_circle, color: Colors.blue),
+                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.primary),
                       ],
                     ),
                     onTap: () => payment.selectCard(card.id),
@@ -611,9 +615,9 @@ class CardSelectionSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50]?.withValues(alpha: 0.3),
+                  color: AppColors.inputFill,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.blue[100]!),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,8 +711,9 @@ class OrderSummarySection extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -716,7 +721,7 @@ class OrderSummarySection extends StatelessWidget {
               Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               Text(
                 '${totalAmount.toStringAsFixed(0)} ֏',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue[900]),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ],
           ),

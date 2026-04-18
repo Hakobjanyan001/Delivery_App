@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../../core/theme/app_theme.dart';
 
 class Message {
   final String text;
@@ -68,26 +69,27 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.blue[100],
-              child: Icon(Icons.support_agent, color: Colors.blue[900]),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.support_agent, color: Colors.white),
             ),
             const SizedBox(width: 12),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Օպերատոր', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('Օպերատոր', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 Text('Օնլայն', style: TextStyle(fontSize: 12, color: Colors.green)),
               ],
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blue[900],
-        elevation: 1,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -116,7 +118,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: msg.isMe ? Colors.blue[900] : Colors.grey[200],
+          color: msg.isMe ? AppColors.surface : AppColors.primary,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(15),
             topRight: const Radius.circular(15),
@@ -126,7 +128,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         ),
         child: Text(
           msg.text,
-          style: TextStyle(color: msg.isMe ? Colors.white : Colors.black87),
+          style: TextStyle(color: msg.isMe ? AppColors.textPrimary : Colors.white),
         ),
       ),
     );
@@ -136,8 +138,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: SafeArea(
         child: Row(
@@ -145,10 +147,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             Expanded(
               child: TextField(
                 controller: _controller,
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Գրեք հաղորդագրություն...',
+                  hintStyle: const TextStyle(color: AppColors.textSecondary),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
-                  fillColor: Colors.grey[100],
+                  fillColor: AppColors.inputFill,
                   filled: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
@@ -157,7 +161,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             ),
             const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: Colors.blue[900],
+              backgroundColor: AppColors.primary,
               child: IconButton(
                 icon: const Icon(Icons.send, color: Colors.white),
                 onPressed: _sendMessage,

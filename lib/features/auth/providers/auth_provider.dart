@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../data/auth_repository.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -10,19 +11,45 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider() {
     _user = _repository.currentUser;
+    if (_user != null) {
+      _loadUserData();
+    }
     _repository.authStateChanges.listen((User? user) {
       _user = user;
+      if (user != null) {
+        _loadUserData();
+      } else {
+        _firestoreName = null;
+        _firestorePhone = null;
+      }
       notifyListeners();
     });
+  }
+
+  String? _firestoreName;
+  String? _firestorePhone;
+
+  Future<void> _loadUserData() async {
+    if (_user == null) return;
+    try {
+      final data = await _repository.fetchUserData(_user!.uid);
+      if (data != null) {
+        _firestoreName = data['displayName'];
+        _firestorePhone = data['phoneNumber'];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading user data from Firestore: $e');
+    }
   }
 
   bool get isAuthenticated => _user != null;
   bool get isAnonymous => _user?.isAnonymous ?? false;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  String? get userName => _user?.displayName ?? _user?.email?.split('@')[0];
+  String? get userName => _firestoreName ?? _user?.displayName ?? _user?.email?.split('@')[0];
   String? get email => _user?.email;
-  String? get phone => _user?.phoneNumber;
+  String? get phone => _firestorePhone ?? _user?.phoneNumber;
   String? get profileImagePath => _user?.photoURL;
 
   void _setLoading(bool value) {
@@ -54,6 +81,7 @@ class AuthProvider with ChangeNotifier {
       final credential = await _repository.signInWithEmail(email, password);
       if (credential.user != null) {
         await _repository.saveUserData(credential.user!);
+        await _loadUserData();
       }
       return true;
     } catch (e) {
@@ -64,13 +92,14 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> register(String name, String username, String email, String password) async {
+  Future<bool> register(String name, String username, String email, String password, String phoneNumber) async {
     _setLoading(true);
     _setError(null);
     try {
       final credential = await _repository.registerWithEmail(name, email, password);
       if (credential.user != null) {
-        await _repository.saveUserData(credential.user!, name: name, username: username);
+        await _repository.saveUserData(credential.user!, name: name, username: username, phone: phoneNumber);
+        await _loadUserData();
       }
       return true;
     } catch (e) {
@@ -88,6 +117,7 @@ class AuthProvider with ChangeNotifier {
       final credential = await _repository.signInWithGoogle();
       if (credential.user != null) {
         await _repository.saveUserData(credential.user!);
+        await _loadUserData();
       }
       return true;
     } catch (e) {
@@ -105,6 +135,7 @@ class AuthProvider with ChangeNotifier {
       final credential = await _repository.signInWithFacebook();
       if (credential.user != null) {
         await _repository.saveUserData(credential.user!);
+        await _loadUserData();
       }
       return true;
     } catch (e) {
@@ -130,31 +161,38 @@ class AuthProvider with ChangeNotifier {
   }
 
   String? _phoneVerificationId;
+  ConfirmationResult? _webConfirmationResult; // Web-i Phone Auth-i hamard
 
   Future<void> verifyPhone(String phoneNumber, Function(String) onCodeSent) async {
     _setLoading(true);
     _setError(null);
     try {
-      await _repository.verifyPhone(
-        phoneNumber: phoneNumber,
-        codeSent: (verificationId, resendToken) {
-          _phoneVerificationId = verificationId;
-          _setLoading(false);
-          onCodeSent(verificationId);
-        },
-        verificationFailed: (e) {
-          _setError(AuthRepository.handleAuthError(e));
-          _setLoading(false);
-        },
-        verificationCompleted: (credential) async {
-          // Avto-lucum kam akntartayin stugum mi qani sarqeri vra
-          await FirebaseAuth.instance.signInWithCredential(credential);
-          _setLoading(false);
-        },
-        codeAutoRetrievalTimeout: (verificationId) {
-          _phoneVerificationId = verificationId;
-        },
-      );
+      if (kIsWeb) {
+        // Web-um ogtagorcum enq signInWithPhoneNumber -> ConfirmationResult
+        _webConfirmationResult = await _repository.signInWithPhoneNumberWeb(phoneNumber);
+        _setLoading(false);
+        onCodeSent('web'); // placeholder verificationId
+      } else {
+        await _repository.verifyPhone(
+          phoneNumber: phoneNumber,
+          codeSent: (verificationId, resendToken) {
+            _phoneVerificationId = verificationId;
+            _setLoading(false);
+            onCodeSent(verificationId);
+          },
+          verificationFailed: (e) {
+            _setError(AuthRepository.handleAuthError(e));
+            _setLoading(false);
+          },
+          verificationCompleted: (credential) async {
+            await FirebaseAuth.instance.signInWithCredential(credential);
+            _setLoading(false);
+          },
+          codeAutoRetrievalTimeout: (verificationId) {
+            _phoneVerificationId = verificationId;
+          },
+        );
+      }
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
@@ -162,13 +200,21 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> signInWithPhone(String smsCode, {String? phoneNumber}) async {
-    if (_phoneVerificationId == null) return false;
     _setLoading(true);
     _setError(null);
     try {
-      final credential = await _repository.signInWithPhone(_phoneVerificationId!, smsCode);
+      UserCredential credential;
+      if (kIsWeb && _webConfirmationResult != null) {
+        // Web flow: confirm the code via ConfirmationResult
+        credential = await _repository.confirmPhoneCodeWeb(_webConfirmationResult!, smsCode);
+      } else {
+        // Mobile flow: use verificationId
+        if (_phoneVerificationId == null) return false;
+        credential = await _repository.signInWithPhone(_phoneVerificationId!, smsCode);
+      }
       if (credential.user != null) {
         await _repository.saveUserData(credential.user!, phone: phoneNumber);
+        await _loadUserData();
       }
       return true;
     } catch (e) {
@@ -189,7 +235,12 @@ class AuthProvider with ChangeNotifier {
       if (imagePath != null) {
         await _user?.updatePhotoURL(imagePath);
       }
-      // Nshum: Email-i ev heraxosi tarmacumnery sovorabar pahanjum en noric mutq kam hastatum. 
+      
+      // Sync with Firestore
+      if (_user != null) {
+        await _repository.saveUserData(_user!, name: name, phone: phone);
+        await _loadUserData();
+      }
       
       await _user?.reload();
       _user = FirebaseAuth.instance.currentUser;
