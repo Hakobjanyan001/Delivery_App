@@ -10,6 +10,7 @@ import 'features/cart/providers/payment_provider.dart';
 import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
 import 'core/services/firebase_service.dart';
+import 'core/widgets/navigation_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,8 +31,16 @@ void main() async {
   );
 }
 
-class MasoorApp extends StatelessWidget {
+class MasoorApp extends StatefulWidget {
   const MasoorApp({super.key});
+
+  @override
+  State<MasoorApp> createState() => _MasoorAppState();
+}
+
+class _MasoorAppState extends State<MasoorApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<State<NavigationWrapper>> _wrapperKey = GlobalKey<State<NavigationWrapper>>();
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +48,26 @@ class MasoorApp extends StatelessWidget {
     
     return MaterialApp(
       title: 'MASOOR',
+      navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      navigatorObservers: [
+        AppNavigatorObserver(
+          onRouteChanged: (name) {
+            final state = _wrapperKey.currentState;
+            if (state != null) {
+              (state as dynamic).updateRoute(name);
+            }
+          },
+        ),
+      ],
+      builder: (context, child) {
+        return NavigationWrapper(
+          key: _wrapperKey,
+          navigatorKey: _navigatorKey,
+          child: child,
+        );
+      },
       home: authProvider.isAuthenticated 
           ? const HomeScreen() 
           : const LoginScreen(),

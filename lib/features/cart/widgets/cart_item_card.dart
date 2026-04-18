@@ -17,7 +17,7 @@ class CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final item = cartItem.foodItem;
-    final l10n = Provider.of<LocalizationProvider>(context);
+    final l10n = context.watch<LocalizationProvider>();
 
     return Dismissible(
       key: ValueKey(cartItem.uniqueKey),
@@ -87,9 +87,9 @@ class CartItemCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 4,
                       children: [
-                        _buildTag(cartItem.selectedSize, Colors.blue[50]!, Colors.blue[900]!),
+                        TagWidget(label: cartItem.selectedSize, bg: Colors.blue[50]!, fg: Colors.blue[900]!),
                         ...cartItem.selectedOptions.map(
-                          (opt) => _buildTag(opt, Colors.orange[50]!, Colors.orange[800]!),
+                          (opt) => TagWidget(label: opt, bg: Colors.orange[50]!, fg: Colors.orange[800]!),
                         ),
                       ],
                     ),
@@ -134,8 +134,22 @@ class CartItemCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildTag(String label, Color bg, Color fg) {
+class TagWidget extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  const TagWidget({
+    super.key,
+    required this.label,
+    required this.bg,
+    required this.fg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(

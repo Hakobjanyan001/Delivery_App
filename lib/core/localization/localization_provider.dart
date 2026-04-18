@@ -65,6 +65,7 @@ class LocalizationProvider with ChangeNotifier {
       'locationError': 'Չհաջողվեց ստանալ հասցեն',
       'locationPermissionDenied': 'Տեղորոշման թույլտվությունը մերժված է',
       'confirmLocation': 'Հաստատել հասցեն',
+      'otherOptions': 'Այլ տարբերակներ',
     },
     'en': {
       'appName': 'MASOOR',
@@ -125,6 +126,7 @@ class LocalizationProvider with ChangeNotifier {
       'locationError': 'Could not get location',
       'locationPermissionDenied': 'Location permission denied',
       'confirmLocation': 'Confirm Location',
+      'otherOptions': 'Other options',
     },
     'ru': {
       'appName': 'MASOOR',
@@ -185,6 +187,7 @@ class LocalizationProvider with ChangeNotifier {
       'locationError': 'Не удалось получить адрес',
       'locationPermissionDenied': 'Доступ к местоположению отклонен',
       'confirmLocation': 'Подтвердить местоположение',
+      'otherOptions': 'Другие варианты',
     },
   };
 

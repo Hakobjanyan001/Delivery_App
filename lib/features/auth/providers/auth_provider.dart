@@ -45,7 +45,7 @@ class AuthProvider with ChangeNotifier {
       if (!email.contains('@')) {
         final resolvedEmail = await _repository.getEmailFromUsername(email);
         if (resolvedEmail == null) {
-          _setError('Ogtatery chi gtnvel:'); // Ogtatery chi gtnvel
+          _setError('Օգտատերը չի գտնվել:'); // User not found
           return false;
         }
         email = resolvedEmail;
@@ -190,7 +190,6 @@ class AuthProvider with ChangeNotifier {
         await _user?.updatePhotoURL(imagePath);
       }
       // Nshum: Email-i ev heraxosi tarmacumnery sovorabar pahanjum en noric mutq kam hastatum. 
-      // Ar-ayjm sranq lriv grac chen, vor ogtaterin chxangarenq.
       
       await _user?.reload();
       _user = FirebaseAuth.instance.currentUser;

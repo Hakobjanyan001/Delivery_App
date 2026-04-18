@@ -435,7 +435,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
-  String get _currentLang => Provider.of<LocalizationProvider>(context, listen: false).currentLocale.languageCode;
 
   void _openFoodDetail(BuildContext context, FoodItem food) {
     showModalBottomSheet(
@@ -462,7 +461,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: GestureDetector(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                MaterialPageRoute(
+                  settings: const RouteSettings(name: 'ProfileScreen'),
+                  builder: (context) => const ProfileScreen(),
+                ),
               ),
               child: CircleAvatar(
                 radius: 18,
@@ -479,9 +481,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        title: Text(
-          l10n.translate('appName'),
-          style: TextStyle(color: Colors.blue[900], fontWeight: FontWeight.bold, fontSize: 24),
+        title: Image.asset(
+          'assets/images/masoor_logo.png',
+          height: 35,
+          fit: BoxFit.contain,
         ),
         actions: [
           const LanguageSelector(),
@@ -491,7 +494,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Icons.shopping_cart_outlined, color: Colors.blue[900]),
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CartScreen()),
+                  MaterialPageRoute(
+                    settings: const RouteSettings(name: 'CartScreen'),
+                    builder: (context) => const CartScreen(),
+                  ),
                 ),
               ),
               Positioned(

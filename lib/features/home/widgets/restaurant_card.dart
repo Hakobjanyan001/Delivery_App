@@ -10,7 +10,6 @@ class RestaurantCard extends StatelessWidget {
   const RestaurantCard({super.key, required this.restaurant});
 
   void _openDetail(BuildContext context, LocalizationProvider l10n) {
-    final lang = l10n.currentLocale.languageCode;
     // Create a temporary FoodItem from Restaurant data
     final food = FoodItem(
       id: restaurant.id,

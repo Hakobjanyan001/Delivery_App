@@ -27,7 +27,10 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pop(true);
     } else {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'HomeScreen'),
+          builder: (context) => const HomeScreen(),
+        ),
       );
     }
   }
@@ -101,6 +104,27 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5)
+                          )
+                        ]
+                      ),
+                      child: Image.asset(
+                        'assets/images/masoor_logo.png',
+                        height: 80,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                   Text(l10n.translate('login'), style: const TextStyle(color: Colors.white, fontSize: 40),),
                   const SizedBox(height: 10,),
                   Text(l10n.translate('welcome'), style: const TextStyle(color: Colors.white, fontSize: 18),),
@@ -219,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Expanded(child: Divider(color: Colors.grey[300])),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                                child: Text("Այլ տարբերակներ", style: TextStyle(color: Colors.grey[600])),
+                                child: Text(l10n.translate('otherOptions'), style: TextStyle(color: Colors.grey[600])),
                               ),
                               Expanded(child: Divider(color: Colors.grey[300])),
                             ],
