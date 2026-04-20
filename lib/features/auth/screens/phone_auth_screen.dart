@@ -40,7 +40,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       if (phoneNumber.startsWith('374')) {
         phoneNumber = '+$phoneNumber';
       } else {
-        // Fallback for other formats or let Firebase handle validation
+        // Fallback for other formats or let the provider handle validation
         // But for this app, +374 is the primary focus
       }
     }

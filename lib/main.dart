@@ -9,12 +9,10 @@ import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
 import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
-import 'core/services/firebase_service.dart';
 import 'core/widgets/navigation_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseService.initialize();
   
   runApp(
     MultiProvider(

@@ -1,125 +1,77 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:async';
+import '../models/user_model.dart';
 
 class AuthRepository {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  AppUser? _currentUser;
+  
+  final StreamController<AppUser?> _authStateController = StreamController<AppUser?>.broadcast();
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<AppUser?> get authStateChanges => _authStateController.stream;
 
-  User? get currentUser => _auth.currentUser;
+  AppUser? get currentUser => _currentUser;
 
-  Future<UserCredential> signInWithEmail(String email, String password) async {
-    try {
-      return await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
+  Future<AppUser> signInWithEmail(String email, String password) async {
+    if (email == 'test@example.com' && password == '123456') {
+      await Future.delayed(const Duration(seconds: 1));
+      _currentUser = AppUser.mock();
+      _authStateController.add(_currentUser);
+      return _currentUser!;
+    } else {
+      throw 'Սխալ էլ․ հասցե կամ գաղտնաբառ։';
     }
   }
 
-  Future<UserCredential> registerWithEmail(String name, String email, String password) async {
-    try {
-      UserCredential credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      await credential.user?.updateDisplayName(name);
-      return credential;
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    }
+  Future<AppUser> registerWithEmail(String name, String email, String password) async {
+    await Future.delayed(const Duration(seconds: 1));
+    _currentUser = AppUser(
+      uid: DateTime.now().millisecondsSinceEpoch.toString(),
+      email: email,
+      displayName: name,
+    );
+    _authStateController.add(_currentUser);
+    return _currentUser!;
   }
 
-  Future<UserCredential> signInWithGoogle() async {
-    try {
-      if (kIsWeb) {
-        // Web-um ogtagorcum enq Firebase Auth-i signInWithPopup-y
-        // google_sign_in plugin-y web-um "popup_closed" error e talis
-        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        googleProvider.addScope('email');
-        googleProvider.addScope('profile');
-        return await _auth.signInWithPopup(googleProvider);
-      } else {
-        // Mobile-um ogtagorcum enq google_sign_in plugin-y
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) throw Exception('Google Sign-In cancelled');
-
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        return await _auth.signInWithCredential(credential);
-      }
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    }
+/*
+  Future<AppUser> signInWithGoogle() async {
+    await Future.delayed(const Duration(seconds: 1));
+    _currentUser = AppUser.mock();
+    _authStateController.add(_currentUser);
+    return _currentUser!;
   }
 
-  Future<UserCredential> signInWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
+  Future<AppUser> signInWithFacebook() async {
+    await Future.delayed(const Duration(seconds: 1));
+    _currentUser = AppUser.mock();
+    _authStateController.add(_currentUser);
+    return _currentUser!;
+  }
+*/
 
-      if (result.status == LoginStatus.success) {
-        final OAuthCredential credential = FacebookAuthProvider.credential(result.accessToken!.tokenString);
-        return await _auth.signInWithCredential(credential);
-      } else if (result.status == LoginStatus.cancelled) {
-        throw Exception('Facebook Sign-In cancelled');
-      } else {
-        throw Exception(result.message ?? 'Facebook Sign-In failed');
-      }
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    } catch (e) {
-      throw e.toString();
-    }
+  Future<AppUser> signInAnonymously() async {
+    await Future.delayed(const Duration(seconds: 500));
+    _currentUser = AppUser(
+      uid: 'anon-${DateTime.now().millisecondsSinceEpoch}',
+      email: 'anonymous@example.com',
+      isAnonymous: true,
+    );
+    _authStateController.add(_currentUser);
+    return _currentUser!;
   }
 
-  Future<UserCredential> signInAnonymously() async {
-    try {
-      return await _auth.signInAnonymously();
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    }
-  }
-
-  // Mobile: verifyPhoneNumber (OTP flow)
   Future<void> verifyPhone({
     required String phoneNumber,
     required Function(String verificationId, int? resendToken) codeSent,
-    required Function(FirebaseAuthException e) verificationFailed,
-    required Function(PhoneAuthCredential credential) verificationCompleted,
+    required Function(String errorMessage) verificationFailed,
+    required Function(AppUser user) verificationCompleted,
     required Function(String verificationId) codeAutoRetrievalTimeout,
   }) async {
-    try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber,
-        verificationCompleted: verificationCompleted,
-        verificationFailed: (e) {
-          verificationFailed(e);
-        },
-        codeSent: codeSent,
-        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
-      );
-    } catch (e) {
-      if (e is FirebaseAuthException) {
-        throw AuthRepository.handleAuthError(e);
-      }
-      throw 'Կապի սխալ: Ստուգեք ինտերնետը:';
-    }
+    await Future.delayed(const Duration(seconds: 1));
+    codeSent('mock-verification-id', 1);
   }
 
-  // Web: signInWithPhoneNumber — Firebase auto-creates invisible reCAPTCHA internally
+/*
+
   Future<ConfirmationResult> signInWithPhoneNumberWeb(String phoneNumber) async {
     try {
       // Firebase-y inqnabern invisible reCAPTCHA e steghtsum ete verifier chi petranvum
@@ -151,16 +103,27 @@ class AuthRepository {
       return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       throw AuthRepository.handleAuthError(e);
+*/
+  Future<AppUser> signInWithPhone(String verificationId, String smsCode) async {
+    if (smsCode == '123456') {
+      await Future.delayed(const Duration(seconds: 1));
+      _currentUser = AppUser.mock();
+      _authStateController.add(_currentUser);
+      return _currentUser!;
+    } else {
+      throw 'Սխալ SMS կոդ։'; // Invalid SMS code
     }
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    await Future.delayed(const Duration(milliseconds: 500));
+    _currentUser = null;
+    _authStateController.add(null);
   }
 
   Future<bool> checkIfIdentifierExists({String? email, String? phone, String? username}) async {
-    if (email != null) {
+    /* 
+       if (email != null) {
       final snapshot = await _firestore
           .collection('users')
           .where('email', isEqualTo: email.toLowerCase())
@@ -183,12 +146,16 @@ class AuthRepository {
           .get();
       if (snapshot.docs.isNotEmpty) return true;
     }
-    
+    */
+
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (email == 'test@example.com') return true;
     return false;
   }
 
   Future<String?> getEmailFromUsername(String username) async {
-    final snapshot = await _firestore
+    /*
+        final snapshot = await _firestore
         .collection('users')
         .where('username', isEqualTo: username.toLowerCase())
         .limit(1)
@@ -197,15 +164,25 @@ class AuthRepository {
     if (snapshot.docs.isNotEmpty) {
       return snapshot.docs.first.get('email') as String?;
     }
+    */
+    if (username.toLowerCase() == 'testuser') return 'test@example.com';
     return null;
   }
 
   Future<Map<String, dynamic>?> fetchUserData(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
+    /*
+        final doc = await _firestore.collection('users').doc(uid).get();
     return doc.data();
+    */
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (_currentUser != null) {
+      return _currentUser!.toJson();
+    }
+    return null;
   }
 
-  Future<void> saveUserData(User user, {String? name, String? phone, String? username}) async {
+  /*
+    Future<void> saveUserData(User user, {String? name, String? phone, String? username}) async {
     final userDoc = _firestore.collection('users').doc(user.uid);
     
     // Ogtagorcum enq set-y merge-ov, vor chjnjvi eghac tvyalnery ete ughaki mutq enq anum
@@ -218,8 +195,13 @@ class AuthRepository {
       'lastLogin': FieldValue.serverTimestamp(),
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    */
+  Future<void> saveUserData(AppUser user, {String? name, String? phone, String? username}) async {
+    // Mock save
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
+/*
   static String handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
@@ -245,5 +227,8 @@ class AuthRepository {
       default:
         return e.message ?? 'Տեղի է ունեցել սխալ (${e.code}):';
     }
+    */
+  void dispose() {
+    _authStateController.close();
   }
 }

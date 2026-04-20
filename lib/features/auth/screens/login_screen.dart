@@ -48,15 +48,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _loginWithGoogle() async {
-    final success = await Provider.of<AuthProvider>(context, listen: false).signInWithGoogle();
+
+  void _loginAnonymously() async {
+    final success = await Provider.of<AuthProvider>(context, listen: false).signInAnonymously();
     if (success && mounted) {
       _handleSuccess();
     }
   }
-
-  void _loginAnonymously() async {
-    final success = await Provider.of<AuthProvider>(context, listen: false).signInAnonymously();
+/*
+  void _loginWithGoogle() async {
+    final success = await Provider.of<AuthProvider>(context, listen: false).signInWithGoogle();
     if (success && mounted) {
       _handleSuccess();
     }
@@ -69,6 +70,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  _loginWithSend(){
+    Telegram kgrvi ste    
+  }
+
+  _loginWithCall(){
+    Watsapnel ste kgrvi     
+  }
+*/
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 }
                                               },
                                             ),
+                                            /*
                                             _socialButton(
                                               icon: Icons.g_mobiledata,
                                               color: Colors.red,
@@ -276,6 +286,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                               icon: Icons.facebook,
                                               color: const Color(0xFF1877F2),
                                               onTap: _loginWithFacebook,
+                                            ),
+                                            */
+
+                                            // Lader funkcional zut znaknerna
+                                            _socialButton(
+                                              icon: Icons.send,
+                                              color: Colors.blue,
+                                              onTap: () {},
+                                            ),
+                                            // Lader funkcional zut znaknerna
+                                            _socialButton(
+                                              icon: Icons.call,
+                                              color: Colors.green,
+                                              onTap: () {},
                                             ),
                                             _socialButton(
                                               icon: Icons.person_outline,

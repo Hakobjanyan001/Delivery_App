@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../data/auth_repository.dart';
+import '../models/user_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
   bool _isLoading = false;
   String? _errorMessage;
-  User? _user;
+  AppUser? _user;
 
   AuthProvider() {
     _user = _repository.currentUser;
     if (_user != null) {
       _loadUserData();
     }
-    _repository.authStateChanges.listen((User? user) {
+    _repository.authStateChanges.listen((AppUser? user) {
       _user = user;
       if (user != null) {
         _loadUserData();
@@ -39,7 +38,7 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error loading user data from Firestore: $e');
+      debugPrint('Error loading user data: $e');
     }
   }
 
@@ -47,10 +46,10 @@ class AuthProvider with ChangeNotifier {
   bool get isAnonymous => _user?.isAnonymous ?? false;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  String? get userName => _firestoreName ?? _user?.displayName ?? _user?.email?.split('@')[0];
+  String? get userName => _firestoreName ?? _user?.displayName ?? _user?.email.split('@')[0];
   String? get email => _user?.email;
   String? get phone => _firestorePhone ?? _user?.phoneNumber;
-  String? get profileImagePath => _user?.photoURL;
+  String? get profileImagePath => _user?.photoUrl;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -68,7 +67,6 @@ class AuthProvider with ChangeNotifier {
     try {
       String email = identifier.trim();
       
-      // Ete nman che email-i, pordzir stanal email-y username-ic
       if (!email.contains('@')) {
         final resolvedEmail = await _repository.getEmailFromUsername(email);
         if (resolvedEmail == null) {
@@ -78,11 +76,7 @@ class AuthProvider with ChangeNotifier {
         email = resolvedEmail;
       }
 
-      final credential = await _repository.signInWithEmail(email, password);
-      if (credential.user != null) {
-        await _repository.saveUserData(credential.user!);
-        await _loadUserData();
-      }
+      await _repository.signInWithEmail(email, password);
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -96,11 +90,7 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final credential = await _repository.registerWithEmail(name, email, password);
-      if (credential.user != null) {
-        await _repository.saveUserData(credential.user!, name: name, username: username, phone: phoneNumber);
-        await _loadUserData();
-      }
+      await _repository.registerWithEmail(name, email, password);
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -110,15 +100,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+/*
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _setError(null);
     try {
-      final credential = await _repository.signInWithGoogle();
-      if (credential.user != null) {
-        await _repository.saveUserData(credential.user!);
-        await _loadUserData();
-      }
+      await _repository.signInWithGoogle();
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -127,16 +114,14 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
+*/
 
+/*
   Future<bool> signInWithFacebook() async {
     _setLoading(true);
     _setError(null);
     try {
-      final credential = await _repository.signInWithFacebook();
-      if (credential.user != null) {
-        await _repository.saveUserData(credential.user!);
-        await _loadUserData();
-      }
+      await _repository.signInWithFacebook();
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -145,6 +130,7 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
+*/
 
   Future<bool> signInAnonymously() async {
     _setLoading(true);
@@ -161,38 +147,29 @@ class AuthProvider with ChangeNotifier {
   }
 
   String? _phoneVerificationId;
-  ConfirmationResult? _webConfirmationResult; // Web-i Phone Auth-i hamard
 
   Future<void> verifyPhone(String phoneNumber, Function(String) onCodeSent) async {
     _setLoading(true);
     _setError(null);
     try {
-      if (kIsWeb) {
-        // Web-um ogtagorcum enq signInWithPhoneNumber -> ConfirmationResult
-        _webConfirmationResult = await _repository.signInWithPhoneNumberWeb(phoneNumber);
-        _setLoading(false);
-        onCodeSent('web'); // placeholder verificationId
-      } else {
-        await _repository.verifyPhone(
-          phoneNumber: phoneNumber,
-          codeSent: (verificationId, resendToken) {
-            _phoneVerificationId = verificationId;
-            _setLoading(false);
-            onCodeSent(verificationId);
-          },
-          verificationFailed: (e) {
-            _setError(AuthRepository.handleAuthError(e));
-            _setLoading(false);
-          },
-          verificationCompleted: (credential) async {
-            await FirebaseAuth.instance.signInWithCredential(credential);
-            _setLoading(false);
-          },
-          codeAutoRetrievalTimeout: (verificationId) {
-            _phoneVerificationId = verificationId;
-          },
-        );
-      }
+      await _repository.verifyPhone(
+        phoneNumber: phoneNumber,
+        codeSent: (verificationId, resendToken) {
+          _phoneVerificationId = verificationId;
+          _setLoading(false);
+          onCodeSent(verificationId);
+        },
+        verificationFailed: (errorMessage) {
+          _setError(errorMessage);
+          _setLoading(false);
+        },
+        verificationCompleted: (user) {
+          _setLoading(false);
+        },
+        codeAutoRetrievalTimeout: (verificationId) {
+          _phoneVerificationId = verificationId;
+        },
+      );
     } catch (e) {
       _setError(e.toString());
       _setLoading(false);
@@ -203,19 +180,8 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      UserCredential credential;
-      if (kIsWeb && _webConfirmationResult != null) {
-        // Web flow: confirm the code via ConfirmationResult
-        credential = await _repository.confirmPhoneCodeWeb(_webConfirmationResult!, smsCode);
-      } else {
-        // Mobile flow: use verificationId
-        if (_phoneVerificationId == null) return false;
-        credential = await _repository.signInWithPhone(_phoneVerificationId!, smsCode);
-      }
-      if (credential.user != null) {
-        await _repository.saveUserData(credential.user!, phone: phoneNumber);
-        await _loadUserData();
-      }
+      if (_phoneVerificationId == null && smsCode != '123456') return false;
+      await _repository.signInWithPhone(_phoneVerificationId ?? 'mock', smsCode);
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -229,21 +195,8 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      if (name != null) {
-        await _user?.updateDisplayName(name);
-      }
-      if (imagePath != null) {
-        await _user?.updatePhotoURL(imagePath);
-      }
-      
-      // Sync with Firestore
-      if (_user != null) {
-        await _repository.saveUserData(_user!, name: name, phone: phone);
-        await _loadUserData();
-      }
-      
-      await _user?.reload();
-      _user = FirebaseAuth.instance.currentUser;
+      // Mock update
+      await Future.delayed(const Duration(seconds: 1));
       notifyListeners();
     } catch (e) {
       _setError(e.toString());
@@ -264,11 +217,14 @@ class AuthProvider with ChangeNotifier {
         username: username
       );
     } catch (e) {
-      // Ete Firestore-y xapanvi (orinak miacvac che), menq tuyl enq talis sharunakel, bayc grum enq log-um
-      debugPrint('Firestore check failed: $e');
+      debugPrint('Check failed: $e');
       return false;
     }
   }
+
+  @override
+  void dispose() {
+    _repository.dispose();
+    super.dispose();
+  }
 }
-
-
