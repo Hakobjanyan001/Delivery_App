@@ -80,11 +80,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.support_agent),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const SupportHubSheet(),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: auth.isAnonymous
           ? _buildGuestView(context)
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Extra bottom padding for nav bar
         child: Column(
           children: [
             // Profile Header
@@ -213,18 +227,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const SupportHubSheet(),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
   }

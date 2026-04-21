@@ -15,6 +15,16 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
+  int getItemQuantity(String foodId) {
+    int count = 0;
+    _items.forEach((key, cartItem) {
+      if (cartItem.foodItem.id == foodId) {
+        count += cartItem.quantity;
+      }
+    });
+    return count;
+  }
+
   double get totalAmount {
     double total = 0.0;
     _items.forEach((key, cartItem) {

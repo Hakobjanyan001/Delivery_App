@@ -17,6 +17,7 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Only watch localization here for title.
     final l10n = context.watch<LocalizationProvider>();
+    final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,15 +26,67 @@ class CartScreen extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.support_agent),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const SupportHubSheet(),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: Selector<CartProvider, bool>(
-        selector: (_, cartProv) => cartProv.items.isEmpty,
-        builder: (context, isEmpty, child) {
+      body: (!auth.isAuthenticated || auth.isAnonymous) 
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('DEBUG: isAuthenticated=${auth.isAuthenticated}, isAnonymous=${auth.isAnonymous}', style: TextStyle(color: Colors.red)),
+                  const Icon(Icons.lock_outline, size: 80, color: AppColors.primary),
+                  const SizedBox(height: 20),
+                  Text(
+                    l10n.translate('registerToPurchase'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: Text(l10n.translate('login'), style: const TextStyle(fontSize: 16)),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : Selector<CartProvider, bool>(
+            selector: (_, cartProv) => cartProv.items.isEmpty,
+            builder: (context, isEmpty, child) {
           if (isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                   Text('DEBUG: isAuthenticated=${auth.isAuthenticated}, isAnonymous=${auth.isAnonymous}', style: const TextStyle(color: Colors.red)),
                    Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.textSecondary.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(l10n.translate('emptyCart'), style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
@@ -63,18 +116,6 @@ class CartScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const SupportHubSheet(),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.support_agent, color: Colors.white),
-      ),
     );
   }
 }
@@ -86,7 +127,7 @@ class CartTotalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Extra bottom padding for nav bar
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: const Border(top: BorderSide(color: AppColors.border)),

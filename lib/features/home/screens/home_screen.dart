@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' as io;
+
 import 'package:provider/provider.dart';
 import '../../../core/models/food_model.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../cart/providers/cart_provider.dart';
-import '../../cart/models/cart_item.dart';
 import '../../cart/screens/cart_screen.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../auth/screens/profile_screen.dart';
-import '../../support/widgets/support_hub_sheet.dart';
 import '../widgets/food_detail_dialog.dart';
-import '../../../core/localization/widgets/language_selector.dart';
 import '../../../core/theme/app_theme.dart';
+// import '../widgets/promo_video_widget.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/providers/search_provider.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +22,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String selectedCategoryKey = 'catAll';
-  String searchQuery = '';
 
   final List<String> categoryKeys = [
     'catAll', 'catShaurma', 'catBarbecue', 'catKFC', 'catPizza', 'catBurger', 
@@ -41,6 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Տաշիր Պիցցա',
       nameEn: 'Tashir Pizza',
       nameRu: 'Ташир Пицца',
+      description: 'Համեղ պիցցաներ և իտալական խոհանոց',
+      descriptionEn: 'Tasty pizzas and Italian cuisine',
+      descriptionRu: 'Вкусная пицца и итальянская кухня',
+      workingHours: '10:00 - 22:00',
+      delivery: '30-45 րոպե',
       rating: 4.5,
       imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=80',
       category: 'Pizza',
@@ -51,6 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Բուրգեր Հաուս',
       nameEn: 'Burger House',
       nameRu: 'Бургер Хаус',
+      description: 'Լավագույն բուրգերները քաղաքում',
+      descriptionEn: 'The best burgers in town',
+      descriptionRu: 'Лучшие бургеры в городе',
+      workingHours: '11:00 - 23:00',
+      delivery: '25-40 րոպե',
       rating: 4.2,
       imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
       category: 'Burger',
@@ -61,6 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
       name: 'Ջազ Սուշի',
       nameEn: 'Jazz Sushi',
       nameRu: 'Джаз Суши',
+      description: 'Թարմ սուշի և ասիական խոհանոց',
+      descriptionEn: 'Fresh sushi and Asian cuisine',
+      descriptionRu: 'Свежие суши и азиатская кухня',
+      workingHours: '12:00 - 00:00',
+      delivery: '40-60 րոպե',
       rating: 4.8,
       imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=500&q=80',
       category: 'Sushi',
@@ -78,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Հավի Շաուրմա (Մեծ)',
         nameEn: 'Chicken Shawarma (Large)',
         nameRu: 'Шаурма с курицей (Большая)',
+        order: '1',
         description: 'Թարմ հավի միս, լավաշ և հատուկ սոուս:',
         descriptionEn: 'Fresh chicken, lavash, and special sauce.',
         descriptionRu: 'Свежая курица, лаваш и специальный соус.',
@@ -92,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Տավարի Շաուրմա (Մեծ)',
         nameEn: 'Beef Shawarma (Large)',
         nameRu: 'Шаурма с говядиной (Большая)',
+        order: '2',
         description: 'Հյութալի տավարի միս և թարմ բանջարեղեն:',
         descriptionEn: 'Juicy beef and fresh vegetables.',
         descriptionRu: 'Сочная говядина и свежие овощи.',
@@ -108,6 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Խոզի Խորոված (Չալաղաջ)',
         nameEn: 'Pork Barbecue (Chalagach)',
         nameRu: 'Шашлык из свинины (Чалагач)',
+        order: '1',
         description: 'Ավանդական հայկական խորոված՝ կրակի վրա:',
         descriptionEn: 'Traditional Armenian BBQ on fire.',
         descriptionRu: 'Традиционный армянский шашлык на огне.',
@@ -123,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Տավարի Քյաբաբ',
         nameEn: 'Beef Kebab',
         nameRu: 'Люля-кебаб из говядины',
+        order: '2',
         description: 'Տավարի աղացած միս և հարուստ համեմունքներ:',
         descriptionEn: 'Ground beef with rich spices.',
         descriptionRu: 'Говяжий фарш с богатыми специями.',
@@ -139,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Sanders Bucket',
         nameEn: 'Sanders Bucket',
         nameRu: 'Баскет Сандерс',
+        order: '1',
         description: '11 տապակած հավի կտորներ:',
         descriptionEn: '11 pieces of fried chicken.',
         descriptionRu: '11 кусочков жареной курицы.',
@@ -153,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Zinger Burger',
         nameEn: 'Zinger Burger',
         nameRu: 'Зингер Бургер',
+        order: '2',
         description: 'Կծու հավի ֆիլե և թարմ լատուկ:',
         descriptionEn: 'Spicy chicken fillet and fresh lettuce.',
         descriptionRu: 'Острое куриное филе и свежий латук.',
@@ -169,6 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Մարգարիտա',
         nameEn: 'Margherita',
         nameRu: 'Маргарита',
+        order: '1',
         description: 'Մոցարելլա պանիր, լոլիկի սոուս և ռեհան:',
         descriptionEn: 'Mozzarella cheese, tomato sauce, and basil.',
         descriptionRu: 'Сыр моцарелла, томатный соус и базилик.',
@@ -180,12 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
         sizePrices: [1800, 3000],
         slicePrice: 250,
         availableOptions: ['Կծու', 'Կրկնակի պանիր', 'Առանց ձիթապտղի'],
+        restaurantId: '1',
+        features: ['Հանրահայտ', 'Իտալական'],
       ),
       FoodItem(
         id: 'pizza_2',
         name: 'Pepperoni',
         nameEn: 'Pepperoni',
         nameRu: 'Пепперони',
+        order: '2',
         description: 'Պեպպերոնի երշիկ և առատ պանիր:',
         descriptionEn: 'Pepperoni sausage and plenty of cheese.',
         descriptionRu: 'Колбаса пепперони и много сыра.',
@@ -197,12 +220,15 @@ class _HomeScreenState extends State<HomeScreen> {
         sizePrices: [2200, 3500],
         slicePrice: 300,
         availableOptions: ['Կծու', 'Կրկնակի pepperoni', 'Բարակ խմոր'],
+        restaurantId: '1',
+        features: ['Կծու', 'Միս'],
       ),
       FoodItem(
         id: 'pizza_3',
         name: '4 Cheese',
         nameEn: '4 Cheese',
         nameRu: '4 Сыра',
+        order: '3',
         description: 'Մոցարելլա, պարմեզան, դոր-բլյու և չեդդեր:',
         descriptionEn: 'Mozzarella, parmesan, dor-blue, and cheddar.',
         descriptionRu: 'Моцарелла, пармезан, дор-блю и чеддер.',
@@ -222,6 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Դասական Բուրգեր',
         nameEn: 'Classic Burger',
         nameRu: 'Классический бургер',
+        order: '1',
         description: 'Տավարի միս, թթու վարունգ և սոուս:',
         descriptionEn: 'Beef patty, pickles, and sauce.',
         descriptionRu: 'Говяжья котлета, огурцы и соус.',
@@ -231,12 +258,15 @@ class _HomeScreenState extends State<HomeScreen> {
         imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
         sizes: ['Փոքր', 'Մեծ'],
         availableOptions: ['Կծու', 'Կրկնակի կոտլետ', 'Առանց կոճապղպեղ', 'Կրկնակի պանիր'],
+        restaurantId: '2',
+        features: ['Դասական', 'Հյութալի'],
       ),
       FoodItem(
         id: 'burger_2',
         name: 'BBQ Բուրգեր',
         nameEn: 'BBQ Burger',
         nameRu: 'BBQ Бургер',
+        order: '2',
         description: 'Հատուկ BBQ սոուս և տապակած սոխ:',
         descriptionEn: 'Special BBQ sauce and fried onions.',
         descriptionRu: 'Специальный соус барбекю и жареный лук.',
@@ -254,6 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Սաղմոնի Ռոլլ',
         nameEn: 'Salmon Roll',
         nameRu: 'Ролл с лососем',
+        order: '1',
         description: 'Թարմ սաղմոն և քացախով բրինձ:',
         descriptionEn: 'Fresh salmon and vinegared rice.',
         descriptionRu: 'Свежий лосось и рис с уксусом.',
@@ -263,6 +294,8 @@ class _HomeScreenState extends State<HomeScreen> {
         imageUrl: 'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=500&q=80',
         sizes: ['6 հատ', '12 հատ'],
         availableOptions: ['Կծու', 'Կրկնակի salmon', 'Wasabi-ով'],
+        restaurantId: '3',
+        features: ['Թարմ', 'Պրեմիում'],
       ),
     ],
     'FastFood': [
@@ -271,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Ֆրի',
         nameEn: 'French Fries',
         nameRu: 'Картофель фри',
+        order: '1',
         description: 'Ոսկեգույն և խրթխրթան կարտոֆիլ:',
         descriptionEn: 'Golden and crispy potatoes.',
         descriptionRu: 'Золотистый и хрустящий картофель.',
@@ -287,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Դոլմա',
         nameEn: 'Dolma',
         nameRu: 'Долма',
+        order: '1',
         description: 'Ավանդական հայկական դոլմա:',
         descriptionEn: 'Traditional Armenian Dolma.',
         descriptionRu: 'Традиционная армянская долма.',
@@ -302,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
         name: 'Շոկոլադե Լավա Քեյք',
         nameEn: 'Chocolate Lava Cake',
         nameRu: 'Шоколадный торт Лава',
+        order: '1',
         description: 'Տաք շոկոլադե միջուկով դեսերտ:',
         descriptionEn: 'Dessert with a warm chocolate center.',
         descriptionRu: 'Десерт с теплой шоколадной начинкой.',
@@ -334,17 +370,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  List<Restaurant> get filteredRestaurants {
-    return allRestaurants.where((res) {
-      final query = searchQuery.toLowerCase();
-      return res.name.toLowerCase().contains(query) ||
-             res.nameEn.toLowerCase().contains(query) ||
-             res.nameRu.toLowerCase().contains(query);
-    }).toList();
-  }
-
-  List<FoodItem> get filteredFoodItems {
-    final query = searchQuery.toLowerCase();
+  List<FoodItem> _getFilteredFoodItems(BuildContext context) {
+    final searchProvider = Provider.of<SearchProvider>(context);
+    final query = searchProvider.searchQuery.toLowerCase().trim();
+    
     final List<FoodItem> allItems = _foodByCategory.values.expand((list) => list).toList();
     
     List<FoodItem> results;
@@ -355,21 +384,42 @@ class _HomeScreenState extends State<HomeScreen> {
       results = _foodByCategory[category] ?? [];
     }
 
-    return results.where((f) {
-      return f.name.toLowerCase().contains(query) ||
-             f.nameEn.toLowerCase().contains(query) ||
-             f.nameRu.toLowerCase().contains(query);
-    }).toList();
+    if (query.isNotEmpty) {
+      return allItems.where((f) {
+        return f.name.toLowerCase().contains(query) ||
+               f.nameEn.toLowerCase().contains(query) ||
+               f.nameRu.toLowerCase().contains(query);
+      }).toList();
+    }
+    
+    return results;
   }
 
 
+  void _requireAuthOrExecute(VoidCallback action) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(isCheckoutFlow: false),
+        ),
+      );
+    } else {
+      action();
+    }
+  }
+
   void _openFoodDetail(BuildContext context, FoodItem food) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => FoodDetailDialog(food: food),
-    );
+    _requireAuthOrExecute(() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        routeSettings: const RouteSettings(name: 'FoodDetail'),
+        builder: (_) => FoodDetailDialog(food: food),
+      );
+    });
   }
 
   @override
@@ -380,101 +430,109 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Consumer<AuthProvider>(
-          builder: (context, auth, _) => Padding(
-            padding: const EdgeInsets.only(left: 10.0),
-            child: GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'ProfileScreen'),
-                  builder: (context) => const ProfileScreen(),
+        centerTitle: true,
+        leadingWidth: 101, // Force rebuild
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12.0),
+          child: Image.asset(
+            'assets/images/masoor_logo.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: GestureDetector(
+          onTap: () async {
+            final Uri url = Uri.parse('tel:+37460515515');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161616),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.phone_outlined, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  '+374 60 515515',
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-              ),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.inputFill,
-                backgroundImage: auth.profileImagePath != null
-                    ? (kIsWeb
-                        ? NetworkImage(auth.profileImagePath!) as ImageProvider
-                        : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
-                    : null,
-                child: auth.profileImagePath == null
-                    ? const Icon(Icons.person, color: AppColors.primary, size: 20)
-                    : null,
-              ),
+              ],
             ),
           ),
         ),
-        title: Image.asset(
-          'assets/images/masoor_logo.png',
-          height: 35,
-          fit: BoxFit.contain,
-        ),
+
+
+
         actions: [
-          const LanguageSelector(),
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'CartScreen'),
-                    builder: (context) => const CartScreen(),
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161616),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                 ),
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Consumer<CartProvider>(
-                  builder: (context, cart, child) => cart.items.isEmpty
-                      ? Container()
-                      : CircleAvatar(
-                          radius: 8,
-                          backgroundColor: Colors.red,
-                          child: Text(
-                            '${cart.totalItemCount}',
-                            style: const TextStyle(fontSize: 10, color: Colors.white),
-                          ),
-                        ),
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 22),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      settings: const RouteSettings(name: 'CartScreen'),
+                      builder: (context) => const CartScreen(),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Consumer<CartProvider>(
+                    builder: (context, cart, child) => cart.items.isEmpty
+                        ? const SizedBox.shrink()
+                        : Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE41E26),
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                            child: Text(
+                              '${cart.totalItemCount}',
+                              style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
       body: CustomScrollView(
+        key: const ValueKey('home_scroll_v2'), // Force full rebuild of all closures inside Slivers on reload
         slivers: [
-          // Search Bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))],
-                ),
-                child: TextField(
-                  style: const TextStyle(color: AppColors.textPrimary),
-                  onChanged: (value) => setState(() => searchQuery = value),
-                  decoration: InputDecoration(
-                    hintText: l10n.translate('searchHint'),
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
-                    border: InputBorder.none,
-                    filled: false,
-                    prefixIcon: const Icon(Icons.search, color: AppColors.primary),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Search Bar removed
+
+
+          // Promo Video Section
+          // const SliverToBoxAdapter(
+          //   child: PromoVideoWidget(height: 380),
+          // ),
+
 
           // Categories Title
           SliverToBoxAdapter(
@@ -504,15 +562,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : AppColors.inputFill,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
+                        color: isSelected ? Colors.white : Colors.transparent,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text(
                         l10n.translate(key),
                         style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.black : Colors.white,
+                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -536,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
           // ---- FOOD ITEMS GRID ----
-          filteredFoodItems.isEmpty
+          _getFilteredFoodItems(context).isEmpty
               ? SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -576,9 +637,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            return _buildFoodCard(filteredFoodItems[index], lang);
+                            final currentFilteredItems = _getFilteredFoodItems(context);
+                            return _buildFoodCard(currentFilteredItems[index], lang);
                           },
-                          childCount: filteredFoodItems.length,
+                          childCount: _getFilteredFoodItems(context).length,
                         ),
                       );
                     },
@@ -588,18 +650,6 @@ class _HomeScreenState extends State<HomeScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const SupportHubSheet(),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.support_agent, color: Colors.white),
-      ),
     );
   }
 
@@ -608,177 +658,143 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () => _openFoodDetail(context, food),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            )
-          ],
+          color: const Color(0xFF111111), // Slightly lighter than background
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.network(
-                food.imageUrl,
-                height: 140, // Reduced height to fit info better
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    height: 140,
-                    color: AppColors.inputFill,
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => Container(
-                  height: 140,
-                  color: AppColors.inputFill,
-                  child: const Icon(Icons.fastfood, color: AppColors.textSecondary, size: 50),
+            // Image - Circular/Highly Rounded
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(food.id.contains('1') ? 100 : 30), // Mix of circle and rounded
+                  child: Image.network(
+                    food.imageUrl,
+                    height: 150,
+                    width: 150,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 150,
+                        width: 150,
+                        color: const Color(0xFF1A1A1A),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 150,
+                      width: 150,
+                      color: const Color(0xFF1A1A1A),
+                      child: const Icon(Icons.fastfood, color: Colors.white24, size: 40),
+                    ),
+                  ),
                 ),
               ),
             ),
             
             // Info Area
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Row 1: Name and Price
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          food.localizedName(lang),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${food.price.toStringAsFixed(0)} ֏',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Row 2: Description
+                   // Name Row
                   Text(
-                    food.localizedDescription(lang),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    food.localizedName(lang),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   
-                  // Row 3: Prep Time and Unit
+                  // Portion and Price Row
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Prep Time
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.inputFill,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${food.prepTime} ${lang == 'en' ? 'min' : (lang == 'ru' ? 'мин' : 'րոպե')}',
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                            ),
-                          ],
+                      Text(
+                        '1 ${lang == 'en' ? 'portion' : (lang == 'ru' ? 'порция' : 'բաժին')}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // Unit
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.inputFill,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '/ ${food.unit}',
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      Text(
+                        '${food.price.toStringAsFixed(0)}֏',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
                         ),
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   
-                  // Quantity Selector
+                  // Dynamic Add Button / Quantity Selector
                   Consumer<CartProvider>(
                     builder: (context, cart, child) {
-                      CartItem? cartItem;
-                      try {
-                        cartItem = cart.items.firstWhere(
-                          (item) => item.foodItem.id == food.id,
+                      final quantity = cart.getItemQuantity(food.id);
+                      
+                      if (quantity == 0) {
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 40,
+                          child: OutlinedButton(
+                            onPressed: () => _requireAuthOrExecute(() => cart.addItem(food)),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                            child: Text(
+                              lang == 'en' ? 'Add' : (lang == 'ru' ? 'Добавить' : 'Ավելացնել'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                         );
-                      } catch (_) {
-                        cartItem = null;
                       }
                       
-                      final int quantity = cartItem?.quantity ?? 0;
-
                       return Container(
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.border),
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
-                              onPressed: quantity > 0
-                                  ? () => cart.removeOneItemByFoodId(food.id)
-                                  : null,
-                              icon: Icon(
-                                Icons.remove,
-                                size: 18,
-                                color: quantity > 0 ? AppColors.primary : AppColors.textSecondary,
-                              ),
+                              onPressed: () => _requireAuthOrExecute(() => cart.removeOneItemByFoodId(food.id)),
+                              icon: const Icon(Icons.remove, color: Colors.white, size: 18),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
                             Text(
                               '$quantity',
                               style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: AppColors.textPrimary,
                               ),
                             ),
                             IconButton(
-                              onPressed: () => cart.addItem(
-                                food, 
-                                selectedSize: quantity == 0 ? food.sizes.first : cartItem!.selectedSize,
-                              ),
-                              icon: const Icon(
-                                Icons.add,
-                                size: 18,
-                                color: AppColors.primary,
-                              ),
+                              onPressed: () => _requireAuthOrExecute(() => cart.addItem(food)),
+                              icon: const Icon(Icons.add, color: Colors.white, size: 18),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),

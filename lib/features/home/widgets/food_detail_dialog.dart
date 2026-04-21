@@ -4,6 +4,8 @@ import '../../../core/models/food_model.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
 
 class FoodDetailDialog extends StatefulWidget {
   final FoodItem food;
@@ -197,7 +199,6 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                       const SizedBox(height: 10),
                     ],
 
-                    // Quantity
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -230,6 +231,17 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                 padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
                 child: ElevatedButton(
                   onPressed: () {
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    
+                    if (!authProvider.isAuthenticated) {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      );
+                      return;
+                    }
+
                     final cart = Provider.of<CartProvider>(context, listen: false);
                     for (int i = 0; i < _quantity; i++) {
                       cart.addItem(

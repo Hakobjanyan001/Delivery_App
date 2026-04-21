@@ -3,13 +3,15 @@ import 'package:provider/provider.dart';
 import 'core/localization/localization_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/screens/login_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
 import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
+import 'core/providers/search_provider.dart';
 import 'core/widgets/navigation_wrapper.dart';
+import 'features/onboarding/providers/onboarding_provider.dart';
+import 'features/onboarding/screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +25,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
+        ChangeNotifierProvider(create: (_) => OnboardingProvider()),
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       child: const MasoorApp(),
     ),
@@ -42,8 +46,6 @@ class _MasoorAppState extends State<MasoorApp> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    
     return MaterialApp(
       title: 'MASOOR',
       navigatorKey: _navigatorKey,
@@ -66,9 +68,14 @@ class _MasoorAppState extends State<MasoorApp> {
           child: child,
         );
       },
-      home: authProvider.isAuthenticated 
-          ? const HomeScreen() 
-          : const LoginScreen(),
+      home: Consumer2<AuthProvider, OnboardingProvider>(
+        builder: (context, authProvider, onboardingProvider, _) {
+          if (!onboardingProvider.hasSeenOnboarding) {
+            return const OnboardingScreen();
+          }
+          return const HomeScreen();
+        },
+      ),
     );
   }
 }

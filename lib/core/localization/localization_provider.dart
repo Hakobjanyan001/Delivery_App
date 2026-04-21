@@ -70,6 +70,10 @@ class LocalizationProvider with ChangeNotifier {
       'emailAlreadyInUse': 'Այս էլ. հասցեն արդեն գրանցված է:',
       'phoneAlreadyInUse': 'Այս հեռախոսահամարը արդեն գրանցված է:',
       'usernameAlreadyInUse': 'Այս մուտքանունը արդեն զբաղված է:',
+      'registerToPurchase': 'Գրանցվեք, որպեսզի կարողանաք գնումներ կատարել։',
+      'home': 'Գլխավոր',
+      'cart': 'Զամբյուղ',
+      'profile': 'Պրոֆիլ',
     },
     'en': {
       'appName': 'MASOOR',
@@ -135,6 +139,10 @@ class LocalizationProvider with ChangeNotifier {
       'emailAlreadyInUse': 'This email is already registered.',
       'phoneAlreadyInUse': 'This phone number is already registered.',
       'usernameAlreadyInUse': 'This username is already taken.',
+      'registerToPurchase': 'Please register to be able to make purchases.',
+      'home': 'Home',
+      'cart': 'Cart',
+      'profile': 'Profile',
     },
     'ru': {
       'appName': 'MASOOR',
@@ -200,6 +208,10 @@ class LocalizationProvider with ChangeNotifier {
       'emailAlreadyInUse': 'Этот электронный адрес уже зарегистрирован.',
       'phoneAlreadyInUse': 'Этот номер телефона уже зарегистрирован.',
       'usernameAlreadyInUse': 'Это имя пользователя уже занято.',
+      'registerToPurchase': 'Пожалуйста, зарегистрируйтесь, чтобы совершать покупки.',
+      'home': 'Главная',
+      'cart': 'Корзина',
+      'profile': 'Профиль',
     },
   };
 

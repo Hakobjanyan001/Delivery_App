@@ -128,14 +128,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                     )
                                   ]
                                 ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    'assets/images/masoor_logo.png',
-                                    height: 80,
-                                    width: 80,
-                                    fit: BoxFit.cover,
+                                child: Image.asset(
+                                    'assets/images/masoor_branch.png',
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
+
                               ),
                             ),
                             const SizedBox(height: 30),
