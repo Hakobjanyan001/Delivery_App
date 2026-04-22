@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../features/auth/providers/auth_provider.dart';
-import '../../features/auth/screens/profile_screen.dart';
-import '../../features/auth/screens/login_screen.dart';
-import '../../core/theme/app_theme.dart';
 import '../localization/localization_provider.dart';
+import '../../features/onboarding/providers/onboarding_provider.dart';
+import '../../features/cart/providers/cart_provider.dart';
+import '../../features/cart/screens/cart_screen.dart';
+import '../../features/cart/screens/checkout_screen.dart';
 import '../providers/search_provider.dart';
+import '../../features/home/widgets/search_overlay_widget.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -23,109 +25,120 @@ class NavigationWrapper extends StatefulWidget {
 
 class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
   String? _currentRoute;
-  bool _isSearchShowing = false;
 
   @override
   void initState() {
     super.initState();
-    // Default to 'HomeScreen' to ensure nav bar is visible on initial load
     _currentRoute = 'HomeScreen';
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {}); // Trigger rebuild to catch initial state
+      if (mounted) setState(() {});
     });
   }
 
-  // Track the current route to hide the button on ProfileScreen
   void updateRoute(String? routeName) {
-    // Treat null, '/', or 'HomeScreen' variant as HomeScreen
     String name = (routeName == null || routeName == '/' || routeName == '' || routeName == 'HomeScreen') 
         ? 'HomeScreen' 
         : routeName;
-    
-    // Clean up potential route name issues (e.g. leading slashes)
     if (name.startsWith('/')) name = name.substring(1);
-
     if (_currentRoute != name) {
-      if (mounted) {
-        setState(() {
-          _currentRoute = name;
-        });
-      }
+      if (mounted) setState(() => _currentRoute = name);
     }
   }
-
-  void _navigateToProfile(bool isAuthenticated) {
-    if (_currentRoute == 'ProfileScreen' || _currentRoute == 'LoginScreen') return;
-    
-    if (isAuthenticated) {
-      widget.navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'ProfileScreen'),
-          builder: (_) => const ProfileScreen(),
-        ),
-      );
-    } else {
-      widget.navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'LoginScreen'),
-          builder: (_) => const LoginScreen(),
-        ),
-      );
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final bool isAuthenticated = authProvider.isAuthenticated;
+    final bool hasSeenOnboarding = context.watch<OnboardingProvider>().hasSeenOnboarding;
 
-    // Show bar everywhere EXCEPT Onboarding and FoodDetail
-    final bool showNavBar = _currentRoute != 'OnboardingScreen' && _currentRoute != 'FoodDetail';
+    final bool showNavBar = hasSeenOnboarding &&
+        _currentRoute != 'OnboardingScreen' &&
+        _currentRoute != 'FoodDetail' &&
+        _currentRoute != 'LoginScreen' &&
+        _currentRoute != 'RegisterScreen';
 
-    return Stack(
-      children: [
-        if (widget.child != null) widget.child!,
-        if (showNavBar)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildNavBar(isAuthenticated),
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          if (widget.child != null) widget.child!,
+          
+          // Search Overlay Layer
+          Consumer<SearchProvider>(
+            builder: (context, search, child) {
+              return AnimatedPositioned(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutExpo,
+                top: search.isSearchActive ? 60 : MediaQuery.of(context).size.height,
+                left: 16,
+                right: 16,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: search.isSearchActive ? 1.0 : 0.0,
+                  child: SearchOverlayWidget(
+                    onClose: () {
+                      search.setSearchActive(false);
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                ),
+              );
+            },
           ),
-      ],
+
+          if (showNavBar)
+            Consumer<SearchProvider>(
+              builder: (context, search, child) {
+                final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+                final bottomOffset = search.isSearchActive ? (keyboardHeight > 0 ? keyboardHeight + 40 : 120.0) : 0.0;
+                
+                return AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  bottom: bottomOffset,
+                  left: 0,
+                  right: 0,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildNavBar(isAuthenticated, search.isSearchActive),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildNavBar(bool isAuthenticated) {
+  Widget _buildNavBar(bool isAuthenticated, bool isSearchActive) {
     final l10n = Provider.of<LocalizationProvider>(context);
     final String route = _currentRoute ?? 'HomeScreen';
     final bool isHome = route == 'HomeScreen';
-    final bool isProfile = route == 'ProfileScreen';
+    final bool isCart = route == 'CartScreen';
 
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 24.0),
+        padding: const EdgeInsets.only(bottom: 24.0, left: 16, right: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-             // Home & Account Pill
+            // Main Navigation Pill (Home & Cart)
             Container(
-              height: 65,
+              height: 60,
               decoration: BoxDecoration(
-                color: const Color(0xFF0F0F0F), // Total Black background
-                borderRadius: BorderRadius.circular(35),
+                color: const Color(0xFF0F0F0F),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
                 ],
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -134,143 +147,57 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     label: l10n.translate('home'),
                     isActive: isHome,
                     onTap: () {
-                      if (!isHome) {
-                        widget.navigatorKey.currentState?.popUntil((route) => route.isFirst);
+                      if (!isHome) widget.navigatorKey.currentState?.popUntil((route) => route.isFirst);
+                    },
+                  ),
+                  _NavBarItem(
+                    icon: Icons.shopping_cart_outlined,
+                    label: l10n.translate('cart'),
+                    isActive: isCart,
+                    onTap: () {
+                      if (!isCart) {
+                        widget.navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: 'CartScreen'),
+                            builder: (context) => const CartScreen(),
+                          ),
+                        );
                       }
                     },
                   ),
-                  const SizedBox(width: 4),
-                   _NavBarItem(
-                    icon: Icons.account_circle_outlined,
-                    label: l10n.translate('profile'), 
-                    isActive: isProfile,
-                    onTap: () => _navigateToProfile(isAuthenticated),
-                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Search or Language Button
-            Container(
-              height: 60,
-              width: 60,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F0F0F),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
+            const SizedBox(width: 8),
+            // Separate Search Button
+            Consumer<SearchProvider>(
+              builder: (context, search, child) {
+                return GestureDetector(
+                  onTap: () => search.toggleSearchActive(),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F0F0F),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
+                      ],
+                    ),
+                    child: Icon(
+                      search.isSearchActive ? Icons.close : Icons.search,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
-                ],
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  isProfile ? Icons.language : Icons.search,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                onPressed: () => isProfile 
-                  ? _showLanguageBottomSheet(context) 
-                  : _showSearchOverlay(context),
-              ),
+                );
+              },
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _showLanguageBottomSheet(BuildContext context) {
-    final navContext = widget.navigatorKey.currentContext;
-    if (navContext == null) return;
-    
-    final l10n = Provider.of<LocalizationProvider>(context, listen: false);
-
-    showModalBottomSheet(
-      context: navContext,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          border: Border(top: BorderSide(color: Colors.white10)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2.5),
-              ),
-            ),
-            const SizedBox(height: 30),
-            _buildLanguageOption(context, l10n, const Locale('hy'), '🇦🇲 Հայերեն'),
-            const SizedBox(height: 12),
-            _buildLanguageOption(context, l10n, const Locale('en'), '🇺🇸 English'),
-            const SizedBox(height: 12),
-            _buildLanguageOption(context, l10n, const Locale('ru'), '🇷🇺 Русский'),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageOption(BuildContext context, LocalizationProvider l10n, Locale locale, String label) {
-    final bool isSelected = l10n.currentLocale.languageCode == locale.languageCode;
-    
-    return GestureDetector(
-      onTap: () {
-        l10n.setLocale(locale);
-        Navigator.pop(context);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500)),
-            const Spacer(),
-            if (isSelected)
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSearchOverlay(BuildContext context) {
-    if (_isSearchShowing) return;
-    
-    final navContext = widget.navigatorKey.currentContext;
-    if (navContext == null) return;
-    
-    setState(() => _isSearchShowing = true);
-    
-    showModalBottomSheet(
-      context: navContext,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const SearchOverlay(),
-    ).then((_) {
-      if (mounted) setState(() => _isSearchShowing = false);
-      // Clear search when closed
-      final searchProv = Provider.of<SearchProvider>(context, listen: false);
-      searchProv.clearSearch();
-    });
   }
 }
 
@@ -293,25 +220,22 @@ class _NavBarItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF1F1F1F) : Colors.transparent, // Dark grey for active
-          borderRadius: BorderRadius.circular(30),
+          color: isActive ? const Color(0xFF1F1F1F) : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
             ),
@@ -322,86 +246,8 @@ class _NavBarItem extends StatelessWidget {
   }
 }
 
-class SearchOverlay extends StatefulWidget {
-  const SearchOverlay({super.key});
-
-  @override
-  State<SearchOverlay> createState() => _SearchOverlayState();
-}
-
-class _SearchOverlayState extends State<SearchOverlay> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = Provider.of<LocalizationProvider>(context);
-    final searchProvider = Provider.of<SearchProvider>(context, listen: false);
-    
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final bottomPadding = bottomInset > 0 ? bottomInset : 100.0;
-    
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // Shrink to fit content
-          children: [
-            Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2.5),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-              onChanged: (value) {
-                searchProvider.updateQuery(value);
-              },
-              decoration: InputDecoration(
-                hintText: l10n.translate('searchHint'),
-                hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
-                  onPressed: () {
-                    _controller.clear();
-                    searchProvider.clearSearch();
-                  },
-                ),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onSubmitted: (value) {
-                Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 10), // Small padding at the bottom
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Custom NavigatorObserver to update the NavigationWrapper
 class AppNavigatorObserver extends NavigatorObserver {
-
   final Function(String?) onRouteChanged;
-
   AppNavigatorObserver({required this.onRouteChanged});
 
   @override

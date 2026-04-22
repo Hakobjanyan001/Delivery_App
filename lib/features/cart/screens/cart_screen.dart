@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/cart_item_card.dart';
@@ -7,6 +8,7 @@ import 'checkout_screen.dart';
 import '../../support/widgets/support_hub_sheet.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../auth/screens/profile_screen.dart';
 import '../../../core/theme/app_theme.dart';
 
 
@@ -20,25 +22,68 @@ class CartScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(l10n.translate('cartTitle'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        toolbarHeight: 70,
+        centerTitle: false,
+        leadingWidth: 120,
+        leading: Row(
+          children: [
+            const BackButton(),
+            Image.asset(
+              'assets/images/masoor_branch.png',
+              width: 72,
+              height: 48,
+              fit: BoxFit.contain,
+            ),
+          ],
+        ),
+        title: null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.support_agent),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const SupportHubSheet(),
-              );
-            },
+          Center(
+            child: GestureDetector(
+              onTap: () async {
+                final Uri url = Uri.parse('tel:+37460515515');
+                if (await canLaunchUrl(url)) await launchUrl(url);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161616),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.phone_outlined, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text('+374 60 515515', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0, left: 8.0),
+            child: GestureDetector(
+              onTap: () {
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+                  Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'LoginScreen'), builder: (context) => const LoginScreen(isCheckoutFlow: false)));
+                } else {
+                  Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'ProfileScreen'), builder: (context) => const ProfileScreen()));
+                }
+              },
+              child: Container(
+                width: 45, height: 45,
+                decoration: BoxDecoration(color: const Color(0xFF161616), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
+                child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
         ],
       ),
       body: (!auth.isAuthenticated || auth.isAnonymous) 
@@ -48,13 +93,12 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('DEBUG: isAuthenticated=${auth.isAuthenticated}, isAnonymous=${auth.isAnonymous}', style: TextStyle(color: Colors.red)),
-                  const Icon(Icons.lock_outline, size: 80, color: AppColors.primary),
+                  const Icon(Icons.lock_outline, size: 80, color: Colors.white),
                   const SizedBox(height: 20),
                   Text(
                     l10n.translate('registerToPurchase'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 30),
                   ElevatedButton(
@@ -62,17 +106,18 @@ class CartScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
+                          settings: const RouteSettings(name: 'LoginScreen'),
                           builder: (context) => const LoginScreen(isCheckoutFlow: false),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Text(l10n.translate('login'), style: const TextStyle(fontSize: 16)),
+                    child: Text(l10n.translate('login'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -86,10 +131,9 @@ class CartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   Text('DEBUG: isAuthenticated=${auth.isAuthenticated}, isAnonymous=${auth.isAnonymous}', style: const TextStyle(color: Colors.red)),
-                   Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.textSecondary.withValues(alpha: 0.3)),
+                   Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.white.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  Text(l10n.translate('emptyCart'), style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+                  Text(l10n.translate('emptyCart'), style: const TextStyle(fontSize: 18, color: Colors.white)),
                 ],
               ),
             );
@@ -127,30 +171,12 @@ class CartTotalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Extra bottom padding for nav bar
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: const Border(top: BorderSide(color: AppColors.border)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -5))],
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100), // Extra bottom padding for nav bar
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.translate('total'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              Selector<CartProvider, double>(
-                selector: (_, cartProv) => cartProv.totalAmount,
-                builder: (context, totalAmount, child) {
-                  return Text(
-                    '${totalAmount.toStringAsFixed(0)} ֏',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () async {
               final authProvider = context.read<AuthProvider>();
@@ -158,6 +184,7 @@ class CartTotalSection extends StatelessWidget {
                 final loggedIn = await Navigator.push<bool>(
                   context,
                   MaterialPageRoute(
+                    settings: const RouteSettings(name: 'LoginScreen'),
                     builder: (context) => const LoginScreen(isCheckoutFlow: true),
                   ),
                 );
@@ -172,14 +199,20 @@ class CartTotalSection extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              minimumSize: const Size(double.infinity, 50),
-              elevation: 2,
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              minimumSize: const Size(double.infinity, 60),
+              elevation: 0,
             ),
-            child: Text(l10n.translate('checkout'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(
+              l10n.translate('checkout'),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ),
         ],
       ),

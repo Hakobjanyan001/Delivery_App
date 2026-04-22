@@ -7,6 +7,7 @@ class OnboardingPageWidget extends StatelessWidget {
   final String buttonText;
   final VoidCallback onButtonPressed;
   final bool isLogoPage;
+  final List<Widget>? children;
 
   const OnboardingPageWidget({
     super.key,
@@ -14,6 +15,7 @@ class OnboardingPageWidget extends StatelessWidget {
     required this.buttonText,
     required this.onButtonPressed,
     this.isLogoPage = false,
+    this.children,
   });
 
   @override
@@ -21,21 +23,65 @@ class OnboardingPageWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF1A1A1A), // Dark background color
-      ),
-
+      color: const Color(0xFF1A1A1A),
       child: Stack(
         children: [
-          if (isLogoPage)
-            Center(
+          if (backgroundImage.startsWith('assets/'))
+            Positioned.fill(
               child: Image.asset(
-                'assets/images/masoor_branch.png',
-                width: 280,
+                backgroundImage,
+                fit: BoxFit.cover,
+              ),
+            )
+          else if (backgroundImage.isNotEmpty)
+            Positioned.fill(
+              child: Image.network(
+                backgroundImage,
+                fit: BoxFit.cover,
               ),
             ),
 
+          if (backgroundImage.isNotEmpty)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.65),
+              ),
+            ),
 
+          if (isLogoPage) ...[
+            Positioned(
+              top: 114,
+              left: 63,
+              child: Image.asset(
+                'assets/images/masoor_branch.png',
+                width: 248,
+                height: 165,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const Positioned(
+              top: 173,
+              left: 193,
+              child: SizedBox(
+                width: 111,
+                height: 24,
+                child: Text(
+                  'Welcome to',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    fontStyle: FontStyle.italic,
+                    fontFamily: 'Segoe UI',
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          if (children != null) ...children!,
 
           Align(
             alignment: Alignment.bottomCenter,
@@ -47,7 +93,7 @@ class OnboardingPageWidget extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onButtonPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.8),
+                    backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
                     shape: const StadiumBorder(),
                     elevation: 0,

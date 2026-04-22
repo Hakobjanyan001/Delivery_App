@@ -64,7 +64,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: AppColors.surface,
+            color: Colors.black,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -98,35 +98,42 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Name & Price Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(food.localizedName(lang),
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
-                            ),
-                            if (_selectedSize != food.sizes.first)
+                    // Name & Price Box
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(food.localizedName(lang),
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black)),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
                               Text(
-                                '${l10n.translate('total')}: ${food.price.toStringAsFixed(0)} ֏',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[500], decoration: TextDecoration.lineThrough),
+                                '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
                               ),
-                          ],
-                        ),
-                      ],
+                              if (_selectedSize != food.sizes.first)
+                                Text(
+                                  '${l10n.translate('total')}: ${food.price.toStringAsFixed(0)} ֏',
+                                  style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.5), decoration: TextDecoration.lineThrough),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
 
                     // Size Selection
                     if (food.sizes.isNotEmpty) ...[
-                      const Text('Չափս', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                      const Text('Չափս', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 10,
@@ -143,10 +150,12 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                               _selectedSize = size;
                               if (size != 'Մեծ') _isPieceMode = false;
                             }),
-                            selectedColor: AppColors.primary,
+                            selectedColor: Colors.white,
+                            backgroundColor: Colors.black,
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                             labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.black : Colors.white,
+                              fontWeight: FontWeight.w900,
                             ),
                           );
                         }).toList(),
@@ -158,16 +167,16 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         Container(
                           margin: const EdgeInsets.only(top: 5),
                           decoration: BoxDecoration(
-                            color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: CheckboxListTile(
-                            title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏'),
+                            title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black)),
+                            subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.black54)),
                             value: _isPieceMode,
                             onChanged: (val) => setState(() => _isPieceMode = val ?? false),
-                            activeColor: AppColors.primary,
+                            activeColor: Colors.black,
+                            checkColor: Colors.white,
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                         ),
@@ -176,24 +185,32 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
 
                     // Options / Attributes
                     if (food.availableOptions.isNotEmpty) ...[
-                      const Text('Հատկանիշներ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                      const Text('Հատկանիշներ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
                       const SizedBox(height: 10),
                       ...food.availableOptions.map((option) {
                         final isSelected = _selectedOptions.contains(option);
-                        return CheckboxListTile(
-                          title: Text(option),
-                          value: isSelected,
-                          contentPadding: EdgeInsets.zero,
-                          activeColor: AppColors.primary,
-                          onChanged: (val) {
-                            setState(() {
-                              if (val == true) {
-                                _selectedOptions.add(option);
-                              } else {
-                                _selectedOptions.remove(option);
-                              }
-                            });
-                          },
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: CheckboxListTile(
+                            title: Text(option, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
+                            value: isSelected,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            activeColor: Colors.black,
+                            checkColor: Colors.white,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val == true) {
+                                  _selectedOptions.add(option);
+                                } else {
+                                  _selectedOptions.remove(option);
+                                }
+                              });
+                            },
+                          ),
                         );
                       }),
                       const SizedBox(height: 10),
@@ -202,22 +219,33 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        IconButton(
-                          onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
-                          icon: const Icon(Icons.remove_circle_outline),
-                          color: AppColors.primary,
-                          iconSize: 32,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('$_quantity',
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        ),
-                        IconButton(
-                          onPressed: () => setState(() => _quantity++),
-                          icon: const Icon(Icons.add_circle_outline),
-                          color: AppColors.primary,
-                          iconSize: 32,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                                icon: const Icon(Icons.remove_circle_outline),
+                                color: Colors.black,
+                                iconSize: 32,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('$_quantity',
+                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black)),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() => _quantity++),
+                                icon: const Icon(Icons.add_circle_outline),
+                                color: Colors.black,
+                                iconSize: 32,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -232,12 +260,19 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                 child: ElevatedButton(
                   onPressed: () {
                     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    final l10n = Provider.of<LocalizationProvider>(context, listen: false);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final cartItemName = food.localizedName(l10n.currentLocale.languageCode);
+                    final addedMsg = l10n.translate('addedToCart');
                     
                     if (!authProvider.isAuthenticated) {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          settings: const RouteSettings(name: 'LoginScreen'),
+                          builder: (context) => const LoginScreen(),
+                        ),
                       );
                       return;
                     }
@@ -251,24 +286,25 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         effectiveUnitPrice: _effectivePrice,
                       );
                     }
+                    
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
-                        content: Text('${food.localizedName(lang)} ${l10n.translate('addedToCart')}'),
+                        content: Text('$cartItemName $addedMsg'),
                         backgroundColor: Colors.green,
                         duration: const Duration(seconds: 2),
                       ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     minimumSize: const Size(double.infinity, 52),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
-                    '${l10n.translate('addedToCart').split(' ')[0]} • ${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    '${lang == 'hy' ? 'Ավելացնել' : (lang == 'en' ? 'Add' : 'Добавить')} • ${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ),
               ),
