@@ -144,6 +144,28 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                           );
                         }).toList(),
                       ),
+                      const SizedBox(height: 10),
+
+                      // Refined Slice Option (Only for Large)
+                      if (_selectedSize == 'Մեծ' && food.slicePrice != null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: CheckboxListTile(
+                            title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black)),
+                            subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.black54)),
+                            value: _isPieceMode,
+                            onChanged: (val) => setState(() => _isPieceMode = val ?? false),
+                            fillColor: WidgetStateProperty.all(Colors.black),
+                            checkColor: Colors.white,
+                            side: const BorderSide(color: Colors.black, width: 2),
+                            checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                        ),
                       const SizedBox(height: 20),
                     ],
 

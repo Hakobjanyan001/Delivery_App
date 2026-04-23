@@ -50,31 +50,41 @@ class OnboardingPageWidget extends StatelessWidget {
 
           if (isLogoPage) ...[
             Positioned(
-              top: 114,
-              left: 63,
-              child: Image.asset(
-                'assets/images/masoor_branch.png',
-                width: 248,
-                height: 165,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const Positioned(
-              top: 173,
-              left: 193,
-              child: SizedBox(
-                width: 111,
-                height: 24,
-                child: Text(
-                  'Welcome to',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    fontStyle: FontStyle.italic,
-                    fontFamily: 'Segoe UI',
-                    height: 1.2,
+              top: 145,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 248,
+                  height: 250,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Branch and MASOOR Logo
+                      Center(
+                        child: Image.asset(
+                          'assets/images/masoor_branch.png',
+                          width: 248,
+                          height: 165,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      // "Welcome to" text positioned above the word MASOOR
+                      const Positioned(
+                        top: 100,
+                        right: 20,
+                        child: Text(
+                          'Welcome to',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontStyle: FontStyle.italic,
+                            fontFamily: 'Segoe UI',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

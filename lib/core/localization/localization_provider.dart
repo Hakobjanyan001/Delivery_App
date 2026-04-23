@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalizationProvider with ChangeNotifier {
   Locale _currentLocale = const Locale('hy');
+  static const String _localeKey = 'selected_locale';
 
   Locale get currentLocale => _currentLocale;
+
+  LocalizationProvider() {
+    loadLocale();
+  }
+
+  Future<void> loadLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCode = prefs.getString(_localeKey);
+    if (savedCode != null && ['hy', 'en', 'ru'].contains(savedCode)) {
+      _currentLocale = Locale(savedCode);
+      notifyListeners();
+    }
+  }
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'hy': {
       'appName': 'MASOOR',
-      'searchHint': 'Որոնման հարթակ՝ ընտրեք ձեր սրտի նախընտրելին ',
+      'searchHint': 'Որոնման հարթակ',
       'categoriesTitle': 'Ցանկ',
       'popularRestaurants': 'Հայտնի Ռեստորաններ',
       'noResults': 'Որոնման արդյունքում ոչինչ չի գտնվել',
@@ -34,6 +49,7 @@ class LocalizationProvider with ChangeNotifier {
       'orderSuccess': 'Պատվերը ընդունված է:',
       'orderMessage': 'Ձեր համեղ ուտեստը արդեն ճանապարհին է:',
       'addedToCart': 'Ավելացված է Ձեր Զամբյուղում',
+      'next_step': 'Հաջորդ քայլը',
       'catAll': 'Ցանկ',
       'catPizza': 'Պիցցա',
       'catBurger': 'Բուրգեր',
@@ -74,10 +90,39 @@ class LocalizationProvider with ChangeNotifier {
       'home': 'Գլխավոր',
       'cart': 'Զամբյուղ',
       'profile': 'Պրոֆիլ',
+      'personalAccount': 'Անձնական հաշիվ',
+      'personalData': 'Անձնական տվյալներ',
+      'orders': 'Պատվերներ',
+      'settings': 'Կարգավորումներ',
+      'activeOrders': 'Ակտիվ պատվերներ',
+      'seeAll': 'Տեսնել բոլորը',
+      'language': 'Լեզու',
+      'paymentMethods': 'Վճարման եղանակներ',
+      'logout': 'Դուրս գալ',
+      'editProfile': 'Խմբագրել պրոֆիլը',
+      'save': 'Պահպանել',
+      'enter': 'Մուտքագրել',
+      'cancel': 'Չեղարկել',
+      'loginToSeeProfile': 'Մուտք գործեք պրոֆիլը տեսնելու համար',
+      'portion': 'բաժին',
+      'add': 'Ավելացնել',
+      'backToHome': 'Վերադառնալ գլխավոր էջ',
+      'editField': 'փոփոխում',
+      'enterNew': 'Մուտքագրեք նոր',
+      'onboarding1': 'Այստեղ յուրաքանչյուր ուտեստ պատմում է մի պատմություն:',
+      'onboarding2': 'Պատրաստված է սրտով: Թխված սիրով:',
+      'onboarding3': 'Ձեր սեղանը սպասում է:',
+      'explore': 'Բացահայտել',
+      'next': 'Հաջորդ',
+      'start': 'Սկսել',
+      'cardDetails': 'Քարտի տվյալները',
+      'cardHolder': 'Քարտապանի անուն',
+      'addCard': 'Ավելացնել քարտ',
+      'idram': 'Իդրամ',
     },
     'en': {
       'appName': 'MASOOR',
-      'searchHint': 'Search here, pick your favorite',
+      'searchHint': 'Search platform',
       'categoriesTitle': 'Menu',
       'popularRestaurants': 'Popular Restaurants',
       'noResults': 'No results found',
@@ -103,6 +148,7 @@ class LocalizationProvider with ChangeNotifier {
       'orderSuccess': 'Order Accepted!',
       'orderMessage': 'Your delicious meal is on its way!',
       'addedToCart': 'Added to your cart',
+      'next_step': 'Next Step',
       'catAll': 'Menu',
       'catPizza': 'Pizza',
       'catBurger': 'Burger',
@@ -143,10 +189,39 @@ class LocalizationProvider with ChangeNotifier {
       'home': 'Home',
       'cart': 'Cart',
       'profile': 'Profile',
+      'personalAccount': 'Personal Account',
+      'personalData': 'Personal Data',
+      'orders': 'Orders',
+      'settings': 'Settings',
+      'activeOrders': 'Active Orders',
+      'seeAll': 'See All',
+      'language': 'Language',
+      'paymentMethods': 'Payment Methods',
+      'logout': 'Logout',
+      'editProfile': 'Edit Profile',
+      'save': 'Save',
+      'enter': 'Enter',
+      'cancel': 'Cancel',
+      'loginToSeeProfile': 'Login to see profile',
+      'portion': 'portion',
+      'add': 'Add',
+      'backToHome': 'Back to Home',
+      'editField': 'Edit',
+      'enterNew': 'Enter new',
+      'onboarding1': 'Where every dish tells a story, and every guest leaves with one.',
+      'onboarding2': 'Crafted with heart. Baked with fire.',
+      'onboarding3': 'Your table is waiting.',
+      'explore': 'Explore',
+      'next': 'Next',
+      'start': 'Start',
+      'cardDetails': 'Card Details',
+      'cardHolder': 'Name on Card',
+      'addCard': 'Add Card',
+      'idram': 'Idram',
     },
     'ru': {
       'appName': 'MASOOR',
-      'searchHint': 'Ищите здесь, выбирайте любимое',
+      'searchHint': 'Поисковая платформа',
       'categoriesTitle': 'Меню',
       'popularRestaurants': 'Популярные рестораны',
       'noResults': 'Ничего не найдено',
@@ -172,6 +247,7 @@ class LocalizationProvider with ChangeNotifier {
       'orderSuccess': 'Заказ принят!',
       'orderMessage': 'Ваша вкусная еда уже в пути!',
       'addedToCart': 'Добавлено в корзину',
+      'next_step': 'Следующий шаг',
       'catAll': 'Все',
       'catPizza': 'Пицца',
       'catBurger': 'Бургер',
@@ -212,13 +288,44 @@ class LocalizationProvider with ChangeNotifier {
       'home': 'Главная',
       'cart': 'Корзина',
       'profile': 'Профиль',
+      'personalAccount': 'Личный кабинет',
+      'personalData': 'Личные данные',
+      'orders': 'Заказы',
+      'settings': 'Настройки',
+      'activeOrders': 'Активные заказы',
+      'seeAll': 'Смотреть все',
+      'language': 'Язык',
+      'paymentMethods': 'Способы оплаты',
+      'logout': 'Выйти',
+      'editProfile': 'Редактировать профиль',
+      'save': 'Сохранить',
+      'enter': 'Ввести',
+      'cancel': 'Отмена',
+      'loginToSeeProfile': 'Войдите, чтобы увидеть профиль',
+      'portion': 'порция',
+      'add': 'Добавить',
+      'backToHome': 'Вернуться на главную',
+      'editField': 'Изменить',
+      'enterNew': 'Введите новый',
+      'onboarding1': 'Где каждое блюдо рассказывает историю, а каждый гость уходит с ней.',
+      'onboarding2': 'Сделано с сердцем. Испечено с любовью.',
+      'onboarding3': 'Ваш столик ждет.',
+      'explore': 'Исследовать',
+      'next': 'Далее',
+      'start': 'Начать',
+      'cardDetails': 'Данные карты',
+      'cardHolder': 'Имя на карте',
+      'addCard': 'Добавить карту',
+      'idram': 'Идрам',
     },
   };
 
-  void setLocale(Locale locale) {
+  void setLocale(Locale locale) async {
     if (!['hy', 'en', 'ru'].contains(locale.languageCode)) return;
     _currentLocale = locale;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, locale.languageCode);
   }
 
   String translate(String key) {

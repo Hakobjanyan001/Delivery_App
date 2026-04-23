@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../localization/localization_provider.dart';
 import '../../features/onboarding/providers/onboarding_provider.dart';
-import '../../features/cart/providers/cart_provider.dart';
 import '../../features/cart/screens/cart_screen.dart';
-import '../../features/cart/screens/checkout_screen.dart';
 import '../providers/search_provider.dart';
+import '../../features/auth/screens/login_screen.dart';
 import '../../features/home/widgets/search_overlay_widget.dart';
+
+import '../../features/cart/providers/cart_provider.dart';
+import '../../features/cart/screens/payment_screen.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -36,9 +38,9 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
   }
 
   void updateRoute(String? routeName) {
-    String name = (routeName == null || routeName == '/' || routeName == '' || routeName == 'HomeScreen') 
-        ? 'HomeScreen' 
-        : routeName;
+    if (routeName == null || routeName.isEmpty) return; // Ignore dialogs/menus without explicit names
+
+    String name = (routeName == '/') ? 'HomeScreen' : routeName;
     if (name.startsWith('/')) name = name.substring(1);
     if (_currentRoute != name) {
       if (mounted) setState(() => _currentRoute = name);
@@ -55,10 +57,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
         _currentRoute != 'OnboardingScreen' &&
         _currentRoute != 'FoodDetail' &&
         _currentRoute != 'LoginScreen' &&
-        _currentRoute != 'RegisterScreen';
+        _currentRoute != 'RegisterScreen' &&
+        _currentRoute != 'OrdersScreen' &&
+        _currentRoute != 'OrderDetailsScreen' &&
+        _currentRoute != 'ProfileScreen';
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           if (widget.child != null) widget.child!,
@@ -69,18 +75,22 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
               return AnimatedPositioned(
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeInOutExpo,
-                top: search.isSearchActive ? 60 : MediaQuery.of(context).size.height,
+                top: search.isSearchActive ? 110 : MediaQuery.of(context).size.height,
                 left: 16,
                 right: 16,
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 300),
                   opacity: search.isSearchActive ? 1.0 : 0.0,
-                  child: SearchOverlayWidget(
-                    onClose: () {
-                      search.setSearchActive(false);
-                      FocusScope.of(context).unfocus();
-                    },
-                  ),
+                  child: search.isSearchActive
+                      ? SearchOverlayWidget(
+                          key: ValueKey(search.isActiveCount), // Use secondary counter to force rebuild on every open
+                          isSearchActive: search.isSearchActive,
+                          onClose: () {
+                            search.setSearchActive(false);
+                            FocusScope.of(context).unfocus();
+                          },
+                        )
+                      : const SizedBox.shrink(),
                 ),
               );
             },
@@ -103,6 +113,50 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (_currentRoute == 'CartScreen')
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                            child: Consumer<CartProvider>(
+                              builder: (context, cart, child) {
+                                if (cart.items.isEmpty) return const SizedBox.shrink();
+                                return GestureDetector(
+                                  onTap: () {
+                                    widget.navigatorKey.currentState?.push(
+                                      MaterialPageRoute(
+                                        settings: const RouteSettings(name: 'PaymentScreen'),
+                                        builder: (context) => const PaymentScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(40),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.5),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        )
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         _buildNavBar(isAuthenticated, search.isSearchActive),
                       ],
                     ),
@@ -120,6 +174,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
     final String route = _currentRoute ?? 'HomeScreen';
     final bool isHome = route == 'HomeScreen';
     final bool isCart = route == 'CartScreen';
+    final bool isPayment = route == 'PaymentScreen';
 
     return SafeArea(
       top: false,
@@ -155,7 +210,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     label: l10n.translate('cart'),
                     isActive: isCart,
                     onTap: () {
-                      if (!isCart) {
+                      if (!isAuthenticated) {
+                        widget.navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: 'LoginScreen'),
+                            builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                          ),
+                        );
+                      } else if (!isCart) {
                         widget.navigatorKey.currentState?.push(
                           MaterialPageRoute(
                             settings: const RouteSettings(name: 'CartScreen'),
@@ -168,32 +230,34 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            // Separate Search Button
-            Consumer<SearchProvider>(
-              builder: (context, search, child) {
-                return GestureDetector(
-                  onTap: () => search.toggleSearchActive(),
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F0F0F),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
-                      ],
+            if (!isCart && !isPayment) ...[
+              const SizedBox(width: 8),
+              // Separate Search Button
+              Consumer<SearchProvider>(
+                builder: (context, search, child) {
+                  return GestureDetector(
+                    onTap: () => search.toggleSearchActive(),
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F0F0F),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
+                        ],
+                      ),
+                      child: Icon(
+                        search.isSearchActive ? Icons.close : Icons.search,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                    child: Icon(
-                      search.isSearchActive ? Icons.close : Icons.search,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),
@@ -220,25 +284,16 @@ class _NavBarItem extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isActive ? const Color(0xFF1F1F1F) : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
+          shape: BoxShape.circle,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
+            Icon(icon, color: Colors.white, size: 24),
           ],
         ),
       ),

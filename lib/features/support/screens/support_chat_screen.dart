@@ -20,7 +20,7 @@ class SupportChatScreen extends StatefulWidget {
 class _SupportChatScreenState extends State<SupportChatScreen> {
   final List<Message> _messages = [
     Message(
-      text: 'Ողջույն! Ես օնլայն օպերատորն եմ: Ինչո՞վ կարող եմ օգնել:',
+      text: 'Ողջույն! Մեր մասնագետը շուտով կպատասխանի ձեզ:',
       isMe: false,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
     ),
@@ -44,7 +44,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       if (mounted) {
         setState(() {
           _messages.add(Message(
-            text: 'Շնորհակալություն հաղորդագրության համար: Մեր մասնագետը կպատասխանի ձեզ կարճ ժամանակում:',
+            text: 'Մեր մասնագետը շուտով կպատասխանի ձեզ:',
             isMe: false,
             timestamp: DateTime.now(),
           ));
@@ -81,7 +81,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Օպերատոր', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text('Աջակցության թիմ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 Text('Օնլայն', style: TextStyle(fontSize: 12, color: Colors.green)),
               ],
             ),

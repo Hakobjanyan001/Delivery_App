@@ -111,7 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.only(left: 12.0),
               child: Image.asset(
                 'assets/images/masoor_branch.png',
-                width: 72, height: 48, fit: BoxFit.contain,
+                width: 72,
+                height: 48,
+                fit: BoxFit.contain,
               ),
             ),
             actions: [
@@ -261,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProductCard(ProductModel product, String lang) {
+  Widget _buildFoodCard(FoodItem food, String lang, LocalizationProvider l10n) {
     return GestureDetector(
       onTap: () => _openFoodDetail(context, product),
       child: Container(
@@ -291,8 +293,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Consumer<CartProvider>(
                           builder: (context, cart, child) {
-                            final quantity = cart.getItemQuantity(product.id);
-                            final portionText = '1 ${lang == 'en' ? 'portion' : (lang == 'ru' ? 'порция' : 'բաժին')}';
+                            final quantity = cart.getItemQuantity(food.id);
+                            final portionText = '1 ${l10n.translate('portion')}';
                             return Text(
                               quantity > 0 ? '$portionText x$quantity' : portionText,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
@@ -312,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: OutlinedButton(
                               onPressed: () => _requireAuthOrExecute(() => cart.addItem(product)),
                               style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white, width: 1), shape: const StadiumBorder()),
-                              child: Text(lang == 'en' ? 'Add' : (lang == 'ru' ? 'Добавить' : 'Ավելացնել'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                              child: Text(l10n.translate('add'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                             ),
                           );
                         }
@@ -341,7 +343,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
   Widget _fallbackImage() => Container(color: const Color(0xFF1A1A1A), child: const Icon(Icons.fastfood, color: Colors.white24, size: 40));
 
   Widget _buildBannersCarousel(List<BannerModel> banners, String lang) {
