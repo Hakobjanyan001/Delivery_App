@@ -23,27 +23,35 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
   @override
   void initState() {
     super.initState();
-    // Request focus on the next frame to allow animation to start
+    if (widget.isSearchActive) {
+      _triggerFocus();
+    }
+  }
+
+  void _triggerFocus() {
+    // Attempt 1: Immediate post-frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
+      if (mounted) _focusNode.requestFocus();
+    });
+    
+    // Attempt 2: After a short delay (for animation transition)
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted && widget.isSearchActive) {
+        _focusNode.requestFocus();
+      }
+    });
+
+    // Attempt 3: After animation completes
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted && widget.isSearchActive) {
+        _focusNode.requestFocus();
+      }
     });
   }
 
   @override
   void didUpdateWidget(SearchOverlayWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isSearchActive && !oldWidget.isSearchActive) {
-      // Request focus when search becomes active
-      // Increased delay to ensure animation has progressed (matching AnimatedOpacity/Positioned)
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (mounted && widget.isSearchActive) {
-          FocusScope.of(context).requestFocus(_focusNode);
-        }
-      });
-    } else if (!widget.isSearchActive && oldWidget.isSearchActive) {
-      // Unfocus when search becomes inactive
-      _focusNode.unfocus();
-    }
   }
 
   @override
@@ -63,8 +71,10 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
       _controller.text = searchProvider.searchQuery;
     }
 
-    return Container(
-      width: double.infinity,
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF0F0F0F),
@@ -88,6 +98,7 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
+              autofocus: true,
               onChanged: (value) => searchProvider.updateQuery(value),
               style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
@@ -108,6 +119,6 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
             ),
         ],
       ),
-    );
+    ));
   }
 }

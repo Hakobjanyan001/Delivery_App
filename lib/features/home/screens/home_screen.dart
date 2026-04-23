@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         descriptionEn: 'Fresh chicken, parmesan, crackers, and special sauce.',
         descriptionRu: 'Свежая курица, пармезан, сухарики и фирменный соус.',
         price: 2000,
-        category: 'Dessert', // Using dessert category for now or we could add 'Salads'
+        category: 'Dessert',
         prepTime: 12,
         imageUrl: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500&q=80',
       ),
@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<FoodItem> _getFilteredFoodItems(BuildContext context) {
     final searchProvider = Provider.of<SearchProvider>(context);
-    final query = searchProvider.searchQuery.toLowerCase().trim();
+    final query = searchProvider.searchQuery.toLowerCase();
     final List<FoodItem> allItems = _foodByCategory.values.expand((list) => list).toList();
     
     if (query.isNotEmpty) {
@@ -181,133 +181,138 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Consumer<SearchProvider>(
       builder: (context, search, child) {
+        final bool isSearchQueryActive = search.isSearchActive && search.searchQuery.isNotEmpty;
+
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: search.isSearchActive 
-            ? PreferredSize(preferredSize: Size.zero, child: const SizedBox.shrink())
-            : AppBar(
-                backgroundColor: Colors.black,
-                elevation: 0,
-                toolbarHeight: 70,
-                centerTitle: false,
-                leadingWidth: 101,
-                leading: Padding(
-                  padding: const EdgeInsets.only(left: 12.0),
-                  child: Image.asset(
-                    'assets/images/masoor_branch.png',
-                    width: 72,
-                    height: 48,
-                    fit: BoxFit.contain,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            elevation: 0,
+            toolbarHeight: 70,
+            centerTitle: false,
+            leadingWidth: 101,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 12.0),
+              child: Image.asset(
+                'assets/images/masoor_branch.png',
+                width: 72,
+                height: 48,
+                fit: BoxFit.contain,
+              ),
+            ),
+            actions: [
+              Center(
+                child: GestureDetector(
+                  onTap: () async {
+                    final Uri url = Uri.parse('tel:+37460515515');
+                    if (await canLaunchUrl(url)) await launchUrl(url);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161616),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.phone_outlined, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text('+374 60 515515', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ),
-                title: null,
-                actions: [
-                  Center(
-                    child: GestureDetector(
-                      onTap: () async {
-                        final Uri url = Uri.parse('tel:+37460515515');
-                        if (await canLaunchUrl(url)) await launchUrl(url);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF161616),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.phone_outlined, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text('+374 60 515515', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12.0, left: 8.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
-                          Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'LoginScreen'), builder: (context) => const LoginScreen(isCheckoutFlow: false)));
-                        } else {
-                          Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'ProfileScreen'), builder: (context) => const ProfileScreen()));
-                        }
-                      },
-                      child: Container(
-                        width: 45, height: 45,
-                        decoration: BoxDecoration(color: const Color(0xFF161616), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
-                        child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
-                      ),
-                    ),
-                  ),
-                ],
               ),
+              Padding(
+                padding: const EdgeInsets.only(right: 12.0, left: 8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
+                      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'LoginScreen'), builder: (context) => const LoginScreen(isCheckoutFlow: false)));
+                    } else {
+                      Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'ProfileScreen'), builder: (context) => const ProfileScreen()));
+                    }
+                  },
+                  child: Container(
+                    width: 45, height: 45,
+                    decoration: BoxDecoration(color: const Color(0xFF161616), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
+                    child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
+                  ),
+                ),
+              ),
+            ],
+          ),
           body: CustomScrollView(
             key: const ValueKey('home_scroll_v2'),
             slivers: [
-              if (search.isSearchActive) const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              if (!search.isSearchActive) SliverToBoxAdapter(child: _buildPromoBanner(l10n)),
-              if (!search.isSearchActive) const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(l10n.translate('categoriesTitle'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 50,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: categoryKeys.length,
-                    itemBuilder: (context, index) {
-                      final key = categoryKeys[index];
-                      final isSelected = selectedCategoryKey == key;
-                      return GestureDetector(
-                        onTap: () => setState(() => selectedCategoryKey = key),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          alignment: Alignment.center,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.transparent,
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(l10n.translate(key), style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold, fontSize: 14)),
-                        ),
-                      );
-                    },
+              if (search.isSearchActive) const SliverToBoxAdapter(child: SizedBox(height: 180)),
+              
+              if (!search.isSearchActive) ...[
+                SliverToBoxAdapter(child: _buildPromoBanner(l10n)),
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(l10n.translate('categoriesTitle'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(l10n.translate(selectedCategoryKey), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 50,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: categoryKeys.length,
+                      itemBuilder: (context, index) {
+                        final key = categoryKeys[index];
+                        final isSelected = selectedCategoryKey == key;
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedCategoryKey = key),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(25),
+                              border: Border.all(color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.3)),
+                            ),
+                            child: Text(l10n.translate(key), style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: isSelected ? FontWeight.w900 : FontWeight.bold, fontSize: 14)),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(l10n.translate(selectedCategoryKey), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+              if (isSearchQueryActive)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      '${l10n.translate('searchResults') ?? "Որոնման արդյունքներ"} (${_getFilteredFoodItems(context).length})',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                
               const SliverToBoxAdapter(child: SizedBox(height: 10)),
+              
               _getFilteredFoodItems(context).isEmpty
-                  ? SliverFillRemaining(
+                  ? const SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: Column(children: [
-                            Icon(Icons.search_off, size: 60, color: Colors.grey[400]),
-                            const SizedBox(height: 16),
-                            Text(l10n.translate('noResults'), style: TextStyle(color: Colors.grey[600], fontSize: 16)),
-                          ]),
-                        ),
-                      ),
+                      child: SizedBox.shrink(),
                     )
                   : SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -326,6 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           }
 
                           return SliverGrid(
+                            key: ValueKey(search.searchQuery),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: crossAxisCount,
                               crossAxisSpacing: 16, mainAxisSpacing: 18,

@@ -23,7 +23,7 @@ class LocalizationProvider with ChangeNotifier {
   static final Map<String, Map<String, String>> _localizedValues = {
     'hy': {
       'appName': 'MASOOR',
-      'searchHint': 'Որոնման հարթակ՝ ընտրեք ձեր սրտի նախընտրելին ',
+      'searchHint': 'Որոնման հարթակ',
       'categoriesTitle': 'Ցանկ',
       'popularRestaurants': 'Հայտնի Ռեստորաններ',
       'noResults': 'Որոնման արդյունքում ոչինչ չի գտնվել',
@@ -122,7 +122,7 @@ class LocalizationProvider with ChangeNotifier {
     },
     'en': {
       'appName': 'MASOOR',
-      'searchHint': 'Search here, pick your favorite',
+      'searchHint': 'Search platform',
       'categoriesTitle': 'Menu',
       'popularRestaurants': 'Popular Restaurants',
       'noResults': 'No results found',
@@ -221,7 +221,7 @@ class LocalizationProvider with ChangeNotifier {
     },
     'ru': {
       'appName': 'MASOOR',
-      'searchHint': 'Ищите здесь, выбирайте любимое',
+      'searchHint': 'Поисковая платформа',
       'categoriesTitle': 'Меню',
       'popularRestaurants': 'Популярные рестораны',
       'noResults': 'Ничего не найдено',

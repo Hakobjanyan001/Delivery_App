@@ -360,14 +360,52 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           initialCenter: currentPos,
                           initialZoom: 15.0,
                           onTap: (tapPos, point) async {
-                            String readableAddress = 'Ընտրված վայր';
+                            // Show "Searching..." immediately for feedback
+                            if (address.selectedAddressId != null) {
+                              address.updateAddressDetails(address.selectedAddressId!, address: 'Որոնվում է...');
+                            }
+
+                            String readableAddress = 'Ընտրված հասցե';
                             try {
-                              List<Placemark> placemarks = await placemarkFromCoordinates(point.latitude, point.longitude);
+                              List<Placemark> placemarks = await placemarkFromCoordinates(
+                                point.latitude, 
+                                point.longitude,
+                              );
                               if (placemarks.isNotEmpty) {
                                 Placemark place = placemarks.first;
-                                readableAddress = '${place.street}, ${place.locality}';
+                                List<String> parts = [];
+                                
+                                // Try to get a meaningful street/name
+                                String? street = place.street ?? place.thoroughfare ?? place.name;
+                                if (street != null && street.isNotEmpty && street != place.locality) {
+                                  parts.add(street);
+                                }
+                                
+                                // Add city/locality
+                                String? city = place.locality ?? place.subAdministrativeArea;
+                                if (city != null && city.isNotEmpty) {
+                                  parts.add(city);
+                                }
+                                
+                                if (parts.isNotEmpty) {
+                                  readableAddress = parts.join(', ');
+                                } else {
+                                  readableAddress = place.locality ?? 'Ընտրված վայր';
+                                }
                               }
-                            } catch (_) {}
+                            } catch (_) {
+                              // Fallback if geocoding completely fails
+                              try {
+                                List<Placemark> placemarks = await placemarkFromCoordinates(point.latitude, point.longitude);
+                                if (placemarks.isNotEmpty) {
+                                  Placemark place = placemarks.first;
+                                  readableAddress = place.street ?? place.name ?? "Հասցեն չգտնվեց";
+                                }
+                              } catch (e) {
+                                // Last resort
+                                readableAddress = 'Ընտրված վայր';
+                              }
+                            }
 
                             if (address.selectedAddressId != null) {
                               address.updateAddressDetails(
@@ -430,6 +468,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              if (address.selectedAddress != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0, left: 4),
+                  child: Text(
+                    address.selectedAddress!.address,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Segoe UI',
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
                   // Styled Address Container
                   GestureDetector(

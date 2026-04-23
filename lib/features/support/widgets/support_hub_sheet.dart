@@ -51,7 +51,7 @@ class SupportHubSheet extends StatelessWidget {
           _buildOption(
             context,
             icon: Icons.chat_bubble_outline,
-            title: 'Օնլայն օպերատոր',
+            title: 'Աջակցության թիմ',
             subtitle: 'Պատասխանում ենք 5-ից 10 րոպեում',
             color: AppColors.primary,
             onTap: () {

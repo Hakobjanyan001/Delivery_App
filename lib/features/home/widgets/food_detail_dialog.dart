@@ -175,8 +175,10 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                             subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.black54)),
                             value: _isPieceMode,
                             onChanged: (val) => setState(() => _isPieceMode = val ?? false),
-                            activeColor: Colors.black,
+                            fillColor: WidgetStateProperty.all(Colors.black),
                             checkColor: Colors.white,
+                            side: const BorderSide(color: Colors.black, width: 2),
+                            checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                         ),
@@ -199,8 +201,10 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                             title: Text(option, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
                             value: isSelected,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            activeColor: Colors.black,
+                            fillColor: WidgetStateProperty.all(Colors.black),
                             checkColor: Colors.white,
+                            side: const BorderSide(color: Colors.black, width: 2),
+                            checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                             onChanged: (val) {
                               setState(() {
                                 if (val == true) {
