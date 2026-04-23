@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/food_model.dart';
+import '../constants/api_constants.dart';
 
 class ApiManager {
-  final String baseUrl = 'https://jsonplaceholder.typicode.com';
+  final String baseUrl = ApiConstants.baseUrl;
 
   Future<List<Restaurant>> getRestaurants() async {
-    final response = await http.get(Uri.parse('$baseUrl/restaurants'));
+    final response = await http.get(Uri.parse(ApiConstants.getRestaurants));
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => Restaurant.fromJson(json)).toList();
@@ -16,21 +17,21 @@ class ApiManager {
   }
 
   Future<List<FoodItem>> getFoods() async {
-    final response = await http.get(Uri.parse('$baseUrl/foods'));
+    final response = await http.get(Uri.parse(ApiConstants.getProducts));
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => FoodItem.fromJson(json)).toList();
     } else {
-      throw Exception('Failed to load foods');
+      throw Exception('Failed to load products');
     }
   }
 
   Future<List<dynamic>> getPosts() async {
-    final response = await http.get(Uri.parse('$baseUrl/posts'));
+    final response = await http.get(Uri.parse(ApiConstants.getBanners));
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load posts');
+      throw Exception('Failed to load banners');
     }
   }
 }

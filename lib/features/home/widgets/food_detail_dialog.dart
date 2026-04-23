@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/models/food_model.dart';
+import '../../../core/models/product_model.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
@@ -8,52 +8,49 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 
 class FoodDetailDialog extends StatefulWidget {
-  final FoodItem food;
+  final ProductModel product;
 
-  const FoodDetailDialog({super.key, required this.food});
+  const FoodDetailDialog({super.key, required this.product});
 
   @override
   State<FoodDetailDialog> createState() => _FoodDetailDialogState();
 }
 
 class _FoodDetailDialogState extends State<FoodDetailDialog> {
-  late String _selectedSize;
-  final Set<String> _selectedOptions = {};
+  String? _selectedVariantName;
+  final Map<String, String> _selectedAttributes = {};
   int _quantity = 1;
-  bool _isPieceMode = false;
-
-  // Price multiplier per size position (index 0 = base, 1 = mid, 2 = large)
-  static const List<double> _multipliers = [1.0, 1.35, 1.7];
 
   double get _effectivePrice {
-    final sizes = widget.food.sizes;
-    if (sizes.isEmpty) return widget.food.price;
-    final idx = sizes.indexOf(_selectedSize).clamp(0, sizes.length - 1);
+    double price = widget.product.displayPrice;
     
-    // Check if in piece mode (only for Large size)
-    if (_isPieceMode && _selectedSize == 'Մեծ' && widget.food.slicePrice != null) {
-      return widget.food.slicePrice!;
+    // Add variant price if selected
+    if (_selectedVariantName != null) {
+      final variant = widget.product.variants.firstWhere((v) => v.name.en == _selectedVariantName || v.name.hy == _selectedVariantName || v.name.ru == _selectedVariantName);
+      price = variant.price;
     }
 
-    // Check if custom prices are defined for this food item
-    if (widget.food.sizePrices != null && idx < widget.food.sizePrices!.length) {
-      return widget.food.sizePrices![idx];
-    }
-    
-    // Fallback to multipliers if no custom prices
-    final multiplierIdx = idx.clamp(0, _multipliers.length - 1);
-    return widget.food.price * _multipliers[multiplierIdx];
+    // Add attribute prices
+    _selectedAttributes.forEach((attrId, optionName) {
+      final attribute = widget.product.attributes.firstWhere((a) => a.id == attrId);
+      final option = attribute.options.firstWhere((o) => o.name.en == optionName || o.name.hy == optionName || o.name.ru == optionName);
+      price += option.price;
+    });
+
+    return price;
   }
 
   @override
   void initState() {
     super.initState();
-    _selectedSize = widget.food.sizes.isNotEmpty ? widget.food.sizes[0] : 'Standard';
+    if (widget.product.variants.isNotEmpty) {
+      _selectedVariantName = widget.product.variants.first.name.hy; // Default to Armenian
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final food = widget.food;
+    final product = widget.product;
     final l10n = Provider.of<LocalizationProvider>(context);
     final lang = l10n.currentLocale.languageCode;
 
@@ -69,36 +66,32 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
           ),
           child: Column(
             children: [
-              // Drag handle
               const SizedBox(height: 10),
               Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
               ),
-              // Content
               Expanded(
                 child: ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.all(20),
                   children: [
-                    // Food image
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.network(
-                        food.imageUrl,
-                        height: 200,
+                        product.mainImageUrl,
+                        height: 250,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           height: 200,
-                          color: Colors.grey[200],
-                          child: Icon(Icons.fastfood, size: 60, color: Colors.grey[400]),
+                          color: const Color(0xFF1A1A1A),
+                          child: const Icon(Icons.fastfood, size: 60, color: Colors.white24),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Name & Price Box
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -109,47 +102,38 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(food.localizedName(lang),
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(product.name.getLocalized(lang),
+                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black)),
+                                if (product.description.getLocalized(lang).isNotEmpty)
+                                  Text(product.description.getLocalized(lang),
+                                      style: TextStyle(fontSize: 14, color: Colors.black.withValues(alpha: 0.6))),
+                              ],
+                            ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
-                              ),
-                              if (_selectedSize != food.sizes.first)
-                                Text(
-                                  '${l10n.translate('total')}: ${food.price.toStringAsFixed(0)} ֏',
-                                  style: TextStyle(fontSize: 12, color: Colors.black.withValues(alpha: 0.5), decoration: TextDecoration.lineThrough),
-                                ),
-                            ],
+                          Text(
+                            '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.black),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
 
-                    // Size Selection
-                    if (food.sizes.isNotEmpty) ...[
-                      const Text('Չափս', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
+                    if (product.variants.isNotEmpty) ...[
+                      const Text('Տարբերակներ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 10,
-                        children: food.sizes.asMap().entries.map((entry) {
-                          final idx = entry.key;
-                          final size = entry.value;
-                          final isSelected = _selectedSize == size;
-                          final multiplier = _multipliers[idx.clamp(0, _multipliers.length - 1)];
-                          final sizePrice = (food.price * multiplier).toStringAsFixed(0);
+                        children: product.variants.map((variant) {
+                          final variantName = variant.name.getLocalized(lang);
+                          final isSelected = _selectedVariantName == variantName;
                           return ChoiceChip(
-                            label: Text('$size  $sizePrice ֏'),
+                            label: Text('$variantName (${variant.price.toStringAsFixed(0)} ֏)'),
                             selected: isSelected,
-                            onSelected: (_) => setState(() {
-                              _selectedSize = size;
-                              if (size != 'Մեծ') _isPieceMode = false;
-                            }),
+                            onSelected: (_) => setState(() => _selectedVariantName = variantName),
                             selectedColor: Colors.white,
                             backgroundColor: Colors.black,
                             side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
@@ -160,60 +144,49 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 10),
-
-                      // Refined Slice Option (Only for Large)
-                      if (_selectedSize == 'Մեծ' && food.slicePrice != null)
-                        Container(
-                          margin: const EdgeInsets.only(top: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: CheckboxListTile(
-                            title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black)),
-                            subtitle: Text('Մեկ կտորի գինը՝ ${food.slicePrice!.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.black54)),
-                            value: _isPieceMode,
-                            onChanged: (val) => setState(() => _isPieceMode = val ?? false),
-                            activeColor: Colors.black,
-                            checkColor: Colors.white,
-                            controlAffinity: ListTileControlAffinity.leading,
-                          ),
-                        ),
                       const SizedBox(height: 20),
                     ],
 
-                    // Options / Attributes
-                    if (food.availableOptions.isNotEmpty) ...[
+                    if (product.attributes.isNotEmpty) ...[
                       const Text('Հատկանիշներ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
                       const SizedBox(height: 10),
-                      ...food.availableOptions.map((option) {
-                        final isSelected = _selectedOptions.contains(option);
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: CheckboxListTile(
-                            title: Text(option, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
-                            value: isSelected,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            activeColor: Colors.black,
-                            checkColor: Colors.white,
-                            onChanged: (val) {
-                              setState(() {
-                                if (val == true) {
-                                  _selectedOptions.add(option);
-                                } else {
-                                  _selectedOptions.remove(option);
-                                }
-                              });
-                            },
-                          ),
+                      ...product.attributes.map((attr) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(attr.name.getLocalized(lang), style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: attr.options.map((opt) {
+                                final optName = opt.name.getLocalized(lang);
+                                final isSelected = _selectedAttributes[attr.id] == optName;
+                                return ChoiceChip(
+                                  label: Text('$optName ${opt.price > 0 ? '(+${opt.price.toStringAsFixed(0)} ֏)' : ''}'),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedAttributes[attr.id] = optName;
+                                      } else {
+                                        _selectedAttributes.remove(attr.id);
+                                      }
+                                    });
+                                  },
+                                  selectedColor: Colors.white,
+                                  backgroundColor: Colors.black,
+                                  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? Colors.black : Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         );
                       }),
-                      const SizedBox(height: 10),
                     ],
 
                     Row(
@@ -254,7 +227,6 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                 ),
               ),
 
-              // Add to Cart button
               Padding(
                 padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
                 child: ElevatedButton(
@@ -262,7 +234,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     final authProvider = Provider.of<AuthProvider>(context, listen: false);
                     final l10n = Provider.of<LocalizationProvider>(context, listen: false);
                     final messenger = ScaffoldMessenger.of(context);
-                    final cartItemName = food.localizedName(l10n.currentLocale.languageCode);
+                    final cartItemName = product.name.getLocalized(lang);
                     final addedMsg = l10n.translate('addedToCart');
                     
                     if (!authProvider.isAuthenticated) {
@@ -280,9 +252,9 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     final cart = Provider.of<CartProvider>(context, listen: false);
                     for (int i = 0; i < _quantity; i++) {
                       cart.addItem(
-                        food,
-                        selectedSize: _isPieceMode ? '$_selectedSize (Կտոր)' : _selectedSize,
-                        selectedOptions: _selectedOptions.toList(),
+                        product,
+                        selectedSize: _selectedVariantName ?? 'Standard',
+                        selectedOptions: _selectedAttributes.values.toList(),
                         effectiveUnitPrice: _effectivePrice,
                       );
                     }

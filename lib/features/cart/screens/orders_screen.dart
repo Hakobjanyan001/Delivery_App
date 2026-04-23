@@ -5,8 +5,23 @@ import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../support/widgets/support_hub_sheet.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
+
+  @override
+  State<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +39,9 @@ class OrdersScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
-      body: orders.isEmpty
+      body: ordersProvider.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : orders.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -58,7 +75,7 @@ class OrdersScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${lang == 'en' ? 'Order' : (lang == 'ru' ? 'Заказ' : 'Պատվեր')} #${order.id.substring(order.id.length - 6)}',
+                              '${lang == 'en' ? 'Order' : (lang == 'ru' ? 'Заказ' : 'Պատվեր')} #${order.id.substring(order.id.length > 6 ? order.id.length - 6 : 0)}',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             Text(
@@ -82,7 +99,7 @@ class OrdersScreen extends StatelessWidget {
                                 children: [
                                   Text('${item.quantity}x ', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   Expanded(
-                                    child: Text('${item.foodItem.localizedName(lang)} (${item.selectedSize})'),
+                                    child: Text('${item.product.name.getLocalized(lang)} (${item.selectedSize})'),
                                   ),
                                   Text('${(item.effectiveUnitPrice * item.quantity).toStringAsFixed(0)} ֏'),
                                 ],

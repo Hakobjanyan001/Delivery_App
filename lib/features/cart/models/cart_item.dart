@@ -1,14 +1,14 @@
-import '../../../core/models/food_model.dart';
+import '../../../core/models/product_model.dart';
 
 class CartItem {
-  final FoodItem foodItem;
+  final ProductModel product;
   final String selectedSize;
   final List<String> selectedOptions;
-  final double effectiveUnitPrice; // Final price after size multiplier
+  final double effectiveUnitPrice; 
   int quantity;
 
   CartItem({
-    required this.foodItem,
+    required this.product,
     required this.selectedSize,
     required this.effectiveUnitPrice,
     this.selectedOptions = const [],
@@ -17,6 +17,30 @@ class CartItem {
 
   double get totalIndividualPrice => effectiveUnitPrice * quantity;
 
-  // Unique key: same food + different size/options = separate cart entry
-  String get uniqueKey => '${foodItem.id}_${selectedSize}_${selectedOptions.join("_")}';
+  String get uniqueKey => '${product.id}_${selectedSize}_${selectedOptions.join("_")}';
+
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      product: ProductModel.fromJson(json['product'] ?? {
+        '_id': json['productId'],
+        'name': json['name'],
+        'price': json['price'],
+      }),
+      selectedSize: json['selectedSize'] ?? 'Standard',
+      selectedOptions: List<String>.from(json['selectedOptions'] ?? []),
+      effectiveUnitPrice: (json['price'] ?? 0).toDouble(),
+      quantity: json['quantity'] ?? 1,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'productId': product.id,
+      'name': product.name.toJson(),
+      'quantity': quantity,
+      'price': effectiveUnitPrice,
+      'selectedSize': selectedSize,
+      'selectedOptions': selectedOptions,
+    };
+  }
 }

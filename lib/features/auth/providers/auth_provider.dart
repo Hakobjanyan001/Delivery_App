@@ -90,7 +90,7 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      await _repository.registerWithEmail(name, email, password);
+      await _repository.registerWithEmail(name, email, password, phone: phoneNumber);
       return true;
     } catch (e) {
       _setError(e.toString());

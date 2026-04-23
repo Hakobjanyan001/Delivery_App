@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/models/food_model.dart';
+import '../../../core/models/product_model.dart';
 import '../models/cart_item.dart';
 
 class CartProvider with ChangeNotifier {
@@ -15,10 +15,10 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
-  int getItemQuantity(String foodId) {
+  int getItemQuantity(String productId) {
     int count = 0;
     _items.forEach((key, cartItem) {
-      if (cartItem.foodItem.id == foodId) {
+      if (cartItem.product.id == productId) {
         count += cartItem.quantity;
       }
     });
@@ -33,20 +33,20 @@ class CartProvider with ChangeNotifier {
     return total;
   }
 
-  void addItem(FoodItem item, {String? selectedSize, List<String>? selectedOptions, double? effectiveUnitPrice}) {
-    final size = selectedSize ?? (item.sizes.isNotEmpty ? item.sizes[0] : 'Standard');
+  void addItem(ProductModel product, {String? selectedSize, List<String>? selectedOptions, double? effectiveUnitPrice}) {
+    // Matching the new backend-driven fields
+    final size = selectedSize ?? 'Standard'; 
     final options = selectedOptions ?? [];
-    final unitPrice = effectiveUnitPrice ?? item.price;
+    final unitPrice = effectiveUnitPrice ?? product.price;
 
-    // Create a temporary item to get the unique key
-    final tempItem = CartItem(foodItem: item, selectedSize: size, selectedOptions: options, effectiveUnitPrice: unitPrice);
+    final tempItem = CartItem(product: product, selectedSize: size, selectedOptions: options, effectiveUnitPrice: unitPrice);
     final key = tempItem.uniqueKey;
 
     if (_items.containsKey(key)) {
       _items[key]!.quantity += 1;
     } else {
       _items[key] = CartItem(
-        foodItem: item,
+        product: product,
         selectedSize: size,
         selectedOptions: options,
         effectiveUnitPrice: unitPrice,
@@ -71,9 +71,9 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void removeOneItemByFoodId(String foodId) {
+  void removeOneItemByProductId(String productId) {
     final key = _items.keys.firstWhere(
-      (k) => _items[k]!.foodItem.id == foodId,
+      (k) => _items[k]!.product.id == productId,
       orElse: () => '',
     );
     if (key.isNotEmpty) {

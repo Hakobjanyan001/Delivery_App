@@ -8,4 +8,12 @@ class AddressModel {
     required this.title,
     required this.address,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'address': address,
+    };
+  }
 }

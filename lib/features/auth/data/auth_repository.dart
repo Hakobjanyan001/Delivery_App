@@ -1,35 +1,70 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/constants/api_constants.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
+  static final AuthRepository _instance = AuthRepository._internal();
+  factory AuthRepository() => _instance;
+  AuthRepository._internal();
+
   AppUser? _currentUser;
+  String? _token;
   
   final StreamController<AppUser?> _authStateController = StreamController<AppUser?>.broadcast();
 
   Stream<AppUser?> get authStateChanges => _authStateController.stream;
 
   AppUser? get currentUser => _currentUser;
+  String? get token => _token;
 
   Future<AppUser> signInWithEmail(String email, String password) async {
-    if (email == 'test@example.com' && password == '123456') {
-      await Future.delayed(const Duration(seconds: 1));
-      _currentUser = AppUser.mock();
-      _authStateController.add(_currentUser);
-      return _currentUser!;
-    } else {
-      throw 'Սխալ էլ․ հասցե կամ գաղտնաբառ։';
+    // --- Real API Login ---
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.login),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _currentUser = AppUser.fromJson(data['user'] ?? data); 
+        _token = data['token'];
+        _authStateController.add(_currentUser);
+        return _currentUser!;
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Մուտքը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
     }
   }
 
-  Future<AppUser> registerWithEmail(String name, String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1));
-    _currentUser = AppUser(
-      uid: DateTime.now().millisecondsSinceEpoch.toString(),
-      email: email,
-      displayName: name,
-    );
-    _authStateController.add(_currentUser);
-    return _currentUser!;
+  Future<AppUser> registerWithEmail(String name, String email, String password, {String? phone}) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.register),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'phone': phone ?? '', 
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return await signInWithEmail(email, password);
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Գրանցումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw 'Կապի սխալ: Ստուգեք ինտերնետը: $e';
+    }
   }
 
 /*

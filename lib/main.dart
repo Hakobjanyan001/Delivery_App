@@ -10,6 +10,7 @@ import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
 import 'core/providers/search_provider.dart';
 import 'core/widgets/navigation_wrapper.dart';
+import 'features/home/providers/home_provider.dart';
 import 'features/onboarding/providers/onboarding_provider.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 
@@ -27,6 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AddressProvider()),
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
       ],
       child: const MasoorApp(),
     ),

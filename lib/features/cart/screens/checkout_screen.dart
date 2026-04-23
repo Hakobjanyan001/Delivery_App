@@ -179,8 +179,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         return;
       }
-      if (context.mounted) Provider.of<OrdersProvider>(context, listen: false).addOrder(cart.items, cart.totalAmount);
-      _showSuccessDialog(context, cart, l10n);
+      if (context.mounted) {
+        final order = await Provider.of<OrdersProvider>(context, listen: false).addOrder(
+          cart.items, 
+          cart.totalAmount,
+          address: addressProvider.selectedAddress!.toJson(),
+          phone: _phoneController.text,
+          paymentMethod: _paymentMethod,
+        );
+        
+        if (order != null && context.mounted) {
+          _showSuccessDialog(context, cart, l10n);
+        } else if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(Provider.of<OrdersProvider>(context, listen: false).error ?? 'Սխալ պատվերի ժամանակ')),
+          );
+        }
+      }
     } else {
       // Payment Card Flow
       String? cardId;
@@ -217,7 +232,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ));
             }
             if (context.mounted) {
-              Provider.of<OrdersProvider>(context, listen: false).addOrder(cart.items, cart.totalAmount);
+              await Provider.of<OrdersProvider>(context, listen: false).addOrder(
+                cart.items, 
+                cart.totalAmount,
+                address: addressProvider.selectedAddress!.toJson(),
+                phone: _phoneController.text,
+                paymentMethod: _paymentMethod,
+              );
               _showSuccessDialog(context, cart, l10n);
             }
           } else if (context.mounted) {

@@ -20,11 +20,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   Future<void> _submit() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (_formKey.currentState!.validate()) {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Գաղտնաբառերը չեն համընկնում:')), // Passwords don't match
+        );
+        return;
+      }
+
       final navigator = Navigator.of(context);
       final messenger = ScaffoldMessenger.of(context);
       final l10n = Provider.of<LocalizationProvider>(context, listen: false);
@@ -51,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text,
         '', // No username
         _emailController.text,
-        'password123', // Default password for now
+        _passwordController.text,
         _phoneController.text,
       );
       
@@ -175,8 +187,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           autofillHints: const [AutofillHints.email],
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
-if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             if (!value.contains('@')) return l10n.translate('invalidEmail');
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInputField(
+                          controller: _passwordController,
+                          hintText: l10n.translate('password'),
+                          isPassword: true,
+                          isPasswordVisible: _isPasswordVisible,
+                          onTogglePassword: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                          autofillHints: const [AutofillHints.newPassword],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (value.length < 6) return 'Գաղտնաբառը պետք է լինի առնվազն 6 նիշ:';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInputField(
+                          controller: _confirmPasswordController,
+                          hintText: 'Կրկնել գաղտնաբառը', // Repeat password
+                          isPassword: true,
+                          isPasswordVisible: _isConfirmPasswordVisible,
+                          onTogglePassword: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return l10n.translate('requiredField');
+                            if (value != _passwordController.text) return 'Գաղտնաբառերը չեն համընկնում:';
                             return null;
                           },
                         ),

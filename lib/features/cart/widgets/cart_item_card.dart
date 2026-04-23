@@ -17,8 +17,9 @@ class CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final item = cartItem.foodItem;
+    final item = cartItem.product;
     final l10n = context.watch<LocalizationProvider>();
+    final lang = l10n.currentLocale.languageCode;
 
     return Dismissible(
       key: ValueKey(cartItem.uniqueKey),
@@ -45,7 +46,7 @@ class CartItemCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: Image.network(
-                item.imageUrl,
+                item.mainImageUrl,
                 width: 85,
                 height: 85,
                 fit: BoxFit.cover,
@@ -64,7 +65,7 @@ class CartItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.localizedName(l10n.currentLocale.languageCode),
+                    item.name.getLocalized(lang),
                     style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.w900,
@@ -75,7 +76,7 @@ class CartItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '1 ${l10n.currentLocale.languageCode == 'en' ? 'portion' : (l10n.currentLocale.languageCode == 'ru' ? 'порция' : 'բաժին')}',
+                    '1 ${lang == 'en' ? 'portion' : (lang == 'ru' ? 'порция' : 'բաժին')}',
                     style: TextStyle(
                       color: Colors.black.withValues(alpha: 0.5),
                       fontSize: 13,

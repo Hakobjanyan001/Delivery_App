@@ -14,4 +14,24 @@ class OrderModel {
     required this.items,
     this.status = "Ընդունված է",
   });
+
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
+    return OrderModel(
+      id: json['id'] ?? json['_id'] ?? '',
+      date: DateTime.parse(json['createdAt'] ?? json['date'] ?? DateTime.now().toIso8601String()),
+      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
+      items: (json['items'] as List? ?? [])
+          .map((item) => CartItem.fromJson(item))
+          .toList(),
+      status: json['status'] ?? "Ընդունված է",
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'items': items.map((item) => item.toJson()).toList(),
+      'totalAmount': totalAmount,
+      'status': status,
+    };
+  }
 }
