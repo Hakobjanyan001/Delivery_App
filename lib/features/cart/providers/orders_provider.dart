@@ -7,12 +7,13 @@ class OrdersProvider with ChangeNotifier {
 
   List<OrderModel> get orders => [..._orders].reversed.toList();
 
-  void addOrder(List<CartItem> items, double total) {
+  void addOrder(List<CartItem> items, double total, String address) {
     _orders.add(OrderModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       date: DateTime.now(),
       totalAmount: total,
       items: items,
+      address: address,
     ));
     notifyListeners();
   }

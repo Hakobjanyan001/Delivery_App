@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization/localization_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -46,36 +47,51 @@ class _MasoorAppState extends State<MasoorApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MASOOR',
-      navigatorKey: _navigatorKey,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      navigatorObservers: [
-        AppNavigatorObserver(
-          onRouteChanged: (name) {
-            final state = _wrapperKey.currentState;
-            if (state != null) {
-              (state as dynamic).updateRoute(name);
-            }
-          },
-        ),
-      ],
-      builder: (context, child) {
-        return NavigationWrapper(
-          key: _wrapperKey,
+    return Consumer<LocalizationProvider>(
+      builder: (context, l10n, child) {
+        return MaterialApp(
+          title: 'MASOOR',
           navigatorKey: _navigatorKey,
-          child: child,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          locale: l10n.currentLocale,
+          supportedLocales: const [
+            Locale('hy'),
+            Locale('en'),
+            Locale('ru'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          navigatorObservers: [
+            AppNavigatorObserver(
+              onRouteChanged: (name) {
+                final state = _wrapperKey.currentState;
+                if (state != null) {
+                  (state as dynamic).updateRoute(name);
+                }
+              },
+            ),
+          ],
+          builder: (context, child) {
+            return NavigationWrapper(
+              key: _wrapperKey,
+              navigatorKey: _navigatorKey,
+              child: child,
+            );
+          },
+          home: Consumer2<AuthProvider, OnboardingProvider>(
+            builder: (context, authProvider, onboardingProvider, _) {
+              if (!onboardingProvider.hasSeenOnboarding) {
+                return const OnboardingScreen();
+              }
+              return const HomeScreen();
+            },
+          ),
         );
       },
-      home: Consumer2<AuthProvider, OnboardingProvider>(
-        builder: (context, authProvider, onboardingProvider, _) {
-          if (!onboardingProvider.hasSeenOnboarding) {
-            return const OnboardingScreen();
-          }
-          return const HomeScreen();
-        },
-      ),
     );
   }
 }

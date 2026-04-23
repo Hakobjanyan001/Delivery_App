@@ -3,11 +3,13 @@ import 'package:provider/provider.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../localization/localization_provider.dart';
 import '../../features/onboarding/providers/onboarding_provider.dart';
-import '../../features/cart/providers/cart_provider.dart';
 import '../../features/cart/screens/cart_screen.dart';
-import '../../features/cart/screens/checkout_screen.dart';
 import '../providers/search_provider.dart';
+import '../../features/auth/screens/login_screen.dart';
 import '../../features/home/widgets/search_overlay_widget.dart';
+
+import '../../features/cart/providers/cart_provider.dart';
+import '../../features/cart/screens/payment_screen.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -36,9 +38,9 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
   }
 
   void updateRoute(String? routeName) {
-    String name = (routeName == null || routeName == '/' || routeName == '' || routeName == 'HomeScreen') 
-        ? 'HomeScreen' 
-        : routeName;
+    if (routeName == null || routeName.isEmpty) return; // Ignore dialogs/menus without explicit names
+
+    String name = (routeName == '/') ? 'HomeScreen' : routeName;
     if (name.startsWith('/')) name = name.substring(1);
     if (_currentRoute != name) {
       if (mounted) setState(() => _currentRoute = name);
@@ -55,9 +57,13 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
         _currentRoute != 'OnboardingScreen' &&
         _currentRoute != 'FoodDetail' &&
         _currentRoute != 'LoginScreen' &&
-        _currentRoute != 'RegisterScreen';
+        _currentRoute != 'RegisterScreen' &&
+        _currentRoute != 'OrdersScreen' &&
+        _currentRoute != 'OrderDetailsScreen' &&
+        _currentRoute != 'ProfileScreen';
 
     return Scaffold(
+      backgroundColor: Colors.black,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -76,6 +82,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                   duration: const Duration(milliseconds: 300),
                   opacity: search.isSearchActive ? 1.0 : 0.0,
                   child: SearchOverlayWidget(
+                    isSearchActive: search.isSearchActive,
                     onClose: () {
                       search.setSearchActive(false);
                       FocusScope.of(context).unfocus();
@@ -103,6 +110,50 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (_currentRoute == 'CartScreen')
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                            child: Consumer<CartProvider>(
+                              builder: (context, cart, child) {
+                                if (cart.items.isEmpty) return const SizedBox.shrink();
+                                return GestureDetector(
+                                  onTap: () {
+                                    widget.navigatorKey.currentState?.push(
+                                      MaterialPageRoute(
+                                        settings: const RouteSettings(name: 'PaymentScreen'),
+                                        builder: (context) => const PaymentScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(40),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.5),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        )
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         _buildNavBar(isAuthenticated, search.isSearchActive),
                       ],
                     ),
@@ -155,7 +206,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     label: l10n.translate('cart'),
                     isActive: isCart,
                     onTap: () {
-                      if (!isCart) {
+                      if (!isAuthenticated) {
+                        widget.navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: 'LoginScreen'),
+                            builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                          ),
+                        );
+                      } else if (!isCart) {
                         widget.navigatorKey.currentState?.push(
                           MaterialPageRoute(
                             settings: const RouteSettings(name: 'CartScreen'),

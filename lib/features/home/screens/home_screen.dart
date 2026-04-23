@@ -98,6 +98,22 @@ class _HomeScreenState extends State<HomeScreen> {
         availableOptions: ['Կծու', 'Կրկնակի պանիր'],
       ),
     ],
+    'Dessert': [
+      FoodItem(
+        id: 'kesar_1',
+        name: 'Կեսար հավով',
+        nameEn: 'Chicken Caesar',
+        nameRu: 'Цезарь с курицей',
+        order: '1',
+        description: 'Թարմ հավի միս, պարմեզան պանիր, կրեկերներ և հատուկ սոուս:',
+        descriptionEn: 'Fresh chicken, parmesan, crackers, and special sauce.',
+        descriptionRu: 'Свежая курица, пармезан, сухарики и фирменный соус.',
+        price: 2000,
+        category: 'Dessert', // Using dessert category for now or we could add 'Salads'
+        prepTime: 12,
+        imageUrl: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=500&q=80',
+      ),
+    ],
   };
 
   String? _mapToInternal(String key) {
@@ -234,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const ValueKey('home_scroll_v2'),
             slivers: [
               if (search.isSearchActive) const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              if (!search.isSearchActive) SliverToBoxAdapter(child: _buildPromoBanner()),
+              if (!search.isSearchActive) SliverToBoxAdapter(child: _buildPromoBanner(l10n)),
               if (!search.isSearchActive) const SliverToBoxAdapter(child: SizedBox(height: 10)),
               SliverToBoxAdapter(
                 child: Padding(
@@ -299,10 +315,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (context, constraints) {
                           int crossAxisCount;
                           final width = constraints.crossAxisExtent;
-                          if (width > 1100) crossAxisCount = 4;
-                          else if (width > 750) crossAxisCount = 3;
-                          else if (width > 520) crossAxisCount = 2;
-                          else crossAxisCount = 1;
+                          if (width > 1100) {
+                            crossAxisCount = 4;
+                          } else if (width > 750) {
+                            crossAxisCount = 3;
+                          } else if (width > 520) {
+                            crossAxisCount = 2;
+                          } else {
+                            crossAxisCount = 1;
+                          }
 
                           return SliverGrid(
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -313,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final currentFilteredItems = _getFilteredFoodItems(context);
-                                return _buildFoodCard(currentFilteredItems[index], lang);
+                                return _buildFoodCard(currentFilteredItems[index], lang, l10n);
                               },
                               childCount: _getFilteredFoodItems(context).length,
                             ),
@@ -329,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFoodCard(FoodItem food, String lang) {
+  Widget _buildFoodCard(FoodItem food, String lang, LocalizationProvider l10n) {
     return GestureDetector(
       onTap: () => _openFoodDetail(context, food),
       child: Container(
@@ -361,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Consumer<CartProvider>(
                           builder: (context, cart, child) {
                             final quantity = cart.getItemQuantity(food.id);
-                            final portionText = '1 ${lang == 'en' ? 'portion' : (lang == 'ru' ? 'порция' : 'բաժին')}';
+                            final portionText = '1 ${l10n.translate('portion')}';
                             return Text(
                               quantity > 0 ? '$portionText x$quantity' : portionText,
                               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
@@ -381,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: OutlinedButton(
                               onPressed: () => _requireAuthOrExecute(() => cart.addItem(food)),
                               style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white, width: 1), shape: const StadiumBorder()),
-                              child: Text(lang == 'en' ? 'Add' : (lang == 'ru' ? 'Добавить' : 'Ավելացնել'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                              child: Text(l10n.translate('add'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                             ),
                           );
                         }
@@ -411,17 +432,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromoBanner() {
-    return Container(
-      margin: const EdgeInsets.all(16), height: 200, width: double.infinity,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), image: const DecorationImage(image: AssetImage('assets/images/promo_banner.png'), fit: BoxFit.cover)),
-      child: Stack(
-        children: [
-          Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent]))),
-          Positioned(top: 54, left: 32, child: const Text('Կեսար հավով', style: TextStyle(color: Colors.white, fontSize: 14.28, fontWeight: FontWeight.w700))),
-          Positioned(top: 73, left: 32, child: const Text('2,000֏', style: TextStyle(color: Colors.white, fontSize: 39.84, fontWeight: FontWeight.w700, height: 1.4))),
-          Positioned(top: 127, left: 32, child: Text('2,300֏', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 18.57, fontWeight: FontWeight.w700, decoration: TextDecoration.lineThrough))),
-        ],
+  Widget _buildPromoBanner(LocalizationProvider l10n) {
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    return GestureDetector(
+      onTap: () {
+        final kesar = _foodByCategory['Dessert']?.firstWhere((f) => f.id == 'kesar_1');
+        if (kesar != null) {
+          _requireAuthOrExecute(() {
+            cart.addItem(kesar);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.translate('addedToCart')),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          });
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.all(16), height: 200, width: double.infinity,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), image: const DecorationImage(image: AssetImage('assets/images/promo_banner.png'), fit: BoxFit.cover)),
+        child: Stack(
+          children: [
+            Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(28), gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent]))),
+            Positioned(top: 54, left: 32, child: Text(l10n.translate('hy') == 'hy' ? 'Կեսար հավով' : (l10n.translate('en') == 'en' ? 'Chicken Caesar' : 'Цезарь с курицей'), style: const TextStyle(color: Colors.white, fontSize: 14.28, fontWeight: FontWeight.w700))),
+            Positioned(top: 73, left: 32, child: const Text('2,000֏', style: TextStyle(color: Colors.white, fontSize: 39.84, fontWeight: FontWeight.w700, height: 1.4))),
+            Positioned(top: 127, left: 32, child: Text('2,300֏', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 18.57, fontWeight: FontWeight.w700, decoration: TextDecoration.lineThrough))),
+          ],
+        ),
       ),
     );
   }

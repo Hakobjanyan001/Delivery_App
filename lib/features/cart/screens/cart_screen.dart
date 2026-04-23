@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../../core/localization/localization_provider.dart';
 import '../providers/cart_provider.dart';
-import '../widgets/cart_item_card.dart';
-import 'checkout_screen.dart';
-import '../../support/widgets/support_hub_sheet.dart';
+import '../../../core/localization/localization_provider.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/profile_screen.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../auth/screens/login_screen.dart';
 
 
 class CartScreen extends StatelessWidget {
@@ -17,202 +12,191 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only watch localization here for title.
-    final l10n = context.watch<LocalizationProvider>();
-    final auth = context.watch<AuthProvider>();
+    final cart = Provider.of<CartProvider>(context);
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: false,
+        titleSpacing: 20,
+        title: ColorFiltered(
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          child: Image.asset(
+            'assets/images/masoor_branch.png',
+            width: 56,
+            height: 38,
+          ),
+        ),
         backgroundColor: Colors.black,
         elevation: 0,
-        toolbarHeight: 70,
-        centerTitle: false,
-        leadingWidth: 120,
-        leading: Row(
-          children: [
-            const BackButton(),
-            Image.asset(
-              'assets/images/masoor_branch.png',
-              width: 72,
-              height: 48,
-              fit: BoxFit.contain,
-            ),
-          ],
-        ),
-        title: null,
         actions: [
-          Center(
-            child: GestureDetector(
-              onTap: () async {
-                final Uri url = Uri.parse('tel:+37460515515');
-                if (await canLaunchUrl(url)) await launchUrl(url);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF161616),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF161616),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.phone_in_talk_outlined, color: Colors.white, size: 16),
+                SizedBox(width: 6),
+                Text(
+                  '+374 60 515515',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 0),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.phone_outlined, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
-                    Text('+374 60 515515', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
+              ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0, left: 8.0),
-            child: GestureDetector(
-              onTap: () {
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                if (!authProvider.isAuthenticated || authProvider.isAnonymous) {
-                  Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'LoginScreen'), builder: (context) => const LoginScreen(isCheckoutFlow: false)));
-                } else {
-                  Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'ProfileScreen'), builder: (context) => const ProfileScreen()));
-                }
-              },
-              child: Container(
-                width: 45, height: 45,
-                decoration: BoxDecoration(color: const Color(0xFF161616), shape: BoxShape.circle, border: Border.all(color: Colors.white.withValues(alpha: 0.1))),
-                child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              if (!auth.isAuthenticated || auth.isAnonymous) {
+                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'LoginScreen'), builder: (context) => const LoginScreen(isCheckoutFlow: false)));
+              } else {
+                Navigator.push(context, MaterialPageRoute(settings: const RouteSettings(name: 'ProfileScreen'), builder: (context) => const ProfileScreen()));
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFF161616),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_outline, color: Colors.white, size: 24),
+            ),
+          ),
+          const SizedBox(width: 20),
+        ],
+      ),
+      body: cart.items.isEmpty
+          ? _buildEmptyState(context, l10n)
+          : Stack(
+              children: [
+                Positioned.fill(
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: 120),
+                    children: [
+                      ...cart.items.map((item) => _buildCartItem(context, cart, item)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildCartItem(BuildContext context, CartProvider cart, dynamic item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      height: 104,
+      decoration: const BoxDecoration(
+        color: Color(0xFF131313),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 104, height: 104, color: const Color(0xFF1E1E1E),
+            child: Image.network(
+              item.foodItem.imageUrl, fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.fastfood, color: Colors.white24, size: 40),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    item.foodItem.name, 
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (item.selectedSize != null && item.selectedSize.isNotEmpty || item.selectedOptions.isNotEmpty)
+                              Text(
+                                '${item.selectedSize}${item.selectedOptions.isNotEmpty ? " • ${item.selectedOptions.join(', ')}" : ""}',
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11, fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            const SizedBox(height: 2),
+                            Text('${item.totalIndividualPrice.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => cart.decreaseQuantity(item.uniqueKey), 
+                            child: Container(
+                              width: 32, height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 1.5),
+                              ),
+                              child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                            )
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14), 
+                            child: Text('${item.quantity}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))
+                          ),
+                          GestureDetector(
+                            onTap: () => cart.addItem(item.foodItem, 
+                              selectedSize: item.selectedSize, selectedOptions: item.selectedOptions, effectiveUnitPrice: item.effectiveUnitPrice),
+                            child: Container(
+                              width: 32, height: 32,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.add, color: Colors.black, size: 18),
+                            )
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
-      body: (!auth.isAuthenticated || auth.isAnonymous) 
-        ? Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.lock_outline, size: 80, color: Colors.white),
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.translate('registerToPurchase'),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          settings: const RouteSettings(name: 'LoginScreen'),
-                          builder: (context) => const LoginScreen(isCheckoutFlow: false),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    ),
-                    child: Text(l10n.translate('login'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-          )
-        : Selector<CartProvider, bool>(
-            selector: (_, cartProv) => cartProv.items.isEmpty,
-            builder: (context, isEmpty, child) {
-          if (isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.white.withValues(alpha: 0.3)),
-                  const SizedBox(height: 16),
-                  Text(l10n.translate('emptyCart'), style: const TextStyle(fontSize: 18, color: Colors.white)),
-                ],
-              ),
-            );
-          }
-          return Column(
-            children: [
-              Expanded(
-                child: Consumer<CartProvider>(
-                  builder: (context, cart, child) {
-                    return ListView.builder(
-                      itemCount: cart.items.length,
-                      itemBuilder: (context, index) {
-                        return CartItemCard(
-                          cartItem: cart.items[index],
-                          cartProvider: cart,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              CartTotalSection(l10n: l10n),
-            ],
-          );
-        },
-      ),
     );
   }
-}
 
-class CartTotalSection extends StatelessWidget {
-  final LocalizationProvider l10n;
-  const CartTotalSection({super.key, required this.l10n});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100), // Extra bottom padding for nav bar
+  Widget _buildEmptyState(BuildContext context, LocalizationProvider l10n) {
+    return Center(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: const BoxDecoration(color: Color(0xFF10100F), shape: BoxShape.circle),
+            child: Icon(Icons.shopping_bag_outlined, size: 64, color: Colors.white.withValues(alpha: 0.1)),
+          ),
           const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () async {
-              final authProvider = context.read<AuthProvider>();
-              if (authProvider.isAnonymous) {
-                final loggedIn = await Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'LoginScreen'),
-                    builder: (context) => const LoginScreen(isCheckoutFlow: true),
-                  ),
-                );
-                if (loggedIn != true) return;
-              }
-              
-              if (context.mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              minimumSize: const Size(double.infinity, 60),
-              elevation: 0,
-            ),
-            child: Text(
-              l10n.translate('checkout'),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+          Text(l10n.translate('emptyCart'), style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 32),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.translate('backToHome'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
       ),

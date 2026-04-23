@@ -5,7 +5,12 @@ import '../../../core/localization/localization_provider.dart';
 
 class SearchOverlayWidget extends StatefulWidget {
   final VoidCallback onClose;
-  const SearchOverlayWidget({super.key, required this.onClose});
+  final bool isSearchActive;
+  const SearchOverlayWidget({
+    super.key, 
+    required this.onClose,
+    required this.isSearchActive,
+  });
 
   @override
   State<SearchOverlayWidget> createState() => _SearchOverlayWidgetState();
@@ -22,6 +27,23 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
+  }
+
+  @override
+  void didUpdateWidget(SearchOverlayWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSearchActive && !oldWidget.isSearchActive) {
+      // Request focus when search becomes active
+      // Increased delay to ensure animation has progressed (matching AnimatedOpacity/Positioned)
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted && widget.isSearchActive) {
+          FocusScope.of(context).requestFocus(_focusNode);
+        }
+      });
+    } else if (!widget.isSearchActive && oldWidget.isSearchActive) {
+      // Unfocus when search becomes inactive
+      _focusNode.unfocus();
+    }
   }
 
   @override

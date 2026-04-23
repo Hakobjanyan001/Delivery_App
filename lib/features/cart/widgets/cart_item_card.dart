@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../models/cart_item.dart';
 import '../providers/cart_provider.dart';
-import '../../../core/theme/app_theme.dart';
 
 class CartItemCard extends StatelessWidget {
   final CartItem cartItem;
@@ -22,113 +21,125 @@ class CartItemCard extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey(cartItem.uniqueKey),
+      direction: DismissDirection.endToStart,
       background: Container(
         color: Colors.red,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
       onDismissed: (direction) {
         cartProvider.removeItem(cartItem.uniqueKey);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFF0F0F0F),
           borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Image
+            // Image - Square on the left
             ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
               child: Image.network(
                 item.imageUrl,
-                width: 85,
-                height: 85,
+                width: 100,
+                height: 100,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  width: 85, height: 85,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.fastfood, color: Colors.grey),
+                  width: 100, height: 100,
+                  color: const Color(0xFF161616),
+                  child: const Icon(Icons.fastfood_outlined, color: Colors.white24),
                 ),
               ),
             ),
             const SizedBox(width: 16),
 
-            // Details
+            // Middle section: Title and subtitle/controls
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.localizedName(l10n.currentLocale.languageCode),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.localizedName(l10n.currentLocale.languageCode),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1 ${l10n.currentLocale.languageCode == 'en' ? 'portion' : (l10n.currentLocale.languageCode == 'ru' ? 'порция' : 'բաժին')}',
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      fontSize: 13,
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text(
+                          'x${cartItem.quantity} `${cartItem.totalIndividualPrice.toStringAsFixed(0)}֏',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        
+                        // Separated Quantity Controls
+                        Row(
+                          children: [
+                            // Minus Button
+                            GestureDetector(
+                              onTap: () => cartProvider.decreaseQuantity(cartItem.uniqueKey),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                ),
+                                child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              '${cartItem.quantity}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Plus Button
+                            GestureDetector(
+                              onTap: () => cartProvider.addItem(
+                                item,
+                                selectedSize: cartItem.selectedSize,
+                                selectedOptions: cartItem.selectedOptions,
+                              ),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.add, color: Colors.black, size: 18),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${cartItem.totalIndividualPrice.toStringAsFixed(0)} ֏',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Quantity controls (Pill shape)
-            Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove, color: Colors.white, size: 18),
-                    onPressed: () => cartProvider.decreaseQuantity(cartItem.uniqueKey),
-                    constraints: const BoxConstraints(minWidth: 32),
-                    padding: EdgeInsets.zero,
-                  ),
-                  Text(
-                    '${cartItem.quantity}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add, color: Colors.white, size: 18),
-                    onPressed: () => cartProvider.addItem(
-                      item,
-                      selectedSize: cartItem.selectedSize,
-                      selectedOptions: cartItem.selectedOptions,
-                    ),
-                    constraints: const BoxConstraints(minWidth: 32),
-                    padding: EdgeInsets.zero,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

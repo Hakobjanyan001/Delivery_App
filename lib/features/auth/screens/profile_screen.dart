@@ -5,12 +5,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' as io;
 import '../providers/auth_provider.dart';
 import '../../cart/providers/payment_provider.dart';
-import '../../cart/models/payment_card.dart';
+import '../../cart/providers/orders_provider.dart';
+import '../../cart/screens/order_details_screen.dart';
+import '../../cart/widgets/card_entry_form.dart';
 import '../../../core/localization/localization_provider.dart';
+import '../../../core/localization/widgets/language_selector.dart';
 import 'login_screen.dart';
-import '../../support/widgets/support_hub_sheet.dart';
-import '../../cart/screens/orders_screen.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../support/screens/support_chat_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,20 +21,33 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   final _picker = ImagePicker();
-  bool _isAddingCard = false;
-  
-  // Card Form Controllers
-  final _cardNumberController = TextEditingController();
-  final _expiryController = TextEditingController();
-  final _cvvController = TextEditingController();
+  String _activeSection = 'data';
+  late TabController _tabController;
+  late PageController _pageController;
+
+  final List<String> _sections = ['data', 'orders', 'settings'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _pageController = PageController(initialPage: 0);
+    
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          _activeSection = _sections[_tabController.index];
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _cardNumberController.dispose();
-    _expiryController.dispose();
-    _cvvController.dispose();
+    _tabController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -43,26 +58,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showEditField(BuildContext context, AuthProvider auth, String field, String currentValue, Function(String) onSave) {
-    final controller = TextEditingController(text: currentValue);
-    showDialog(
+  void _showPaymentSelection(BuildContext context, PaymentProvider payment, LocalizationProvider l10n) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('$field-ի փոփոխում'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(hintText: 'Մուտքագրեք նոր $field'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Չեղարկել')),
-          TextButton(
-            onPressed: () {
-              onSave(controller.text);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Պահպանել'),
-          ),
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 24),
+            Text(l10n.translate('paymentMethod'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 24),
+            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.cash, Icons.payments_outlined, l10n.translate('cash')),
+            const SizedBox(height: 12),
+            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.idram, Icons.account_balance_wallet_outlined, l10n.translate('idram')),
+            const SizedBox(height: 12),
+            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.card, Icons.credit_card, l10n.translate('card')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentTypeItem(BuildContext context, PaymentProvider payment, LocalizationProvider l10n, PaymentMethodType type, IconData icon, String title) {
+    final isSelected = payment.selectedMethodType == type;
+    return GestureDetector(
+      onTap: () {
+        if (type == PaymentMethodType.card && payment.cards.isEmpty) {
+          Navigator.pop(context);
+          _showCardEntry(context);
+        } else {
+          payment.setMethodType(type);
+          Navigator.pop(context);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? Colors.black : Colors.white, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(title, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+            ),
+            if (isSelected) const Icon(Icons.check_circle, color: Colors.black, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCardEntry(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      builder: (context) => const CardEntryForm(),
+    );
+  }
+
+  void _showSupportOptions(BuildContext context, LocalizationProvider l10n) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+        decoration: const BoxDecoration(
+          color: Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 24),
+            const Text('Աջակցության կենտրոն', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 24),
+            _buildSupportOption(
+              icon: Icons.phone_outlined,
+              title: '+374 60 515515',
+              subtitle: 'Զանգահարել աջակցության կենտրոն',
+              onTap: () async {
+                final Uri url = Uri.parse('tel:+37460515515');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url);
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildSupportOption(
+              icon: Icons.chat_bubble_outline,
+              title: 'Օպերատորի հետ չատ',
+              subtitle: 'Գրեք մեր մասնագետին',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportChatScreen()));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportOption({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                   const SizedBox(height: 4),
+                   Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+          ],
+        ),
       ),
     );
   }
@@ -71,159 +218,286 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final payment = Provider.of<PaymentProvider>(context);
-    Provider.of<LocalizationProvider>(context, listen: false);
+    final ordersProvider = Provider.of<OrdersProvider>(context);
+    final l10n = Provider.of<LocalizationProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Իմ պրոֆիլը', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.support_agent),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const SupportHubSheet(),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: auth.isAnonymous
+            ? _buildGuestView(context, l10n)
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight - 20,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                    // ── Custom AppBar ───────────────────────────────────────
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (_activeSection == 'edit_profile') {
+                              setState(() => _activeSection = 'data');
+                            } else {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF161616),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _activeSection == 'edit_profile' ? l10n.translate('editProfile') : 
+                                (_activeSection == 'data' ? l10n.translate('personalAccount') : 
+                                (_activeSection == 'orders' ? l10n.translate('orders') : l10n.translate('settings'))),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              if (_activeSection == 'data')
+                                GestureDetector(
+                                  onTap: () => _showSupportOptions(context, l10n),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.05),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.headset_mic_outlined, color: Colors.white, size: 22),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    if (_activeSection != 'edit_profile') ...[
+                      // ── Tab Navigation ──────────────────────────────────────
+                      _buildNavigationButtons(l10n),
+                      const SizedBox(height: 32),
+                      
+                      // Swipable Content Area
+                      SizedBox(
+                        height: constraints.maxHeight - 250, // Estimate space
+                        child: PageView(
+                          controller: _pageController,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _activeSection = _sections[index];
+                              _tabController.animateTo(index);
+                            });
+                          },
+                          children: [
+                            // Page 1: Personal Data Dashboard
+                            SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildArtagersProfileCard(auth, l10n),
+                                  const SizedBox(height: 36),
+                                  _buildSectionHeader(
+                                    l10n.translate('activeOrders'),
+                                    trailing: _buildSeeAllButton(l10n),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildOrdersPreview(context, ordersProvider, l10n),
+                                  const SizedBox(height: 36),
+                                  _buildSectionHeader(l10n.translate('settings')),
+                                  const SizedBox(height: 16),
+                                  _buildSettingsPreview(payment, l10n),
+                                ],
+                              ),
+                            ),
+                            // Page 2: Full Orders List
+                            SingleChildScrollView(
+                              child: _buildFullOrdersList(ordersProvider, l10n),
+                            ),
+                            // Page 3: Full Settings
+                            SingleChildScrollView(
+                              child: _buildSettingsContent(payment, l10n),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      _buildEditProfileView(auth, l10n),
+                    ],
+
+                    const Expanded(child: SizedBox(height: 40)),
+
+                    // Logout Button
+                    if (_activeSection != 'edit_profile')
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          auth.logout();
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              settings: const RouteSettings(name: 'LoginScreen'),
+                              builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF161616),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Text(
+                            l10n.translate('logout'),
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  // ── Tab Navigation Builder ─────────────────────────────────────────────
+  Widget _buildNavigationButtons(LocalizationProvider l10n) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildNavTab('data', l10n.translate('personalData')),
+          const SizedBox(width: 12),
+          _buildNavTab('orders', l10n.translate('orders')),
+          const SizedBox(width: 12),
+          _buildNavTab('settings', l10n.translate('settings')),
         ],
       ),
-      body: auth.isAnonymous
-          ? _buildGuestView(context)
-          : SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Extra bottom padding for nav bar
-        child: Column(
+    );
+  }
+
+  Widget _buildNavTab(String id, String label) {
+    final index = _sections.indexOf(id);
+    final isActive = _activeSection == id;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _activeSection = id);
+        _tabController.animateTo(index);
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.black,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.white,
+            fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Profile Card ───────────────────────────────────────────────────────
+  Widget _buildArtagersProfileCard(AuthProvider auth, LocalizationProvider l10n) {
+    return GestureDetector(
+      onTap: () => setState(() => _activeSection = 'edit_profile'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
           children: [
-            // Profile Header
-            Center(
-              child: Stack(
+            CircleAvatar(
+              radius: 42,
+              backgroundColor: const Color(0xFF1A1A1A),
+              backgroundImage: auth.profileImagePath != null
+                  ? (kIsWeb
+                      ? NetworkImage(auth.profileImagePath!) as ImageProvider
+                      : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
+                  : null,
+              child: auth.profileImagePath == null
+                  ? const Icon(Icons.person, color: Colors.white24, size: 40)
+                  : null,
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: AppColors.inputFill,
-                    backgroundImage: auth.profileImagePath != null
-                        ? (kIsWeb 
-                            ? NetworkImage(auth.profileImagePath!) as ImageProvider
-                            : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
-                        : null,
-                    child: auth.profileImagePath == null
-                        ? const Icon(Icons.person, size: 60, color: AppColors.primary)
-                        : null,
+                  Text(
+                    auth.userName ?? 'User Name',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () => _pickImage(auth),
-                      child: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.primary,
-                        child: Icon(Icons.camera_alt, color: Colors.white, size: 18),
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    auth.phone ?? '+374 -- -- -- --',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              auth.userName ?? 'Օգտատեր',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
-
-            // Profile Sections
-            _buildInfoCard(
-              title: 'Անձնական տվյալներ',
-              items: [
-                _buildInfoItem(
-                  icon: Icons.person_outline,
-                  label: 'Անուն',
-                  value: auth.userName ?? 'Մուտքագրեք անուն',
-                  onTap: () => _showEditField(context, auth, 'Անուն', auth.userName ?? '', (v) => auth.updateProfile(name: v)),
-                ),
-                _buildInfoItem(
-                  icon: Icons.email_outlined,
-                  label: 'Էլ. փոստ',
-                  value: auth.email ?? 'Մուտքագրեք էլ. փոստ',
-                  onTap: () => _showEditField(context, auth, 'Էլ. փոստ', auth.email ?? '', (v) => auth.updateProfile(email: v)),
-                ),
-                _buildInfoItem(
-                  icon: Icons.phone_outlined,
-                  label: 'Հեռախոս',
-                  value: auth.phone ?? 'Մուտքագրեք հեռախոս',
-                  onTap: () => _showEditField(context, auth, 'Հեռախոս', auth.phone ?? '', (v) => auth.updateProfile(phone: v)),
-                ),
-              ],
-            ),
-
-            _buildInfoCard(
-              title: 'Պատվերներ',
-              items: [
-                ListTile(
-                  leading: const Icon(Icons.history, color: AppColors.primary),
-                  title: const Text('Պատվերների պատմություն', style: TextStyle(fontSize: 16)),
-                  trailing: const Icon(Icons.chevron_right),
-                  contentPadding: EdgeInsets.zero,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            _buildInfoCard(
-              title: 'Վճարման քարտեր',
-              items: [
-                if (payment.cards.isEmpty && !_isAddingCard)
-                  const ListTile(
-                    leading: Icon(Icons.credit_card_off),
-                    title: Text('Կցված քարտեր չկան'),
-                  ),
-                ...payment.cards.map((card) => _buildCardItem(card, payment)),
-                
-                if (_isAddingCard)
-                  _buildInlineAddCardForm(payment)
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: TextButton.icon(
-                      onPressed: () => setState(() => _isAddingCard = true),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Ավելացնել քարտ'),
-                    ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-
-            // Logout Button
-            ElevatedButton(
-              onPressed: () {
-                auth.logout();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[50],
-                foregroundColor: Colors.red,
-                minimumSize: const Size(double.infinity, 50),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
-              child: const Text('Դուրս գալ', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
             ),
           ],
         ),
@@ -231,196 +505,374 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoCard({required String title, required List<Widget> items}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-          const SizedBox(height: 10),
-          ...items,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoItem({required IconData icon, required String label, required String value, required VoidCallback onTap}) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(label, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-      trailing: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textSecondary),
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  Widget _buildCardItem(PaymentCard card, PaymentProvider provider) {
-    return ListTile(
-      leading: const Icon(Icons.credit_card, color: AppColors.primary),
-      title: Text('**** **** **** ${card.last4}'),
-      subtitle: Text(card.expiryDate),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-        onPressed: () => _confirmDeleteCard(context, provider, card),
-      ),
-      contentPadding: EdgeInsets.zero,
-    );
-  }
-
-  Widget _buildInlineAddCardForm(PaymentProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Divider(),
-          const Text('Ավելացնել նոր քարտ', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _cardNumberController,
-            decoration: InputDecoration(
-              hintText: 'Քարտի համարը',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.credit_card),
+  Widget _buildEditProfileView(AuthProvider auth, LocalizationProvider l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Center(
+          child: Stack(
+            children: [
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: const Color(0xFF1A1A1A),
+                backgroundImage: auth.profileImagePath != null
+                    ? (kIsWeb
+                        ? NetworkImage(auth.profileImagePath!) as ImageProvider
+                        : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
+                    : null,
+                child: auth.profileImagePath == null
+                    ? const Icon(Icons.person, color: Colors.white24, size: 50)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => _pickImage(auth),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, color: Colors.black, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        _buildEditItem(l10n.translate('name'), auth.userName ?? '', (v) => auth.updateProfile(name: v), l10n),
+        const SizedBox(height: 16),
+        _buildEditItem(l10n.translate('phone'), auth.phone ?? '', (v) => auth.updateProfile(phone: v), l10n),
+        const SizedBox(height: 32),
+        GestureDetector(
+          onTap: () => setState(() => _activeSection = 'data'),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
             ),
-            keyboardType: TextInputType.number,
+            child: Center(
+              child: Text(
+                l10n.translate('save'),
+                style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditItem(String label, String value, Function(String) onEdit, LocalizationProvider l10n) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10100F),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _expiryController,
-                  decoration: InputDecoration(
-                    hintText: 'MM/YY',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _cvvController,
-                  decoration: InputDecoration(
-                    hintText: 'CVV',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  obscureText: true,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
+              Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(value.isEmpty ? l10n.translate('enter') : value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => setState(() => _isAddingCard = false),
-                  child: const Text('Չեղարկել'),
-                ),
-              ),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_cardNumberController.text.length >= 4) {
-                      provider.addCard(PaymentCard(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        last4: _cardNumberController.text.substring(_cardNumberController.text.length - 4),
-                        brand: 'Visa', // Dummy brand
-                        expiryDate: _expiryController.text,
-                      ));
-                      _cardNumberController.clear();
-                      _expiryController.clear();
-                      _cvvController.clear();
-                      setState(() => _isAddingCard = false);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Պահպանել'),
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white38, size: 20),
+            onPressed: () {
+              final auth = Provider.of<AuthProvider>(context, listen: false);
+              _showEditField(auth, label, value, onEdit, l10n);
+            },
           ),
         ],
       ),
     );
   }
 
-  void _confirmDeleteCard(BuildContext context, PaymentProvider provider, PaymentCard card) {
+  void _showEditField(AuthProvider auth, String field, String currentValue, Function(String) onSave, LocalizationProvider l10n) {
+    final controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ջնջել քարտը'),
-        content: Text('Ցանկանո՞ւմ եք ջնջել ${card.last4}-ով ավարտվող քարտը։'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('${l10n.translate('editField')} $field', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: '${l10n.translate('enterNew')} $field',
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Չեղարկել')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.translate('cancel'), style: const TextStyle(color: Colors.white54))),
           TextButton(
             onPressed: () {
-              provider.removeCard(card.id);
-              Navigator.of(ctx).pop();
+              onSave(controller.text);
+              Navigator.pop(ctx);
+              setState(() {});
             },
-            child: const Text('Ջնջել', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.translate('save'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGuestView(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30.0),
+  // ── Section Header ─────────────────────────────────────────────────────
+  Widget _buildSectionHeader(String title, {Widget? trailing}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 12),
+          trailing,
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSeeAllButton(LocalizationProvider l10n) {
+    return GestureDetector(
+      onTap: () => setState(() => _activeSection = 'orders'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF121212),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          l10n.translate('seeAll'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Dashboard Previews ─────────────────────────────────────────────────
+  Widget _buildOrdersPreview(BuildContext context, OrdersProvider provider, LocalizationProvider l10n) {
+    if (provider.orders.isEmpty) {
+      return Container(
+        height: 100,
+        alignment: Alignment.center,
+        child: Text(l10n.translate('emptyCart'), style: TextStyle(color: Colors.white.withValues(alpha: 0.3))),
+      );
+    }
+    return Column(
+      children: [
+        _buildPreviewOrderCard(context, provider, provider.orders.first, isTop: true, isBottom: provider.orders.length == 1),
+        if (provider.orders.length > 1)
+          _buildPreviewOrderCard(context, provider, provider.orders[1], isBottom: true),
+      ],
+    );
+  }
+
+  Widget _buildPreviewOrderCard(BuildContext context, OrdersProvider provider, dynamic order, {bool isTop = false, bool isBottom = false}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderDetailsScreen(order: order),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.only(
+            topLeft: isTop ? const Radius.circular(24) : Radius.zero,
+            topRight: isTop ? const Radius.circular(24) : Radius.zero,
+            bottomLeft: isBottom ? const Radius.circular(24) : Radius.zero,
+            bottomRight: isBottom ? const Radius.circular(24) : Radius.zero,
+          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.account_circle_outlined, size: 100, color: AppColors.primary),
-            const SizedBox(height: 20),
-            const Text(
-              'Մուտք գործեք պրոֆիլը տեսնելու համար',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Գրանցվեք կամ մուտք գործեք ձեր հաշիվ՝ պատվերների պատմությունը և պահպանված քարտերը կառավարելու համար։',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 55),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Մուտք գործել / Գրանցվել', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(order.address, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Order #${order.id.substring(order.id.length - 6)}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(order.status, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsPreview(PaymentProvider payment, LocalizationProvider l10n) {
+    String currentPaymentLabel = l10n.translate('cash');
+    if (payment.selectedMethodType == PaymentMethodType.card && payment.selectedCard != null) {
+      currentPaymentLabel = '•••• ${payment.selectedCard!.last4}';
+    } else if (payment.selectedMethodType == PaymentMethodType.idram) {
+      currentPaymentLabel = l10n.translate('idram');
+    }
+
+    return Column(
+      children: [
+        _buildLanguageButton(l10n),
+        const SizedBox(height: 12),
+        _buildListButton(
+          l10n.translate('paymentMethods'), 
+          subtitle: currentPaymentLabel,
+          onTap: () => _showPaymentSelection(context, payment, l10n),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageButton(LocalizationProvider l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F0F),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+           Text(l10n.translate('language'), style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+           const LanguageSelector(color: Colors.white),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListButton(String title, {String? subtitle, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13, fontWeight: FontWeight.w600)),
+                ],
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Tab Content Logic ──────────────────────────────────────────────────
+  Widget _buildFullOrdersList(OrdersProvider ordersProvider, LocalizationProvider l10n) {
+    if (ordersProvider.orders.isEmpty) {
+      return _buildEmptyState(l10n.translate('emptyCart'));
+    }
+    return Column(
+      children: ordersProvider.orders.map((o) => _buildDetailedOrderCard(o)).toList(),
+    );
+  }
+
+  Widget _buildSettingsContent(PaymentProvider payment, LocalizationProvider l10n) {
+    return _buildSettingsPreview(payment, l10n);
+  }
+
+  Widget _buildDetailedOrderCard(dynamic order) {
+    return _buildPreviewOrderCard(
+      context,
+      Provider.of<OrdersProvider>(context, listen: false),
+      order,
+      isTop: true,
+      isBottom: true,
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F0F),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Center(
+        child: Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.3))),
+      ),
+    );
+  }
+
+  Widget _buildGuestView(BuildContext context, LocalizationProvider l10n) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.account_circle_outlined, size: 80, color: Colors.white24),
+          const SizedBox(height: 20),
+          Text(l10n.translate('loginToSeeProfile'), style: const TextStyle(color: Colors.white54)),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  settings: const RouteSettings(name: 'LoginScreen'),
+                  builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+            child: Text(l10n.translate('login')),
+          ),
+        ],
       ),
     );
   }
