@@ -26,6 +26,7 @@ class OrderModel {
           .map((item) => CartItem.fromJson(item))
           .toList(),
       status: json['status'] ?? "Ընդունված է",
+      address: json['address'] ?? "",
     );
   }
 

@@ -48,14 +48,18 @@ class CartItemCard extends StatelessWidget {
                 bottomLeft: Radius.circular(24),
               ),
               child: Image.network(
-                item.imageUrl,
+                item.mainImageUrl,
                 width: 100,
-                height: 100,
+                // height: 100,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  width: 100, height: 100,
+                  width: 100,
+                  // height: 100,
                   color: const Color(0xFF161616),
-                  child: const Icon(Icons.fastfood_outlined, color: Colors.white24),
+                  child: const Icon(
+                    Icons.fastfood_outlined,
+                    color: Colors.white24,
+                  ),
                 ),
               ),
             ),
@@ -66,10 +70,11 @@ class CartItemCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.localizedName(l10n.currentLocale.languageCode),
+                      item.name.toString(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -90,22 +95,30 @@ class CartItemCard extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        
+
                         // Separated Quantity Controls
                         Row(
                           children: [
                             // Minus Button
                             GestureDetector(
-                              onTap: () => cartProvider.decreaseQuantity(cartItem.uniqueKey),
+                              onTap: () => cartProvider.decreaseQuantity(
+                                cartItem.uniqueKey,
+                              ),
                               child: Container(
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
                                   color: Colors.transparent,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
                                 ),
-                                child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                                child: const Icon(
+                                  Icons.remove,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -132,7 +145,11 @@ class CartItemCard extends StatelessWidget {
                                   color: Colors.white,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.add, color: Colors.black, size: 18),
+                                child: const Icon(
+                                  Icons.add,
+                                  color: Colors.black,
+                                  size: 18,
+                                ),
                               ),
                             ),
                           ],
@@ -170,7 +187,10 @@ class TagWidget extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

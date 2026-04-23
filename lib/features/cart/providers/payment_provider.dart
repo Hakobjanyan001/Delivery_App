@@ -45,7 +45,7 @@ class PaymentProvider with ChangeNotifier {
 
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Load Method Type
     final methodTypeName = prefs.getString(_methodTypeKey);
     if (methodTypeName != null) {
@@ -63,7 +63,7 @@ class PaymentProvider with ChangeNotifier {
         _selectedCardId = _cards.first.id;
       }
     }
-    
+
     notifyListeners();
   }
 

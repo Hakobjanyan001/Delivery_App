@@ -11,8 +11,9 @@ class AuthRepository {
 
   AppUser? _currentUser;
   String? _token;
-  
-  final StreamController<AppUser?> _authStateController = StreamController<AppUser?>.broadcast();
+
+  final StreamController<AppUser?> _authStateController =
+      StreamController<AppUser?>.broadcast();
 
   Stream<AppUser?> get authStateChanges => _authStateController.stream;
 
@@ -30,20 +31,31 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        _currentUser = AppUser.fromJson(data['user'] ?? data); 
+        print("34");
+
+        _currentUser = AppUser.fromJson(data['user']);
+        print("35");
         _token = data['token'];
+        print("37");
         _authStateController.add(_currentUser);
+        print(40);
         return _currentUser!;
       } else {
         final error = jsonDecode(response.body);
         throw error['message'] ?? 'Մուտքը ձախողվեց:';
       }
     } catch (e) {
+      print(e);
       throw e.toString();
     }
   }
 
-  Future<AppUser> registerWithEmail(String name, String email, String password, {String? phone}) async {
+  Future<AppUser> registerWithEmail(
+    String name,
+    String email,
+    String password, {
+    String? phone,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.register),
@@ -52,7 +64,7 @@ class AuthRepository {
           'name': name,
           'email': email,
           'password': password,
-          'phone': phone ?? '', 
+          'phone': phone ?? '',
         }),
       );
 
@@ -67,7 +79,7 @@ class AuthRepository {
     }
   }
 
-/*
+  /*
   Future<AppUser> signInWithGoogle() async {
     await Future.delayed(const Duration(seconds: 1));
     _currentUser = AppUser.mock();
@@ -86,9 +98,10 @@ class AuthRepository {
   Future<AppUser> signInAnonymously() async {
     await Future.delayed(const Duration(seconds: 500));
     _currentUser = AppUser(
-      uid: 'anon-${DateTime.now().millisecondsSinceEpoch}',
+      id: 'anon-${DateTime.now().millisecondsSinceEpoch}',
       email: 'anonymous@example.com',
-      isAnonymous: true,
+      name: 'Anonymous',
+      username: "demo_user",
     );
     _authStateController.add(_currentUser);
     return _currentUser!;
@@ -105,7 +118,7 @@ class AuthRepository {
     codeSent('mock-verification-id', 1);
   }
 
-/*
+  /*
 
   Future<ConfirmationResult> signInWithPhoneNumberWeb(String phoneNumber) async {
     try {
@@ -142,7 +155,16 @@ class AuthRepository {
   Future<AppUser> signInWithPhone(String verificationId, String smsCode) async {
     if (smsCode == '123456') {
       await Future.delayed(const Duration(seconds: 1));
-      _currentUser = AppUser.mock();
+      _currentUser = AppUser.fromJson({
+        "username": "testuser",
+        "email": "test@example.com",
+        "role": "user",
+        "_id": "680a6b63191859525a3c4f54",
+        "phoneNumber": "",
+        "isPhoneVerified": false,
+        "createdAt": "2026-04-22T16:35:47.311Z",
+        "updatedAt": "2026-04-22T16:35:47.311Z",
+      });
       _authStateController.add(_currentUser);
       return _currentUser!;
     } else {
@@ -156,7 +178,11 @@ class AuthRepository {
     _authStateController.add(null);
   }
 
-  Future<bool> checkIfIdentifierExists({String? email, String? phone, String? username}) async {
+  Future<bool> checkIfIdentifierExists({
+    String? email,
+    String? phone,
+    String? username,
+  }) async {
     /* 
        if (email != null) {
       final snapshot = await _firestore
@@ -231,12 +257,17 @@ class AuthRepository {
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     */
-  Future<void> saveUserData(AppUser user, {String? name, String? phone, String? username}) async {
+  Future<void> saveUserData(
+    AppUser user, {
+    String? name,
+    String? phone,
+    String? username,
+  }) async {
     // Mock save
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-/*
+  /*
   static String handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':

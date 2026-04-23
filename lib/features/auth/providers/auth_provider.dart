@@ -31,7 +31,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> _loadUserData() async {
     if (_user == null) return;
     try {
-      final data = await _repository.fetchUserData(_user!.uid);
+      final data = await _repository.fetchUserData(_user!.id);
       if (data != null) {
         _firestoreName = data['displayName'];
         _firestorePhone = data['phoneNumber'];
@@ -43,13 +43,13 @@ class AuthProvider with ChangeNotifier {
   }
 
   bool get isAuthenticated => _user != null;
-  bool get isAnonymous => _user?.isAnonymous ?? false;
+  // bool get isAnonymous => _user?.isAnonymous ?? false;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  String? get userName => _firestoreName ?? _user?.displayName ?? _user?.email.split('@')[0];
+  String? get userName =>
+      _firestoreName ?? _user?.name.toString() ?? _user?.email.split('@')[0];
   String? get email => _user?.email;
-  String? get phone => _firestorePhone ?? _user?.phoneNumber;
-  String? get profileImagePath => _user?.photoUrl;
+  String? get phone => _firestorePhone ?? _user?.phone;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -66,7 +66,7 @@ class AuthProvider with ChangeNotifier {
     _setError(null);
     try {
       String email = identifier.trim();
-      
+
       if (!email.contains('@')) {
         final resolvedEmail = await _repository.getEmailFromUsername(email);
         if (resolvedEmail == null) {
@@ -86,11 +86,22 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> register(String name, String username, String email, String password, String phoneNumber) async {
+  Future<bool> register(
+    String name,
+    String username,
+    String email,
+    String password,
+    String phoneNumber,
+  ) async {
     _setLoading(true);
     _setError(null);
     try {
-      await _repository.registerWithEmail(name, email, password, phone: phoneNumber);
+      await _repository.registerWithEmail(
+        name,
+        email,
+        password,
+        phone: phoneNumber,
+      );
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -100,7 +111,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-/*
+  /*
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _setError(null);
@@ -116,7 +127,7 @@ class AuthProvider with ChangeNotifier {
   }
 */
 
-/*
+  /*
   Future<bool> signInWithFacebook() async {
     _setLoading(true);
     _setError(null);
@@ -148,7 +159,10 @@ class AuthProvider with ChangeNotifier {
 
   String? _phoneVerificationId;
 
-  Future<void> verifyPhone(String phoneNumber, Function(String) onCodeSent) async {
+  Future<void> verifyPhone(
+    String phoneNumber,
+    Function(String) onCodeSent,
+  ) async {
     _setLoading(true);
     _setError(null);
     try {
@@ -181,7 +195,10 @@ class AuthProvider with ChangeNotifier {
     _setError(null);
     try {
       if (_phoneVerificationId == null && smsCode != '123456') return false;
-      await _repository.signInWithPhone(_phoneVerificationId ?? 'mock', smsCode);
+      await _repository.signInWithPhone(
+        _phoneVerificationId ?? 'mock',
+        smsCode,
+      );
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -191,7 +208,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({String? name, String? email, String? phone, String? imagePath}) async {
+  Future<void> updateProfile({
+    String? name,
+    String? email,
+    String? phone,
+    String? imagePath,
+  }) async {
     _setLoading(true);
     _setError(null);
     try {
@@ -209,12 +231,16 @@ class AuthProvider with ChangeNotifier {
     await _repository.signOut();
   }
 
-  Future<bool> checkIfIdentifierExists({String? email, String? phone, String? username}) async {
+  Future<bool> checkIfIdentifierExists({
+    String? email,
+    String? phone,
+    String? username,
+  }) async {
     try {
       return await _repository.checkIfIdentifierExists(
-        email: email, 
-        phone: phone, 
-        username: username
+        email: email,
+        phone: phone,
+        username: username,
       );
     } catch (e) {
       debugPrint('Check failed: $e');

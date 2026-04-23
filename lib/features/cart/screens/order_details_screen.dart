@@ -163,7 +163,7 @@ class OrderDetailsScreen extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: Text(
-                    item.foodItem.name,
+                    item.product.name.toString(),
                     style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),

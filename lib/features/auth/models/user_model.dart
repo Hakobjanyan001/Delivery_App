@@ -1,48 +1,63 @@
+import './address_model.dart';
+
 class AppUser {
-  final String uid;
+  final String id; // Mongo _id
+  final String name;
+  final String username;
   final String email;
-  final String? displayName;
-  final String? phoneNumber;
-  final String? photoUrl;
-  final bool isAnonymous;
+  final String? phone;
+  final bool emailVerified;
+  final String? firebaseUid;
+  final String role;
+  final bool is18Plus;
+  final String language;
+  final List<Address> addresses;
 
   AppUser({
-    required this.uid,
+    required this.id,
+    required this.name,
+    required this.username,
     required this.email,
-    this.displayName,
-    this.phoneNumber,
-    this.photoUrl,
-    this.isAnonymous = false,
+    this.phone,
+    this.emailVerified = false,
+    this.firebaseUid,
+    this.role = 'client',
+    this.is18Plus = false,
+    this.language = 'hy',
+    this.addresses = const [],
   });
 
-  factory AppUser.mock() {
+  factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
-      uid: 'mock-uid-123',
-      email: 'test@example.com',
-      displayName: 'Test User',
-      phoneNumber: '+374 99 999999',
+      id: json['_id'] ?? json['id'],
+      name: json['name'] ?? '',
+      username: json['username'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'],
+      emailVerified: json['emailVerified'] ?? false,
+      firebaseUid: json['firebaseUid'],
+      role: json['role'] ?? 'client',
+      is18Plus: json['is18Plus'] ?? false,
+      language: json['language'] ?? 'hy',
+      addresses: (json['addresses'] as List? ?? [])
+          .map((e) => Address.fromJson(e))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'uid': uid,
+      '_id': id,
+      'name': name,
+      'username': username,
       'email': email,
-      'displayName': displayName,
-      'phoneNumber': phoneNumber,
-      'photoUrl': photoUrl,
-      'isAnonymous': isAnonymous,
+      'phone': phone,
+      'emailVerified': emailVerified,
+      'firebaseUid': firebaseUid,
+      'role': role,
+      'is18Plus': is18Plus,
+      'language': language,
+      'addresses': addresses.map((e) => e.toJson()).toList(),
     };
-  }
-
-  factory AppUser.fromJson(Map<String, dynamic> json) {
-    return AppUser(
-      uid: json['uid'] as String,
-      email: json['email'] as String,
-      displayName: json['displayName'] as String?,
-      phoneNumber: json['phoneNumber'] as String?,
-      photoUrl: json['photoUrl'] as String?,
-      isAnonymous: json['isAnonymous'] as bool? ?? false,
-    );
   }
 }

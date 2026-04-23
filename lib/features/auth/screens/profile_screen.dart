@@ -21,7 +21,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final _picker = ImagePicker();
   String _activeSection = 'data';
   late TabController _tabController;
@@ -34,7 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _pageController = PageController(initialPage: 0);
-    
+
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {
@@ -58,7 +59,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
-  void _showPaymentSelection(BuildContext context, PaymentProvider payment, LocalizationProvider l10n) {
+  void _showPaymentSelection(
+    BuildContext context,
+    PaymentProvider payment,
+    LocalizationProvider l10n,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -75,23 +80,65 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
-            Text(l10n.translate('paymentMethod'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(
+              l10n.translate('paymentMethod'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 24),
-            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.cash, Icons.payments_outlined, l10n.translate('cash')),
+            _buildPaymentTypeItem(
+              context,
+              payment,
+              l10n,
+              PaymentMethodType.cash,
+              Icons.payments_outlined,
+              l10n.translate('cash'),
+            ),
             const SizedBox(height: 12),
-            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.idram, Icons.account_balance_wallet_outlined, l10n.translate('idram')),
+            _buildPaymentTypeItem(
+              context,
+              payment,
+              l10n,
+              PaymentMethodType.idram,
+              Icons.account_balance_wallet_outlined,
+              l10n.translate('idram'),
+            ),
             const SizedBox(height: 12),
-            _buildPaymentTypeItem(context, payment, l10n, PaymentMethodType.card, Icons.credit_card, l10n.translate('card')),
+            _buildPaymentTypeItem(
+              context,
+              payment,
+              l10n,
+              PaymentMethodType.card,
+              Icons.credit_card,
+              l10n.translate('card'),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPaymentTypeItem(BuildContext context, PaymentProvider payment, LocalizationProvider l10n, PaymentMethodType type, IconData icon, String title) {
+  Widget _buildPaymentTypeItem(
+    BuildContext context,
+    PaymentProvider payment,
+    LocalizationProvider l10n,
+    PaymentMethodType type,
+    IconData icon,
+    String title,
+  ) {
     final isSelected = payment.selectedMethodType == type;
     return GestureDetector(
       onTap: () {
@@ -111,12 +158,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? Colors.black : Colors.white, size: 24),
+            Icon(
+              icon,
+              color: isSelected ? Colors.black : Colors.white,
+              size: 24,
+            ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(title, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-            if (isSelected) const Icon(Icons.check_circle, color: Colors.black, size: 24),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Colors.black, size: 24),
           ],
         ),
       ),
@@ -147,9 +206,25 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
-            const Text('Աջակցության կենտրոն', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            const Text(
+              'Աջակցության կենտրոն',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 24),
             _buildSupportOption(
               icon: Icons.phone_outlined,
@@ -170,7 +245,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               subtitle: 'Գրեք մեր մասնագետին',
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportChatScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SupportChatScreen(),
+                  ),
+                );
               },
             ),
           ],
@@ -179,7 +259,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSupportOption({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _buildSupportOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -193,7 +278,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: Colors.white, size: 24),
             ),
             const SizedBox(width: 16),
@@ -201,13 +289,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                   const SizedBox(height: 4),
-                   Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 13,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white24,
+              size: 14,
+            ),
           ],
         ),
       ),
@@ -224,12 +329,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: auth.isAnonymous
+        child: !auth.isAuthenticated
             ? _buildGuestView(context, l10n)
             : LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight - 20,
@@ -238,147 +346,193 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                    // ── Custom AppBar ───────────────────────────────────────
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (_activeSection == 'edit_profile') {
-                              setState(() => _activeSection = 'data');
-                            } else {
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF161616),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _activeSection == 'edit_profile' ? l10n.translate('editProfile') : 
-                                (_activeSection == 'data' ? l10n.translate('personalAccount') : 
-                                (_activeSection == 'orders' ? l10n.translate('orders') : l10n.translate('settings'))),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              if (_activeSection == 'data')
+                            // ── Custom AppBar ───────────────────────────────────────
+                            Row(
+                              children: [
                                 GestureDetector(
-                                  onTap: () => _showSupportOptions(context, l10n),
+                                  onTap: () {
+                                    if (_activeSection == 'edit_profile') {
+                                      setState(() => _activeSection = 'data');
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  },
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.05),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF161616),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.headset_mic_outlined, color: Colors.white, size: 22),
+                                    child: const Icon(
+                                      Icons.arrow_back,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    if (_activeSection != 'edit_profile') ...[
-                      // ── Tab Navigation ──────────────────────────────────────
-                      _buildNavigationButtons(l10n),
-                      const SizedBox(height: 32),
-                      
-                      // Swipable Content Area
-                      SizedBox(
-                        height: constraints.maxHeight - 250, // Estimate space
-                        child: PageView(
-                          controller: _pageController,
-                          onPageChanged: (index) {
-                            setState(() {
-                              _activeSection = _sections[index];
-                              _tabController.animateTo(index);
-                            });
-                          },
-                          children: [
-                            // Page 1: Personal Data Dashboard
-                            SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildArtagersProfileCard(auth, l10n),
-                                  const SizedBox(height: 36),
-                                  _buildSectionHeader(
-                                    l10n.translate('activeOrders'),
-                                    trailing: _buildSeeAllButton(l10n),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _activeSection == 'edit_profile'
+                                            ? l10n.translate('editProfile')
+                                            : (_activeSection == 'data'
+                                                  ? l10n.translate(
+                                                      'personalAccount',
+                                                    )
+                                                  : (_activeSection == 'orders'
+                                                        ? l10n.translate(
+                                                            'orders',
+                                                          )
+                                                        : l10n.translate(
+                                                            'settings',
+                                                          ))),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      if (_activeSection == 'data')
+                                        GestureDetector(
+                                          onTap: () => _showSupportOptions(
+                                            context,
+                                            l10n,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.05,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.headset_mic_outlined,
+                                              color: Colors.white,
+                                              size: 22,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 16),
-                                  _buildOrdersPreview(context, ordersProvider, l10n),
-                                  const SizedBox(height: 36),
-                                  _buildSectionHeader(l10n.translate('settings')),
-                                  const SizedBox(height: 16),
-                                  _buildSettingsPreview(payment, l10n),
-                                ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 32),
+
+                            if (_activeSection != 'edit_profile') ...[
+                              // ── Tab Navigation ──────────────────────────────────────
+                              _buildNavigationButtons(l10n),
+                              const SizedBox(height: 32),
+
+                              // Swipable Content Area
+                              SizedBox(
+                                height:
+                                    constraints.maxHeight -
+                                    250, // Estimate space
+                                child: PageView(
+                                  controller: _pageController,
+                                  onPageChanged: (index) {
+                                    setState(() {
+                                      _activeSection = _sections[index];
+                                      _tabController.animateTo(index);
+                                    });
+                                  },
+                                  children: [
+                                    // Page 1: Personal Data Dashboard
+                                    SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildArtagersProfileCard(auth, l10n),
+                                          const SizedBox(height: 36),
+                                          _buildSectionHeader(
+                                            l10n.translate('activeOrders'),
+                                            trailing: _buildSeeAllButton(l10n),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          _buildOrdersPreview(
+                                            context,
+                                            ordersProvider,
+                                            l10n,
+                                          ),
+                                          const SizedBox(height: 36),
+                                          _buildSectionHeader(
+                                            l10n.translate('settings'),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          _buildSettingsPreview(payment, l10n),
+                                        ],
+                                      ),
+                                    ),
+                                    // Page 2: Full Orders List
+                                    SingleChildScrollView(
+                                      child: _buildFullOrdersList(
+                                        ordersProvider,
+                                        l10n,
+                                      ),
+                                    ),
+                                    // Page 3: Full Settings
+                                    SingleChildScrollView(
+                                      child: _buildSettingsContent(
+                                        payment,
+                                        l10n,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            // Page 2: Full Orders List
-                            SingleChildScrollView(
-                              child: _buildFullOrdersList(ordersProvider, l10n),
-                            ),
-                            // Page 3: Full Settings
-                            SingleChildScrollView(
-                              child: _buildSettingsContent(payment, l10n),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else ...[
-                      _buildEditProfileView(auth, l10n),
-                    ],
+                            ] else ...[
+                              _buildEditProfileView(auth, l10n),
+                            ],
 
-                    const Expanded(child: SizedBox(height: 40)),
+                            const Expanded(child: SizedBox(height: 40)),
 
-                    // Logout Button
-                    if (_activeSection != 'edit_profile')
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {
-                          auth.logout();
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              settings: const RouteSettings(name: 'LoginScreen'),
-                              builder: (context) => const LoginScreen(isCheckoutFlow: false),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF161616),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            l10n.translate('logout'),
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 60),
+                            // Logout Button
+                            if (_activeSection != 'edit_profile')
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    auth.logout();
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        settings: const RouteSettings(
+                                          name: 'LoginScreen',
+                                        ),
+                                        builder: (context) => const LoginScreen(
+                                          isCheckoutFlow: false,
+                                        ),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF161616),
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child: Text(
+                                      l10n.translate('logout'),
+                                      style: const TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 60),
                           ],
                         ),
                       ),
@@ -425,7 +579,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           color: isActive ? Colors.white : Colors.black,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.3),
+            color: isActive
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -442,7 +598,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   // ── Profile Card ───────────────────────────────────────────────────────
-  Widget _buildArtagersProfileCard(AuthProvider auth, LocalizationProvider l10n) {
+  Widget _buildArtagersProfileCard(
+    AuthProvider auth,
+    LocalizationProvider l10n,
+  ) {
     return GestureDetector(
       onTap: () => setState(() => _activeSection = 'edit_profile'),
       child: Container(
@@ -457,14 +616,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             CircleAvatar(
               radius: 42,
               backgroundColor: const Color(0xFF1A1A1A),
-              backgroundImage: auth.profileImagePath != null
-                  ? (kIsWeb
-                      ? NetworkImage(auth.profileImagePath!) as ImageProvider
-                      : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
-                  : null,
-              child: auth.profileImagePath == null
-                  ? const Icon(Icons.person, color: Colors.white24, size: 40)
-                  : null,
+              backgroundImage: null,
+              child: const Icon(Icons.person, color: Colors.white24, size: 40),
             ),
             const SizedBox(width: 18),
             Expanded(
@@ -497,7 +650,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+              child: const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
           ],
         ),
@@ -516,14 +673,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               CircleAvatar(
                 radius: 60,
                 backgroundColor: const Color(0xFF1A1A1A),
-                backgroundImage: auth.profileImagePath != null
-                    ? (kIsWeb
-                        ? NetworkImage(auth.profileImagePath!) as ImageProvider
-                        : FileImage(io.File(auth.profileImagePath!)) as ImageProvider)
-                    : null,
-                child: auth.profileImagePath == null
-                    ? const Icon(Icons.person, color: Colors.white24, size: 50)
-                    : null,
+                backgroundImage: null,
+                child: const Icon(
+                  Icons.person,
+                  color: Colors.white24,
+                  size: 50,
+                ),
               ),
               Positioned(
                 bottom: 0,
@@ -536,7 +691,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, color: Colors.black, size: 20),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.black,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -544,9 +703,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           ),
         ),
         const SizedBox(height: 32),
-        _buildEditItem(l10n.translate('name'), auth.userName ?? '', (v) => auth.updateProfile(name: v), l10n),
+        _buildEditItem(
+          l10n.translate('name'),
+          auth.userName ?? '',
+          (v) => auth.updateProfile(name: v),
+          l10n,
+        ),
         const SizedBox(height: 16),
-        _buildEditItem(l10n.translate('phone'), auth.phone ?? '', (v) => auth.updateProfile(phone: v), l10n),
+        _buildEditItem(
+          l10n.translate('phone'),
+          auth.phone ?? '',
+          (v) => auth.updateProfile(phone: v),
+          l10n,
+        ),
         const SizedBox(height: 32),
         GestureDetector(
           onTap: () => setState(() => _activeSection = 'data'),
@@ -560,7 +729,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             child: Center(
               child: Text(
                 l10n.translate('save'),
-                style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ),
@@ -569,7 +742,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildEditItem(String label, String value, Function(String) onEdit, LocalizationProvider l10n) {
+  Widget _buildEditItem(
+    String label,
+    String value,
+    Function(String) onEdit,
+    LocalizationProvider l10n,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -583,9 +761,22 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 13,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(value.isEmpty ? l10n.translate('enter') : value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                value.isEmpty ? l10n.translate('enter') : value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           IconButton(
@@ -600,14 +791,27 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  void _showEditField(AuthProvider auth, String field, String currentValue, Function(String) onSave, LocalizationProvider l10n) {
+  void _showEditField(
+    AuthProvider auth,
+    String field,
+    String currentValue,
+    Function(String) onSave,
+    LocalizationProvider l10n,
+  ) {
     final controller = TextEditingController(text: currentValue);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('${l10n.translate('editField')} $field', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: Text(
+          '${l10n.translate('editField')} $field',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -615,19 +819,35 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           decoration: InputDecoration(
             hintText: '${l10n.translate('enterNew')} $field',
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+            enabledBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+            ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.translate('cancel'), style: const TextStyle(color: Colors.white54))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              l10n.translate('cancel'),
+              style: const TextStyle(color: Colors.white54),
+            ),
+          ),
           TextButton(
             onPressed: () {
               onSave(controller.text);
               Navigator.pop(ctx);
               setState(() {});
             },
-            child: Text(l10n.translate('save'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(
+              l10n.translate('save'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -650,10 +870,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 12),
-          trailing,
-        ],
+        if (trailing != null) ...[const SizedBox(width: 12), trailing],
       ],
     );
   }
@@ -680,24 +897,48 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   // ── Dashboard Previews ─────────────────────────────────────────────────
-  Widget _buildOrdersPreview(BuildContext context, OrdersProvider provider, LocalizationProvider l10n) {
+  Widget _buildOrdersPreview(
+    BuildContext context,
+    OrdersProvider provider,
+    LocalizationProvider l10n,
+  ) {
     if (provider.orders.isEmpty) {
       return Container(
         height: 100,
         alignment: Alignment.center,
-        child: Text(l10n.translate('emptyCart'), style: TextStyle(color: Colors.white.withValues(alpha: 0.3))),
+        child: Text(
+          l10n.translate('emptyCart'),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        ),
       );
     }
     return Column(
       children: [
-        _buildPreviewOrderCard(context, provider, provider.orders.first, isTop: true, isBottom: provider.orders.length == 1),
+        _buildPreviewOrderCard(
+          context,
+          provider,
+          provider.orders.first,
+          isTop: true,
+          isBottom: provider.orders.length == 1,
+        ),
         if (provider.orders.length > 1)
-          _buildPreviewOrderCard(context, provider, provider.orders[1], isBottom: true),
+          _buildPreviewOrderCard(
+            context,
+            provider,
+            provider.orders[1],
+            isBottom: true,
+          ),
       ],
     );
   }
 
-  Widget _buildPreviewOrderCard(BuildContext context, OrdersProvider provider, dynamic order, {bool isTop = false, bool isBottom = false}) {
+  Widget _buildPreviewOrderCard(
+    BuildContext context,
+    OrdersProvider provider,
+    dynamic order, {
+    bool isTop = false,
+    bool isBottom = false,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -722,13 +963,34 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(order.address, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+            Text(
+              order.address,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Order #${order.id.substring(order.id.length - 6)}', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
-                Text(order.status, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  'Order #${order.id.substring(order.id.length - 6)}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  order.status,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ],
@@ -737,9 +999,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildSettingsPreview(PaymentProvider payment, LocalizationProvider l10n) {
+  Widget _buildSettingsPreview(
+    PaymentProvider payment,
+    LocalizationProvider l10n,
+  ) {
     String currentPaymentLabel = l10n.translate('cash');
-    if (payment.selectedMethodType == PaymentMethodType.card && payment.selectedCard != null) {
+    if (payment.selectedMethodType == PaymentMethodType.card &&
+        payment.selectedCard != null) {
       currentPaymentLabel = '•••• ${payment.selectedCard!.last4}';
     } else if (payment.selectedMethodType == PaymentMethodType.idram) {
       currentPaymentLabel = l10n.translate('idram');
@@ -750,7 +1016,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _buildLanguageButton(l10n),
         const SizedBox(height: 12),
         _buildListButton(
-          l10n.translate('paymentMethods'), 
+          l10n.translate('paymentMethods'),
           subtitle: currentPaymentLabel,
           onTap: () => _showPaymentSelection(context, payment, l10n),
         ),
@@ -769,14 +1035,25 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-           Text(l10n.translate('language'), style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
-           const LanguageSelector(color: Colors.white),
+          Text(
+            l10n.translate('language'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const LanguageSelector(color: Colors.white),
         ],
       ),
     );
   }
 
-  Widget _buildListButton(String title, {String? subtitle, VoidCallback? onTap}) {
+  Widget _buildListButton(
+    String title, {
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -792,10 +1069,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -805,7 +1096,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 12),
+              child: const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 12,
+              ),
             ),
           ],
         ),
@@ -814,16 +1109,24 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   // ── Tab Content Logic ──────────────────────────────────────────────────
-  Widget _buildFullOrdersList(OrdersProvider ordersProvider, LocalizationProvider l10n) {
+  Widget _buildFullOrdersList(
+    OrdersProvider ordersProvider,
+    LocalizationProvider l10n,
+  ) {
     if (ordersProvider.orders.isEmpty) {
       return _buildEmptyState(l10n.translate('emptyCart'));
     }
     return Column(
-      children: ordersProvider.orders.map((o) => _buildDetailedOrderCard(o)).toList(),
+      children: ordersProvider.orders
+          .map((o) => _buildDetailedOrderCard(o))
+          .toList(),
     );
   }
 
-  Widget _buildSettingsContent(PaymentProvider payment, LocalizationProvider l10n) {
+  Widget _buildSettingsContent(
+    PaymentProvider payment,
+    LocalizationProvider l10n,
+  ) {
     return _buildSettingsPreview(payment, l10n);
   }
 
@@ -845,7 +1148,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(24),
       ),
       child: Center(
-        child: Text(message, style: TextStyle(color: Colors.white.withValues(alpha: 0.3))),
+        child: Text(
+          message,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        ),
       ),
     );
   }
@@ -855,9 +1161,16 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.account_circle_outlined, size: 80, color: Colors.white24),
+          const Icon(
+            Icons.account_circle_outlined,
+            size: 80,
+            color: Colors.white24,
+          ),
           const SizedBox(height: 20),
-          Text(l10n.translate('loginToSeeProfile'), style: const TextStyle(color: Colors.white54)),
+          Text(
+            l10n.translate('loginToSeeProfile'),
+            style: const TextStyle(color: Colors.white54),
+          ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
@@ -865,11 +1178,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 context,
                 MaterialPageRoute(
                   settings: const RouteSettings(name: 'LoginScreen'),
-                  builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                  builder: (context) =>
+                      const LoginScreen(isCheckoutFlow: false),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+            ),
             child: Text(l10n.translate('login')),
           ),
         ],
