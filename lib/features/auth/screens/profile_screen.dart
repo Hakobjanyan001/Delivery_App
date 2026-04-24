@@ -6,6 +6,7 @@ import 'dart:io' as io;
 import '../providers/auth_provider.dart';
 import '../../cart/providers/payment_provider.dart';
 import '../../cart/providers/orders_provider.dart';
+import '../../cart/providers/address_provider.dart';
 import '../../cart/screens/order_details_screen.dart';
 import '../../cart/widgets/card_entry_form.dart';
 import '../../../core/localization/localization_provider.dart';
@@ -449,7 +450,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         },
                         children: [
                           // Page 1: Personal Data Dashboard
-                          SingleChildScrollView(
+                          Consumer<AddressProvider>(
+                            builder: (context, addressProvider, _) =>
+                            SingleChildScrollView(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Column(
                               crossAxisAlignment:
@@ -468,6 +471,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   l10n,
                                 ),
                                 const SizedBox(height: 36),
+                                _buildSectionHeader('Իմ հասցեները'),
+                                const SizedBox(height: 16),
+                                _buildAddressesSection(context, addressProvider, auth),
+                                const SizedBox(height: 36),
                                 _buildSectionHeader(
                                   l10n.translate('settings'),
                                 ),
@@ -478,6 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 const SizedBox(height: 60),
                               ],
                             ),
+                          ),
                           ),
                           // Page 2: Full Orders List
                           SingleChildScrollView(
@@ -1106,6 +1114,319 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── Addresses Section ──────────────────────────────────────────────────
+  Widget _buildAddressesSection(
+    BuildContext context,
+    AddressProvider addressProvider,
+    AuthProvider auth,
+  ) {
+    final addresses = addressProvider.addresses;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        // Saved addresses list
+        if (addresses.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F0F0F),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Text(
+              'Հասցեներ չկան',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+            ),
+          )
+        else
+          ...addresses.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final addr = entry.value;
+            final isFirst = idx == 0;
+            final isLast = idx == addresses.length - 1;
+            return Container(
+              margin: EdgeInsets.only(bottom: isLast ? 0 : 2),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F0F0F),
+                borderRadius: BorderRadius.only(
+                  topLeft: isFirst ? const Radius.circular(20) : Radius.zero,
+                  topRight: isFirst ? const Radius.circular(20) : Radius.zero,
+                  bottomLeft: isLast ? const Radius.circular(20) : Radius.zero,
+                  bottomRight: isLast ? const Radius.circular(20) : Radius.zero,
+                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.location_on_outlined, color: Colors.white70, size: 18),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          addr.title.isNotEmpty ? addr.title : 'Հասցե',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (addr.address.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            addr.address,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showAddressEditInline(context, addressProvider, addr),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.edit_outlined, color: Colors.white54, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 12),
+        // Add address button
+        GestureDetector(
+          onTap: () => _showAddNewAddressDialog(context, addressProvider),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add, color: Colors.white70, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Ավելացնել հասցե',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddNewAddressDialog(BuildContext context, AddressProvider addressProvider) {
+    final titleController = TextEditingController();
+    final addressController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Նոր հասցե',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 20),
+              _buildAddressField(titleController, 'Հասցեի անուն (օր.՝ Տուն, Աշխատանք)'),
+              const SizedBox(height: 12),
+              _buildAddressField(addressController, 'Փողոց, տուն'),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  if (addressController.text.trim().isNotEmpty) {
+                    addressProvider.addAddress(
+                      titleController.text.trim().isNotEmpty
+                          ? titleController.text.trim()
+                          : 'Հասցե',
+                      addressController.text.trim(),
+                    );
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Պահպանել',
+                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddressEditInline(BuildContext context, AddressProvider addressProvider, dynamic addr) {
+    final titleController = TextEditingController(text: addr.title);
+    final addressController = TextEditingController(text: addr.address);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Խմբագրել հասցե',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      addressProvider.removeAddress(addr.id);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildAddressField(titleController, 'Հասցեի անուն'),
+              const SizedBox(height: 12),
+              _buildAddressField(addressController, 'Փողոց, տուն'),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  addressProvider.updateAddressDetails(
+                    addr.id,
+                    address: addressController.text.trim(),
+                  );
+                  Navigator.pop(ctx);
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Պահպանել',
+                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddressField(TextEditingController controller, String hint) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
+          border: InputBorder.none,
         ),
       ),
     );

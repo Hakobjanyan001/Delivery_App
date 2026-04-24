@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../providers/cart_provider.dart';
 import '../providers/payment_provider.dart';
 import '../providers/address_provider.dart';
@@ -256,6 +258,120 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             if (isSelected)
               const Icon(Icons.check_circle, color: Colors.black, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSavedAddressesBottomSheet(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.only(bottom: 90),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Իմ հասցեները',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 24),
+            if (addressProvider.addresses.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161616),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                ),
+                child: const Text(
+                  'Պահպանված հասցեներ չկան',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              )
+            else
+              ...addressProvider.addresses.map((addr) {
+                final isSelected = addressProvider.selectedAddressId == addr.id;
+                return GestureDetector(
+                  onTap: () {
+                    addressProvider.selectAddress(addr.id);
+                    if (addr.latitude != null && addr.longitude != null) {
+                      _mapController?.animateTo(addr.latitude!, addr.longitude!);
+                    }
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : const Color(0xFF161616),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: isSelected ? Colors.black : Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                addr.title,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.black : Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              if (addr.address.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  addr.address,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.black.withOpacity(0.6) : Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle, color: Colors.black, size: 24),
+                      ],
+                    ),
+                  ),
+                );
+              }),
           ],
         ),
       ),
@@ -588,7 +704,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       : (place.locality ?? 'Ընտրված վայր');
                             }
                           } catch (_) {
-                            readableAddress = 'Ընտրված վայր';
+                            // Fallback to OSM Nominatim API if native geocoding fails (e.g. on Web)
+                            try {
+                              final url = Uri.parse(
+                                'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&zoom=18&addressdetails=1',
+                              );
+                              final response = await http.get(url, headers: {
+                                'Accept-Language': 'hy',
+                              });
+                              if (response.statusCode == 200) {
+                                final data = json.decode(response.body);
+                                if (data['address'] != null) {
+                                  final addr = data['address'];
+                                  final road = addr['road'] ?? addr['pedestrian'] ?? addr['path'] ?? addr['suburb'];
+                                  final house = addr['house_number'];
+                                  final city = addr['city'] ?? addr['town'] ?? addr['village'];
+                                  
+                                  List<String> parts = [];
+                                  if (road != null) {
+                                    parts.add(house != null ? '$road $house' : road);
+                                  }
+                                  if (city != null && city != road) {
+                                    parts.add(city);
+                                  }
+                                  
+                                  if (parts.isNotEmpty) {
+                                    readableAddress = parts.join(', ');
+                                  } else {
+                                    readableAddress = data['display_name'] ?? 'Ընտրված վայր';
+                                  }
+                                }
+                              } else {
+                                readableAddress = 'Ընտրված վայր';
+                              }
+                            } catch (e) {
+                              readableAddress = 'Ընտրված վայր';
+                            }
                           }
 
                           if (address.selectedAddressId != null) {
@@ -734,6 +885,40 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ],
                         ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _showSavedAddressesBottomSheet(context, address, l10n),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10100F),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Իմ հասցեները',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Segoe UI',
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
+                      ),
                     ],
                   ),
                 ),
