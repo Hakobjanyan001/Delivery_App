@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/localization/localization_provider.dart';
+import '../models/order_model.dart';
+import '../../../core/widgets/universal_map.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart' as osm;
 import 'package:latlong2/latlong.dart' as latlong;
-import '../models/order_model.dart';
-import '../../../core/widgets/universal_map.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final OrderModel order;
@@ -12,6 +14,7 @@ class OrderDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = Provider.of<LocalizationProvider>(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -41,21 +44,21 @@ class OrderDetailsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Status Timeline ───────────────────────────────────────────
-            _buildSectionTitle('Կարգավիճակ'),
+            _buildSectionTitle(l10n.translate('status')),
             const SizedBox(height: 16),
-            _buildStatusTimeline(),
+            _buildStatusTimeline(l10n),
             const SizedBox(height: 40),
 
             // ── Items List ────────────────────────────────────────────────
-            _buildSectionTitle('Ապրանքներ'),
+            _buildSectionTitle(l10n.translate('items')),
             const SizedBox(height: 16),
-            _buildItemsCard(order),
+            _buildItemsCard(order, l10n),
             const SizedBox(height: 40),
 
             // ── Delivery Section ──────────────────────────────────────────
-            _buildSectionTitle('Առաքում'),
+            _buildSectionTitle(l10n.translate('delivery')),
             const SizedBox(height: 16),
-            _buildDeliveryCard(),
+            _buildDeliveryCard(l10n),
             const SizedBox(height: 40),
           ],
         ),
@@ -74,7 +77,21 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusTimeline() {
+  Widget _buildStatusTimeline(LocalizationProvider l10n) {
+    final status = order.status.toLowerCase();
+    
+    // Define steps
+    final steps = [
+      {'key': 'pending', 'label': l10n.translate('pending')},
+      {'key': 'accepted', 'label': l10n.translate('accepted')},
+      {'key': 'preparing', 'label': l10n.translate('preparing')},
+      {'key': 'on_way', 'label': l10n.translate('on_the_way')},
+      {'key': 'delivered', 'label': l10n.translate('delivered')},
+    ];
+
+    int currentStepIndex = steps.indexWhere((s) => s['key'] == status);
+    if (status == 'cancelled') currentStepIndex = -1;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -83,17 +100,25 @@ class OrderDetailsScreen extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
-        children: [
-          _buildStatusRow('Առաքում', '--:--:--', isActive: false, isFirst: true),
-          _buildStatusRow('Պատրաստ', '12:59:12', isActive: true),
-          _buildStatusRow('Հաստատված', '12:34:21', isActive: true),
-          _buildStatusRow('Պատվիրված', '12:32:54', isActive: true, isLast: true),
-        ],
+        children: List.generate(steps.length, (index) {
+          final step = steps[index];
+          final bool isPast = index <= currentStepIndex;
+          final bool isCurrent = index == currentStepIndex;
+          
+          return _buildStatusRow(
+            step['label'] ?? '',
+            '', // We don't have exact times for each step yet
+            isActive: isPast,
+            isFirst: index == 0,
+            isLast: index == steps.length - 1,
+            isHighlighted: isCurrent,
+          );
+        }).reversed.toList(),
       ),
     );
   }
 
-  Widget _buildStatusRow(String label, String time, {required bool isActive, bool isFirst = false, bool isLast = false}) {
+  Widget _buildStatusRow(String label, String time, {required bool isActive, bool isFirst = false, bool isLast = false, bool isHighlighted = false}) {
     return IntrinsicHeight(
       child: Row(
         children: [
@@ -103,8 +128,11 @@ class OrderDetailsScreen extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.white : Colors.white24,
+                  color: isHighlighted ? Colors.green : (isActive ? Colors.white : Colors.white24),
                   shape: BoxShape.circle,
+                  boxShadow: isHighlighted ? [
+                    BoxShadow(color: Colors.green.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 2)
+                  ] : null,
                 ),
               ),
               if (!isLast)
@@ -126,9 +154,9 @@ class OrderDetailsScreen extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white24,
+                      color: isHighlighted ? Colors.green : (isActive ? Colors.white : Colors.white24),
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w700,
                     ),
                   ),
                   Text(
@@ -148,67 +176,89 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItemsCard(OrderModel order) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        children: [
-          ...order.items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    item.product.name.toString(),
-                    style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${item.quantity} բաժին',
-                    style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    '${item.totalIndividualPrice.toStringAsFixed(0)} ֏',
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-          )),
-          const Divider(color: Colors.white10, height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildItemsCard(OrderModel order, LocalizationProvider l10n) {
+    return Consumer<LocalizationProvider>(
+      builder: (context, l10n, child) {
+        final lang = l10n.currentLocale.languageCode;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Column(
             children: [
-              const Text(
-                'Ընդհանուր',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              Text(
-                '${order.totalAmount.toStringAsFixed(0)} ֏',
-                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+              ...order.items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            item.product.name.getLocalized(lang),
+                            style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            '${item.quantity.toInt()} ${l10n.translate('portion')}',
+                            style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            '${item.totalPrice.toStringAsFixed(0)} ֏',
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (item.note != null && item.note!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 0),
+                        child: Text(
+                          '${l10n.translate('note') ?? 'Մեկնաբանություն'}՝ ${item.note}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              )),
+              const Divider(color: Colors.white10, height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.translate('total'),
+                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    '${order.totalAmount.toStringAsFixed(0)} ֏',
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildDeliveryCard() {
-    const LatLng deliveryLocation = LatLng(40.1811, 44.5136);
+  Widget _buildDeliveryCard(LocalizationProvider l10n) {
+    final LatLng deliveryLocation = LatLng(order.latitude ?? 40.8142, order.longitude ?? 44.4842);
     
     return Container(
       decoration: BoxDecoration(
@@ -230,8 +280,8 @@ class OrderDetailsScreen extends StatelessWidget {
                 initialPosition: deliveryLocation,
                 isReadOnly: true,
                 googleMarkers: {
-                  const Marker(
-                    markerId: MarkerId('delivery_location'),
+                  Marker(
+                    markerId: const MarkerId('delivery_location'),
                     position: deliveryLocation,
                   ),
                 },
@@ -246,15 +296,15 @@ class OrderDetailsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Text(
-                    'Վանաձոր, Վարդանանց 15/3',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                    order.address,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ),
                 Text(

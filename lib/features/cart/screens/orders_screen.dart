@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/orders_provider.dart';
 import '../../../core/theme/app_theme.dart';
-
+import '../../../core/localization/localization_provider.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -121,8 +121,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildDetailedOrderCard(dynamic order) {
+    final l10n = Provider.of<LocalizationProvider>(context, listen: false);
+    final lang = l10n.currentLocale.languageCode;
+
     final itemNames = order.items
-        .map<String>((it) => '${it.product.name.hy} ×${it.quantity}')
+        .map<String>((it) => '${it.product.name.getLocalized(lang)} ×${it.quantity.toInt()}')
         .join('\n');
     final shortId = order.id.length > 6
         ? order.id.substring(order.id.length - 6)

@@ -15,6 +15,8 @@ import 'package:latlong2/latlong.dart' as latlong;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../../core/widgets/universal_map.dart';
+import '../../home/providers/home_provider.dart';
+import '../../../core/models/restaurant_model.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -24,7 +26,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  GoogleMapController? _mapController;
+  UniversalMapController? _mapController;
 
   @override
   void initState() {
@@ -60,12 +62,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         position.longitude,
       );
     }
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        LatLng(position.latitude, position.longitude),
-        15.0,
-      ),
-    );
+    _mapController?.animateTo(position.latitude, position.longitude);
   }
 
   Widget _buildAddressDetailTag(String label) {
@@ -150,9 +147,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   if (locations.isNotEmpty) {
                     lat = locations.first.latitude;
                     lng = locations.first.longitude;
-                    _mapController?.animateCamera(
-                      CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15.0),
-                    );
+                    _mapController?.animateTo(lat, lng);
                   }
                 } catch (_) {}
               }
@@ -273,8 +268,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final payment = Provider.of<PaymentProvider>(context);
     final address = Provider.of<AddressProvider>(context);
     final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
     final auth = Provider.of<AuthProvider>(context);
     final orders = Provider.of<OrdersProvider>(context);
+    final homeProvider = Provider.of<HomeProvider>(context);
+
+    // Get restaurant info for delivery settings
+    RestaurantModel? restaurant;
+    if (cart.items.isNotEmpty) {
+      try {
+        final restaurantId = cart.items.first.product.restaurantId;
+        restaurant = homeProvider.restaurants.firstWhere((r) => r.id == restaurantId);
+      } catch (_) {}
+    }
+
+    final double deliveryFee = (restaurant != null && cart.totalAmount < restaurant.delivery.freeDeliveryFrom) 
+        ? restaurant.delivery.basePrice 
+        : 0.0;
+    
+    final double finalTotal = cart.totalAmount + deliveryFee;
 
     final currentPos = address.selectedAddress?.latitude != null
         ? LatLng(
@@ -393,7 +405,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             Expanded(
                               flex: 3,
                               child: Text(
-                                item.product.name.toString(),
+                                item.product.name.getLocalized(lang),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -405,7 +417,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                '${item.quantity} բաժին',
+                                '${item.quantity.toInt()} բաժին',
                                 style: const TextStyle(
                                   color: Colors.white54,
                                   fontSize: 14,
@@ -416,7 +428,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                '${item.totalIndividualPrice.toStringAsFixed(0)} ֏',
+                                '${item.totalPrice.toStringAsFixed(0)} ֏',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -434,6 +446,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
+                          'Ապրանքներ',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${cart.totalAmount.toStringAsFixed(0)} ֏',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Առաքում',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
+                          style: TextStyle(
+                            color: deliveryFee > 0 ? Colors.white : Colors.greenAccent,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white24, height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
                           'Ընդհանուր',
                           style: TextStyle(
                             color: Colors.white,
@@ -442,7 +498,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         ),
                         Text(
-                          '${cart.totalAmount.toStringAsFixed(0)} ֏',
+                          '${finalTotal.toStringAsFixed(0)} ֏',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -476,8 +532,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   height: 220,
                   child: Stack(
                     children: [
-                      UniversalMap(
-                        initialPosition: currentPos,
+                      RepaintBoundary(
+                        child: UniversalMap(
+                          key: const ValueKey('payment_delivery_map'),
+                          initialPosition: currentPos,
                         onMapCreated: (controller) {
                           _mapController = controller;
                           // Night mode style only for Google Maps
@@ -565,7 +623,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ],
                         myLocationEnabled: true,
                       ),
-                      Positioned(
+                    ),
+                    Positioned(
                         top: 16,
                         right: 16,
                         child: GestureDetector(
@@ -642,10 +701,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            '500֏',
+                          Text(
+                            deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: deliveryFee > 0 ? Colors.white : Colors.greenAccent,
                               fontFamily: 'Segoe UI',
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
@@ -723,21 +782,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               const SizedBox(height: 48),
               GestureDetector(
-                onTap: () {
+                onTap: () async {
                   if (auth.isAuthenticated) {
                     final deliveryAddress = address.selectedAddress;
-                    orders.addOrder(
+                    await orders.addOrder(
                       cart.items,
                       cart.totalAmount,
-                      paymentMethod: payment.selectedMethodType.toString(),
+                      deliveryPrice: deliveryFee,
+                      paymentMethod: payment.selectedMethodType.name,
                       phone: auth.phone ?? '',
-                      address: {'address': deliveryAddress},
+                      address: {'address': deliveryAddress?.address ?? ""},
                     );
-                    cart.clearCart();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.translate('orderSuccess'))),
-                    );
-                    Navigator.popUntil(context, (route) => route.isFirst);
+                    await cart.clearCart();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.translate('orderSuccess'))),
+                      );
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                    }
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

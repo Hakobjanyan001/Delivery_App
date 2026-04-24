@@ -83,11 +83,25 @@ class CartItemCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (cartItem.note != null && cartItem.note!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          cartItem.note!,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Text(
-                          'x${cartItem.quantity} `${cartItem.totalIndividualPrice.toStringAsFixed(0)}֏',
+                          'x${cartItem.quantity} `${cartItem.totalPrice.toStringAsFixed(0)}֏',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 13,
@@ -135,8 +149,11 @@ class CartItemCard extends StatelessWidget {
                             GestureDetector(
                               onTap: () => cartProvider.addItem(
                                 item,
-                                selectedSize: cartItem.selectedSize,
-                                selectedOptions: cartItem.selectedOptions,
+                                variantId: cartItem.variantId,
+                                variantName: cartItem.variantName,
+                                attributes: cartItem.attributes,
+                                unitPrice: cartItem.unitPrice,
+                                note: cartItem.note,
                               ),
                               child: Container(
                                 width: 36,

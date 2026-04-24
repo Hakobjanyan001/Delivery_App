@@ -9,10 +9,18 @@ class AuthProvider with ChangeNotifier {
   AppUser? _user;
 
   AuthProvider() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    _setLoading(true);
+    await _repository.tryAutoLogin();
     _user = _repository.currentUser;
     if (_user != null) {
       _loadUserData();
     }
+    _setLoading(false);
+
     _repository.authStateChanges.listen((AppUser? user) {
       _user = user;
       if (user != null) {
@@ -208,7 +216,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({
+  Future<bool> updateProfile({
     String? name,
     String? email,
     String? phone,
@@ -217,11 +225,16 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      // Mock update
-      await Future.delayed(const Duration(seconds: 1));
+      _user = await _repository.updateProfile(
+        name: name,
+        email: email,
+        phone: phone,
+      );
       notifyListeners();
+      return true;
     } catch (e) {
       _setError(e.toString());
+      return false;
     } finally {
       _setLoading(false);
     }

@@ -7,6 +7,8 @@ class OrderModel {
   final List<CartItem> items;
   final String status;
   final String address;
+  final double? latitude;
+  final double? longitude;
 
   OrderModel({
     required this.id,
@@ -14,10 +16,13 @@ class OrderModel {
     required this.totalAmount,
     required this.items,
     required this.address,
-    this.status = "Ընդունված է",
+    this.status = "pending",
+    this.latitude,
+    this.longitude,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
+    final addressData = json['address'];
     return OrderModel(
       id: json['id'] ?? json['_id'] ?? '',
       date: DateTime.parse(json['createdAt'] ?? json['date'] ?? DateTime.now().toIso8601String()),
@@ -25,8 +30,12 @@ class OrderModel {
       items: (json['items'] as List? ?? [])
           .map((item) => CartItem.fromJson(item))
           .toList(),
-      status: json['status'] ?? "Ընդունված է",
-      address: json['address'] ?? "",
+      status: json['status'] ?? "pending",
+      address: addressData is Map 
+          ? (addressData['address'] ?? "") 
+          : (addressData ?? ""),
+      latitude: addressData is Map ? (addressData['lat']?.toDouble()) : null,
+      longitude: addressData is Map ? (addressData['lng']?.toDouble()) : null,
     );
   }
 
@@ -35,6 +44,11 @@ class OrderModel {
       'items': items.map((item) => item.toJson()).toList(),
       'totalAmount': totalAmount,
       'status': status,
+      'address': {
+        'address': address,
+        'lat': latitude,
+        'lng': longitude,
+      },
     };
   }
 }

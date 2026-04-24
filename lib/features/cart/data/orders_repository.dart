@@ -13,6 +13,7 @@ class OrdersRepository {
     required Map<String, dynamic> address,
     required String phone,
     required String paymentMethod,
+    double deliveryPrice = 0.0,
   }) async {
     // We need a way to get the token. 
     // Usually, tokens are stored in AuthRepository or a secure storage.
@@ -33,6 +34,7 @@ class OrdersRepository {
         body: jsonEncode({
           'items': items,
           'totalAmount': totalAmount,
+          'deliveryPrice': deliveryPrice,
           'address': address,
           'phone': phone,
           'paymentMethod': paymentMethod,

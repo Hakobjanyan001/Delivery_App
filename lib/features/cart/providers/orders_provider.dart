@@ -33,6 +33,7 @@ class OrdersProvider with ChangeNotifier {
     required Map<String, dynamic> address,
     required String phone,
     required String paymentMethod,
+    double deliveryPrice = 0.0,
   }) async {
     _isLoading = true;
     _error = null;
@@ -42,6 +43,7 @@ class OrdersProvider with ChangeNotifier {
       final order = await _repository.createOrder(
         items: items.map((i) => i.toJson()).toList(),
         totalAmount: total,
+        deliveryPrice: deliveryPrice,
         address: address,
         phone: phone,
         paymentMethod: paymentMethod,

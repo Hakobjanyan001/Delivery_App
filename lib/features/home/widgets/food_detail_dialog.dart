@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/product_model.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../cart/models/cart_item.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -20,6 +21,7 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
   String? _selectedVariantName;
   final Map<String, String> _selectedAttributes = {};
   int _quantity = 1;
+  final TextEditingController _noteController = TextEditingController();
 
   double get _effectivePrice {
     double price = widget.product.displayPrice;
@@ -42,11 +44,8 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
       );
       final option = attribute.options.firstWhere(
         (o) =>
-            o.name.en == optionName ||
-            o.name.hy == optionName ||
-            o.name.ru == optionName,
+            o == optionName,
       );
-      price += option.price;
     });
 
     return price;
@@ -59,6 +58,12 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
       _selectedVariantName =
           widget.product.variants.first.name.hy; // Default to Armenian
     }
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
   }
 
   @override
@@ -199,142 +204,84 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                         }).toList(),
                       ),
                       const SizedBox(height: 10),
+                    ],
 
-                      // Refined Slice Option (Only for Large)
-                      //   if (_selectedVariantName == 'Մեծ' && product.price != 0)
-                      //     Container(
-                      //       margin: const EdgeInsets.only(top: 5),
-                      //       decoration: BoxDecoration(
-                      //         color: Colors.white,
-                      //         borderRadius: BorderRadius.circular(16),
-                      //       ),
-                      //       child: CheckboxListTile(
-                      //         title: const Text('Վաճառել կտորով', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black)),
-                      //         subtitle: Text('Մեկ կտորի գինը՝ ${product.slicePrice!.toStringAsFixed(0)} ֏', style: const TextStyle(color: Colors.black54)),
-                      //         value: _isPieceMode,
-                      //         onChanged: (val) => setState(() => _isPieceMode = val ?? false),
-                      //         fillColor: WidgetStateProperty.all(Colors.black),
-                      //         checkColor: Colors.white,
-                      //         side: const BorderSide(color: Colors.black, width: 2),
-                      //         checkboxShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      //         controlAffinity: ListTileControlAffinity.leading,
-                      //       ),
-                      //     ),
-                      //   const SizedBox(height: 20),
-                      // ],
-                      if (product.attributes.isNotEmpty) ...[
-                        const Text(
-                          'Հատկանիշներ',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
+                    // Comment Section
+                    const Text(
+                      'Մեկնաբանություն',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _noteController,
+                      maxLines: 3,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Թողնել մեկնաբանություն...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1A1A1A),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
                             color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: _quantity > 1
+                                    ? () => setState(() => _quantity--)
+                                    : null,
+                                icon: const Icon(Icons.remove_circle_outline),
+                                color: Colors.black,
+                                iconSize: 32,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  '$_quantity',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() => _quantity++),
+                                icon: const Icon(Icons.add_circle_outline),
+                                color: Colors.black,
+                                iconSize: 32,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        ...product.attributes.map((attr) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                attr.name.getLocalized(lang),
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                children: attr.options.map((opt) {
-                                  final optName = opt.name.getLocalized(lang);
-                                  final isSelected =
-                                      _selectedAttributes[attr.id] == optName;
-                                  return ChoiceChip(
-                                    label: Text(
-                                      '$optName ${opt.price > 0 ? '(+${opt.price.toStringAsFixed(0)} ֏)' : ''}',
-                                    ),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        if (selected) {
-                                          _selectedAttributes[attr.id] =
-                                              optName;
-                                        } else {
-                                          _selectedAttributes.remove(attr.id);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: Colors.white,
-                                    backgroundColor: Colors.black,
-                                    side: BorderSide(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? Colors.black
-                                          : Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 16),
-                            ],
-                          );
-                        }),
                       ],
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  onPressed: _quantity > 1
-                                      ? () => setState(() => _quantity--)
-                                      : null,
-                                  icon: const Icon(Icons.remove_circle_outline),
-                                  color: Colors.black,
-                                  iconSize: 32,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Text(
-                                    '$_quantity',
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () => setState(() => _quantity++),
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  color: Colors.black,
-                                  iconSize: 32,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -364,14 +311,36 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                       context,
                       listen: false,
                     );
-                    for (int i = 0; i < _quantity; i++) {
-                      cart.addItem(
-                        product,
-                        selectedSize: _selectedVariantName ?? 'Standard',
-                        selectedOptions: _selectedAttributes.values.toList(),
-                        effectiveUnitPrice: _effectivePrice,
-                      );
+                    
+                    String? selectedVariantId;
+                    if (_selectedVariantName != null) {
+                      try {
+                        final variant = product.variants.firstWhere(
+                          (v) => v.name.getLocalized(lang) == _selectedVariantName,
+                        );
+                        selectedVariantId = variant.id;
+                      } catch (_) {}
                     }
+
+                    final attributes = _selectedAttributes.entries.map<CartAttribute>((e) {
+                      // e.key is attrId, we might want the localized name instead?
+                      // Let's stick to what's available.
+                      final attr = product.attributes.firstWhere((a) => a.id == e.key);
+                      return CartAttribute(
+                        name: attr.name.getLocalized(lang),
+                        values: [e.value],
+                      );
+                    }).toList();
+
+                    cart.addItem(
+                      product,
+                      variantId: selectedVariantId,
+                      variantName: _selectedVariantName,
+                      attributes: attributes,
+                      unitPrice: _effectivePrice,
+                      quantity: _quantity,
+                      note: _noteController.text.isNotEmpty ? _noteController.text : null,
+                    );
 
                     Navigator.pop(context);
                     messenger.showSnackBar(

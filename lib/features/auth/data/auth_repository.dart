@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/user_model.dart';
 
@@ -11,6 +12,7 @@ class AuthRepository {
 
   AppUser? _currentUser;
   String? _token;
+  bool _isInitialized = false;
 
   final StreamController<AppUser?> _authStateController =
       StreamController<AppUser?>.broadcast();
@@ -19,6 +21,39 @@ class AuthRepository {
 
   AppUser? get currentUser => _currentUser;
   String? get token => _token;
+
+  Future<void> _saveAuthData(AppUser user, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    await prefs.setString('auth_user', jsonEncode(user.toJson()));
+  }
+
+  Future<void> _clearAuthData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('auth_user');
+  }
+
+  Future<bool> tryAutoLogin() async {
+    if (_isInitialized) return _currentUser != null;
+    
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey('auth_token')) {
+      _isInitialized = true;
+      return false;
+    }
+
+    _token = prefs.getString('auth_token');
+    final userJson = prefs.getString('auth_user');
+    
+    if (userJson != null) {
+      _currentUser = AppUser.fromJson(jsonDecode(userJson));
+      _authStateController.add(_currentUser);
+    }
+    
+    _isInitialized = true;
+    return _currentUser != null;
+  }
 
   Future<AppUser> signInWithEmail(String email, String password) async {
     // --- Real API Login ---
@@ -34,11 +69,11 @@ class AuthRepository {
         print("34");
 
         _currentUser = AppUser.fromJson(data['user']);
-        print("35");
         _token = data['token'];
-        print("37");
+        
+        await _saveAuthData(_currentUser!, _token!);
+        
         _authStateController.add(_currentUser);
-        print(40);
         return _currentUser!;
       } else {
         final error = jsonDecode(response.body);
@@ -173,8 +208,9 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await _clearAuthData();
     _currentUser = null;
+    _token = null;
     _authStateController.add(null);
   }
 
@@ -257,14 +293,38 @@ class AuthRepository {
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     */
-  Future<void> saveUserData(
-    AppUser user, {
+  Future<AppUser> updateProfile({
     String? name,
     String? phone,
-    String? username,
+    String? email,
   }) async {
-    // Mock save
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.updateProfile),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+        body: jsonEncode({
+          if (name != null) 'name': name,
+          if (phone != null) 'phone': phone,
+          if (email != null) 'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _currentUser = AppUser.fromJson(data['user']);
+        await _saveAuthData(_currentUser!, _token!);
+        _authStateController.add(_currentUser);
+        return _currentUser!;
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Թարմացումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
   }
 
   /*

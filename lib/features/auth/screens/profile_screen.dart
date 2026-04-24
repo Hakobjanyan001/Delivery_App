@@ -23,12 +23,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
-  final _picker = ImagePicker();
   String _activeSection = 'data';
   late TabController _tabController;
   late PageController _pageController;
-
   final List<String> _sections = ['data', 'orders', 'settings'];
+
+  String? _localName;
+  String? _localEmail;
+  String? _localPhone;
 
   @override
   void initState() {
@@ -43,6 +45,17 @@ class _ProfileScreenState extends State<ProfileScreen>
         });
       }
     });
+
+    // Fetch orders from backend
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      setState(() {
+        _localName = auth.userName;
+        _localEmail = auth.email;
+        _localPhone = auth.phone;
+      });
+      Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
+    });
   }
 
   @override
@@ -52,12 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
-  Future<void> _pickImage(AuthProvider auth) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null && mounted) {
-      auth.updateProfile(imagePath: image.path);
-    }
-  }
 
   void _showPaymentSelection(
     BuildContext context,
@@ -331,214 +338,184 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: SafeArea(
         child: !auth.isAuthenticated
             ? _buildGuestView(context, l10n)
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight - 20,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Custom AppBar ───────────────────────────────────────
+                        Row(
                           children: [
-                            // ── Custom AppBar ───────────────────────────────────────
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    if (_activeSection == 'edit_profile') {
-                                      setState(() => _activeSection = 'data');
-                                    } else {
-                                      Navigator.pop(context);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF161616),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.arrow_back,
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                  ),
+                            GestureDetector(
+                              onTap: () {
+                                if (_activeSection == 'edit_profile') {
+                                  setState(() => _activeSection = 'data');
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF161616),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        _activeSection == 'edit_profile'
-                                            ? l10n.translate('editProfile')
-                                            : (_activeSection == 'data'
-                                                  ? l10n.translate(
-                                                      'personalAccount',
-                                                    )
-                                                  : (_activeSection == 'orders'
-                                                        ? l10n.translate(
-                                                            'orders',
-                                                          )
-                                                        : l10n.translate(
-                                                            'settings',
-                                                          ))),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                      if (_activeSection == 'data')
-                                        GestureDetector(
-                                          onTap: () => _showSupportOptions(
-                                            context,
-                                            l10n,
-                                          ),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.05,
-                                              ),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.headset_mic_outlined,
-                                              color: Colors.white,
-                                              size: 22,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 22,
                                 ),
-                              ],
+                              ),
                             ),
-                            const SizedBox(height: 32),
-
-                            if (_activeSection != 'edit_profile') ...[
-                              // ── Tab Navigation ──────────────────────────────────────
-                              _buildNavigationButtons(l10n),
-                              const SizedBox(height: 32),
-
-                              // Swipable Content Area
-                              SizedBox(
-                                height:
-                                    constraints.maxHeight -
-                                    250, // Estimate space
-                                child: PageView(
-                                  controller: _pageController,
-                                  onPageChanged: (index) {
-                                    setState(() {
-                                      _activeSection = _sections[index];
-                                      _tabController.animateTo(index);
-                                    });
-                                  },
-                                  children: [
-                                    // Page 1: Personal Data Dashboard
-                                    SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          _buildArtagersProfileCard(auth, l10n),
-                                          const SizedBox(height: 36),
-                                          _buildSectionHeader(
-                                            l10n.translate('activeOrders'),
-                                            trailing: _buildSeeAllButton(l10n),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          _buildOrdersPreview(
-                                            context,
-                                            ordersProvider,
-                                            l10n,
-                                          ),
-                                          const SizedBox(height: 36),
-                                          _buildSectionHeader(
-                                            l10n.translate('settings'),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          _buildSettingsPreview(payment, l10n),
-                                        ],
-                                      ),
-                                    ),
-                                    // Page 2: Full Orders List
-                                    SingleChildScrollView(
-                                      child: _buildFullOrdersList(
-                                        ordersProvider,
-                                        l10n,
-                                      ),
-                                    ),
-                                    // Page 3: Full Settings
-                                    SingleChildScrollView(
-                                      child: _buildSettingsContent(
-                                        payment,
-                                        l10n,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ] else ...[
-                              _buildEditProfileView(auth, l10n),
-                            ],
-
-                            const Expanded(child: SizedBox(height: 40)),
-
-                            // Logout Button
-                            if (_activeSection != 'edit_profile')
-                              Center(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    auth.logout();
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                        settings: const RouteSettings(
-                                          name: 'LoginScreen',
-                                        ),
-                                        builder: (context) => const LoginScreen(
-                                          isCheckoutFlow: false,
-                                        ),
-                                      ),
-                                      (route) => false,
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF161616),
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
                                     child: Text(
-                                      l10n.translate('logout'),
+                                      _activeSection == 'edit_profile'
+                                          ? l10n.translate('editProfile')
+                                          : (_activeSection == 'data'
+                                                ? l10n.translate(
+                                                    'personalAccount',
+                                                  )
+                                                : (_activeSection == 'orders'
+                                                      ? l10n.translate(
+                                                          'orders',
+                                                        )
+                                                      : l10n.translate(
+                                                          'settings',
+                                                        ))),
                                       style: const TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                ),
+                                  if (_activeSection == 'data')
+                                    GestureDetector(
+                                      onTap: () => _showSupportOptions(
+                                        context,
+                                        l10n,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.05,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.headset_mic_outlined,
+                                          color: Colors.white,
+                                          size: 22,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            const SizedBox(height: 60),
+                            ),
                           ],
                         ),
+                        const SizedBox(height: 32),
+
+                        if (_activeSection != 'edit_profile') ...[
+                          // ── Tab Navigation ──────────────────────────────────────
+                          _buildNavigationButtons(l10n),
+                          const SizedBox(height: 32),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  if (_activeSection != 'edit_profile')
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _activeSection = _sections[index];
+                            _tabController.animateTo(index);
+                          });
+                        },
+                        children: [
+                          // Page 1: Personal Data Dashboard
+                          SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                _buildArtagersProfileCard(auth, l10n),
+                                const SizedBox(height: 36),
+                                _buildSectionHeader(
+                                  l10n.translate('activeOrders'),
+                                  trailing: _buildSeeAllButton(l10n),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildOrdersPreview(
+                                  context,
+                                  ordersProvider,
+                                  l10n,
+                                ),
+                                const SizedBox(height: 36),
+                                _buildSectionHeader(
+                                  l10n.translate('settings'),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSettingsPreview(payment, l10n),
+                                const SizedBox(height: 40),
+                                _buildLogoutButton(auth, l10n),
+                                const SizedBox(height: 60),
+                              ],
+                            ),
+                          ),
+                          // Page 2: Full Orders List
+                          SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                _buildFullOrdersList(
+                                  ordersProvider,
+                                  l10n,
+                                ),
+                                const SizedBox(height: 60),
+                              ],
+                            ),
+                          ),
+                          // Page 3: Full Settings
+                          SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                _buildSettingsContent(
+                                  payment,
+                                  l10n,
+                                ),
+                                const SizedBox(height: 60),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildEditProfileView(auth, l10n),
                       ),
                     ),
-                  );
-                },
+                ],
               ),
       ),
     );
@@ -613,12 +590,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 42,
-              backgroundColor: const Color(0xFF1A1A1A),
-              backgroundImage: null,
-              child: const Icon(Icons.person, color: Colors.white24, size: 40),
-            ),
             const SizedBox(width: 18),
             Expanded(
               child: Column(
@@ -666,59 +637,42 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: const Color(0xFF1A1A1A),
-                backgroundImage: null,
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white24,
-                  size: 50,
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => _pickImage(auth),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
         _buildEditItem(
           l10n.translate('name'),
-          auth.userName ?? '',
-          (v) => auth.updateProfile(name: v),
+          _localName ?? '',
+          (v) => setState(() => _localName = v),
+          l10n,
+        ),
+        const SizedBox(height: 16),
+        _buildEditItem(
+          l10n.translate('email'),
+          _localEmail ?? '',
+          (v) => setState(() => _localEmail = v),
           l10n,
         ),
         const SizedBox(height: 16),
         _buildEditItem(
           l10n.translate('phone'),
-          auth.phone ?? '',
-          (v) => auth.updateProfile(phone: v),
+          _localPhone ?? '',
+          (v) => setState(() => _localPhone = v),
           l10n,
         ),
         const SizedBox(height: 32),
         GestureDetector(
-          onTap: () => setState(() => _activeSection = 'data'),
+          onTap: () async {
+            final success = await auth.updateProfile(
+              name: _localName,
+              email: _localEmail,
+              phone: _localPhone,
+            );
+            if (success && mounted) {
+              setState(() => _activeSection = 'data');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Պրոֆիլը թարմացված է')),
+              );
+            }
+          },
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18),
@@ -727,14 +681,23 @@ class _ProfileScreenState extends State<ProfileScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Center(
-              child: Text(
-                l10n.translate('save'),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+              child: auth.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      l10n.translate('save'),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -877,7 +840,15 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildSeeAllButton(LocalizationProvider l10n) {
     return GestureDetector(
-      onTap: () => setState(() => _activeSection = 'orders'),
+      onTap: () {
+        setState(() => _activeSection = 'orders');
+        _tabController.animateTo(1);
+        _pageController.animateToPage(
+          1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -902,12 +873,41 @@ class _ProfileScreenState extends State<ProfileScreen>
     OrdersProvider provider,
     LocalizationProvider l10n,
   ) {
-    if (provider.orders.isEmpty) {
+    if (provider.isLoading) {
+      return Container(
+        height: 100,
+        alignment: Alignment.center,
+        child: const CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    if (provider.error != null) {
       return Container(
         height: 100,
         alignment: Alignment.center,
         child: Text(
-          l10n.translate('emptyCart'),
+          provider.error!,
+          style: const TextStyle(color: Colors.redAccent),
+        ),
+      );
+    }
+
+    final activeOrders = provider.orders.where((o) {
+      final s = o.status.toLowerCase();
+      return s != 'delivered' && s != 'cancelled' && s != 'canceled';
+    }).toList();
+
+    if (activeOrders.isEmpty) {
+      return Container(
+        height: 100,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Text(
+          l10n.translate('noActiveOrders') ?? 'Ակտիվ պատվերներ չկան',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
         ),
       );
@@ -917,15 +917,17 @@ class _ProfileScreenState extends State<ProfileScreen>
         _buildPreviewOrderCard(
           context,
           provider,
-          provider.orders.first,
+          l10n,
+          activeOrders.first,
           isTop: true,
-          isBottom: provider.orders.length == 1,
+          isBottom: activeOrders.length == 1,
         ),
-        if (provider.orders.length > 1)
+        if (activeOrders.length > 1)
           _buildPreviewOrderCard(
             context,
             provider,
-            provider.orders[1],
+            l10n,
+            activeOrders[1],
             isBottom: true,
           ),
       ],
@@ -935,6 +937,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildPreviewOrderCard(
     BuildContext context,
     OrdersProvider provider,
+    LocalizationProvider l10n,
     dynamic order, {
     bool isTop = false,
     bool isBottom = false,
@@ -984,11 +987,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                 ),
                 Text(
-                  order.status,
+                  _getStatusLabel(order.status, l10n),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: _getStatusColor(order.status),
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -1113,12 +1116,23 @@ class _ProfileScreenState extends State<ProfileScreen>
     OrdersProvider ordersProvider,
     LocalizationProvider l10n,
   ) {
+    if (ordersProvider.isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (ordersProvider.error != null) {
+      return _buildEmptyState(ordersProvider.error!);
+    }
+
     if (ordersProvider.orders.isEmpty) {
       return _buildEmptyState(l10n.translate('emptyCart'));
     }
     return Column(
       children: ordersProvider.orders
-          .map((o) => _buildDetailedOrderCard(o))
+          .map((o) => _buildDetailedOrderCard(o, l10n))
           .toList(),
     );
   }
@@ -1130,14 +1144,39 @@ class _ProfileScreenState extends State<ProfileScreen>
     return _buildSettingsPreview(payment, l10n);
   }
 
-  Widget _buildDetailedOrderCard(dynamic order) {
+  Widget _buildDetailedOrderCard(dynamic order, LocalizationProvider l10n) {
     return _buildPreviewOrderCard(
       context,
       Provider.of<OrdersProvider>(context, listen: false),
+      l10n,
       order,
       isTop: true,
       isBottom: true,
     );
+  }
+
+  String _getStatusLabel(String status, LocalizationProvider l10n) {
+    final statusKey = status.toLowerCase() == 'on_way' ? 'on_the_way' : status.toLowerCase();
+    return l10n.translate(statusKey);
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'accepted':
+        return Colors.blue;
+      case 'preparing':
+        return Colors.yellow;
+      case 'on_way':
+        return Colors.purple;
+      case 'delivered':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.white54;
+    }
   }
 
   Widget _buildEmptyState(String message) {
@@ -1190,6 +1229,46 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: Text(l10n.translate('login')),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(AuthProvider auth, LocalizationProvider l10n) {
+    return Center(
+      child: GestureDetector(
+        onTap: () {
+          auth.logout();
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              settings: const RouteSettings(
+                name: 'LoginScreen',
+              ),
+              builder: (context) => const LoginScreen(
+                isCheckoutFlow: false,
+              ),
+            ),
+            (route) => false,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161616),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Text(
+            l10n.translate('logout'),
+            style: const TextStyle(
+              color: Colors.redAccent,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
       ),
     );
   }

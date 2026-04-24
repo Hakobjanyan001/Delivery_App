@@ -1,3 +1,5 @@
+import 'dart:js_interop';
+
 import 'common_models.dart';
 
 class ProductModel {
@@ -91,7 +93,7 @@ class ProductModel {
 class ProductAttribute {
   final String id;
   final LocalizedString name;
-  final List<AttributeOption> options;
+  final List<String> options;
 
   ProductAttribute({
     required this.id,
@@ -103,9 +105,7 @@ class ProductAttribute {
     return ProductAttribute(
       id: json['_id'] ?? '',
       name: LocalizedString.fromJson(json['name'] ?? {}),
-      options: (json['options'] as List? ?? [])
-          .map((e) => AttributeOption.fromJson(e))
-          .toList(),
+      options: List<String>.from(json['values'] ?? []),
     );
   }
 
@@ -113,7 +113,7 @@ class ProductAttribute {
     return {
       '_id': id,
       'name': name.toJson(),
-      'options': options.map((e) => e.toJson()).toList(),
+      'options': options.map((e) => e.toString()).toList(),
     };
   }
 }
@@ -143,16 +143,19 @@ class AttributeOption {
 }
 
 class ProductVariant {
+  final String id;
   final LocalizedString name;
   final double price;
 
   ProductVariant({
+    required this.id,
     required this.name,
     required this.price,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
     return ProductVariant(
+      id: json['_id']?.toString() ?? '',
       name: LocalizedString.fromJson(json['name'] ?? {}),
       price: (json['price'] ?? 0).toDouble(),
     );

@@ -22,7 +22,7 @@ class LocationPickerDialog extends StatefulWidget {
 
 class _LocationPickerDialogState extends State<LocationPickerDialog> {
   late LatLng _selectedPosition;
-  GoogleMapController? _mapController;
+  UniversalMapController? _mapController;
 
   @override
   void initState() {
@@ -105,7 +105,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
 }
 
 class PositionReference extends StatelessWidget {
-  final GoogleMapController? mapController;
+  final UniversalMapController? mapController;
   final LocalizationProvider l10n;
 
   const PositionReference({super.key, required this.mapController, required this.l10n});
@@ -119,11 +119,7 @@ class PositionReference extends StatelessWidget {
         mini: true,
         onPressed: () async {
           Position position = await Geolocator.getCurrentPosition();
-          mapController?.animateCamera(
-            CameraUpdate.newLatLng(
-              LatLng(position.latitude, position.longitude),
-            ),
-          );
+          mapController?.animateTo(position.latitude, position.longitude);
         },
         child: const Icon(Icons.my_location),
       ),
