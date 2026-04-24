@@ -62,6 +62,27 @@ class ProductModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'restaurantId': restaurantId,
+      'categoryId': categoryId,
+      'subcategoryId': subcategoryId,
+      'name': name.toJson(),
+      'description': description.toJson(),
+      'images': images,
+      'price': price,
+      'discountPrice': discountPrice,
+      'isDiscountManual': isDiscountManual,
+      'isAvailable': isAvailable,
+      'type': type,
+      'cookingTime': cookingTime,
+      'is18Plus': is18Plus,
+      'attributes': attributes.map((e) => e.toJson()).toList(),
+      'variants': variants.map((e) => e.toJson()).toList(),
+    };
+  }
+
   String get mainImageUrl => images.isNotEmpty ? images.first : '';
 
   double get displayPrice => (discountPrice != null && discountPrice! > 0) ? discountPrice! : price;
@@ -87,6 +108,14 @@ class ProductAttribute {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name.toJson(),
+      'options': options.map((e) => e.toJson()).toList(),
+    };
+  }
 }
 
 class AttributeOption {
@@ -104,6 +133,13 @@ class AttributeOption {
       price: (json['price'] ?? 0).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name.toJson(),
+      'price': price,
+    };
+  }
 }
 
 class ProductVariant {
@@ -120,5 +156,12 @@ class ProductVariant {
       name: LocalizedString.fromJson(json['name'] ?? {}),
       price: (json['price'] ?? 0).toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name.toJson(),
+      'price': price,
+    };
   }
 }

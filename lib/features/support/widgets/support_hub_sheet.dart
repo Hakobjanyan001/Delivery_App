@@ -30,7 +30,11 @@ class SupportHubSheet extends StatelessWidget {
             children: [
               const Text(
                 'Աջակցության կենտրոն',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.white),
@@ -58,7 +62,9 @@ class SupportHubSheet extends StatelessWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SupportChatScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const SupportChatScreen(),
+                ),
               );
             },
           ),
@@ -97,8 +103,18 @@ class SupportHubSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                  ),
                 ],
               ),
             ),

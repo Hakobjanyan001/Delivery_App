@@ -360,18 +360,6 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                     final cartItemName = product.name.getLocalized(lang);
                     final addedMsg = l10n.translate('addedToCart');
 
-                    if (!authProvider.isAuthenticated) {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          settings: const RouteSettings(name: 'LoginScreen'),
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
-                      return;
-                    }
-
                     final cart = Provider.of<CartProvider>(
                       context,
                       listen: false,

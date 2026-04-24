@@ -5,6 +5,7 @@ import '../../../core/localization/localization_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/profile_screen.dart';
 import '../../auth/screens/login_screen.dart';
+import '../models/cart_item.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -33,64 +34,28 @@ class CartScreen extends StatelessWidget {
         elevation: 0,
         actions: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF161616),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
             ),
-            child: const Row(
-              children: [
+            child: Row(
+              children: const [
                 Icon(
                   Icons.phone_in_talk_outlined,
-                  color: Colors.white,
-                  size: 16,
+                  color: Colors.black,
+                  size: 18,
                 ),
-                SizedBox(width: 6),
+                SizedBox(width: 8),
                 Text(
                   '+374 60 515515',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    letterSpacing: 0,
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              if (!auth.isAuthenticated) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'LoginScreen'),
-                    builder: (context) =>
-                        const LoginScreen(isCheckoutFlow: false),
-                  ),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'ProfileScreen'),
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF161616),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_outline,
-                color: Colors.white,
-                size: 24,
-              ),
             ),
           ),
           const SizedBox(width: 20),
@@ -115,7 +80,14 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCartItem(BuildContext context, CartProvider cart, dynamic item) {
+  Widget _buildCartItem(
+    BuildContext context,
+    CartProvider cart,
+    CartItem item,
+  ) {
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
       height: 104,
@@ -127,7 +99,7 @@ class CartScreen extends StatelessWidget {
             height: 104,
             color: const Color(0xFF1E1E1E),
             child: Image.network(
-              item.foodItem.imageUrl,
+              item.product.mainImageUrl,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) =>
                   const Icon(Icons.fastfood, color: Colors.white24, size: 40),
@@ -141,7 +113,7 @@ class CartScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    item.foodItem.name,
+                    item.product.name.getLocalized(lang),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -159,8 +131,7 @@ class CartScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            if (item.selectedSize != null &&
-                                    item.selectedSize.isNotEmpty ||
+                            if (item.selectedSize.isNotEmpty ||
                                 item.selectedOptions.isNotEmpty)
                               Text(
                                 '${item.selectedSize}${item.selectedOptions.isNotEmpty ? " • ${item.selectedOptions.join(', ')}" : ""}',
@@ -218,7 +189,7 @@ class CartScreen extends StatelessWidget {
                           ),
                           GestureDetector(
                             onTap: () => cart.addItem(
-                              item.foodItem,
+                              item.product,
                               selectedSize: item.selectedSize,
                               selectedOptions: item.selectedOptions,
                               effectiveUnitPrice: item.effectiveUnitPrice,

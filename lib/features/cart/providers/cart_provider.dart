@@ -1,9 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/product_model.dart';
 import '../models/cart_item.dart';
 
 class CartProvider with ChangeNotifier {
   final Map<String, CartItem> _items = {};
+  static const String _cartKey = 'user_cart_items';
+
+  CartProvider() {
+    loadCart();
+  }
 
   List<CartItem> get items => _items.values.toList();
 
@@ -52,11 +59,13 @@ class CartProvider with ChangeNotifier {
         effectiveUnitPrice: unitPrice,
       );
     }
+    _saveCart();
     notifyListeners();
   }
 
   void removeItem(String key) {
     _items.remove(key);
+    _saveCart();
     notifyListeners();
   }
 
@@ -68,6 +77,7 @@ class CartProvider with ChangeNotifier {
     } else {
       _items.remove(key);
     }
+    _saveCart();
     notifyListeners();
   }
 
@@ -83,6 +93,35 @@ class CartProvider with ChangeNotifier {
 
   void clearCart() {
     _items.clear();
+    _saveCart();
     notifyListeners();
+  }
+
+  Future<void> _saveCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartData = _items.values.map((item) => item.toJson()).toList();
+      await prefs.setString(_cartKey, json.encode(cartData));
+    } catch (e) {
+      debugPrint('Error saving cart: $e');
+    }
+  }
+
+  Future<void> loadCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartString = prefs.getString(_cartKey);
+      if (cartString != null) {
+        final List<dynamic> cartData = json.decode(cartString);
+        _items.clear();
+        for (var itemData in cartData) {
+          final item = CartItem.fromJson(itemData as Map<String, dynamic>);
+          _items[item.uniqueKey] = item;
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading cart: $e');
+    }
   }
 }

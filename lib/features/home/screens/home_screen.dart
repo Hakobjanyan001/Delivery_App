@@ -13,6 +13,7 @@ import '../../../core/providers/search_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/profile_screen.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,12 +24,44 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? selectedCategoryId;
+  final TextEditingController _searchController = TextEditingController();
+  late PageController _productBannerController;
+  Timer? _bannerTimer;
+  int _currentBannerPage = 0;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _productBannerController.dispose();
+    _bannerTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
+    _productBannerController = PageController(initialPage: 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<HomeProvider>(context, listen: false).fetchHomeData();
+      Provider.of<HomeProvider>(context, listen: false).fetchHomeData().then((_) {
+        _startBannerTimer();
+      });
+    });
+  }
+
+  void _startBannerTimer() {
+    _bannerTimer?.cancel();
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      if (homeProvider.products.isNotEmpty) {
+        _currentBannerPage = (_currentBannerPage + 1) % homeProvider.products.length;
+        if (_productBannerController.hasClients) {
+          _productBannerController.animateToPage(
+            _currentBannerPage,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+      }
     });
   }
 
@@ -48,15 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openFoodDetail(BuildContext context, ProductModel product) {
-    _requireAuthOrExecute(() {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        routeSettings: const RouteSettings(name: 'FoodDetail'),
-        builder: (_) => FoodDetailDialog(product: product),
-      );
-    });
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: 'FoodDetail'),
+      builder: (_) => FoodDetailDialog(product: product),
+    );
   }
 
   @override
@@ -65,6 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final lang = l10n.currentLocale.languageCode;
     final homeProvider = Provider.of<HomeProvider>(context);
     final search = Provider.of<SearchProvider>(context);
+
+    if (_searchController.text != search.searchQuery) {
+      _searchController.text = search.searchQuery;
+    }
 
     if (homeProvider.isLoading && homeProvider.products.isEmpty) {
       return const Scaffold(
@@ -99,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedCategoryId,
     );
 
-    final displayProducts = search.isSearchActive
+    final displayProducts = search.searchQuery.isNotEmpty
         ? homeProvider.products
               .where(
                 (p) => p.name
@@ -112,12 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: search.isSearchActive
-          ? PreferredSize(
-              preferredSize: Size.zero,
-              child: const SizedBox.shrink(),
-            )
-          : AppBar(
+      appBar: AppBar(
               backgroundColor: Colors.black,
               elevation: 0,
               toolbarHeight: 70,
@@ -141,80 +171,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
-                        vertical: 8,
+                        vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF161616),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
                           Icon(
                             Icons.phone_outlined,
-                            color: Colors.white,
+                            color: Colors.black,
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             '+374 60 515515',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 12.0, left: 8.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      final authProvider = Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      );
-                      if (!authProvider.isAuthenticated) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            settings: const RouteSettings(name: 'LoginScreen'),
-                            builder: (context) =>
-                                const LoginScreen(isCheckoutFlow: false),
-                          ),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            settings: const RouteSettings(
-                              name: 'ProfileScreen',
-                            ),
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF161616),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: Colors.white,
-                        size: 24,
                       ),
                     ),
                   ),
@@ -227,34 +207,87 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.black,
         child: CustomScrollView(
           slivers: [
-            if (search.isSearchActive)
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
-            if (!search.isSearchActive && homeProvider.banners.isNotEmpty)
+            if (search.searchQuery.isEmpty && homeProvider.products.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildProductBanner(homeProvider.products, lang),
+              ),
+            // Sticky Search Bar
+            SliverAppBar(
+              pinned: true,
+              floating: false,
+              backgroundColor: Colors.black,
+              surfaceTintColor: Colors.black,
+              automaticallyImplyLeading: false,
+              toolbarHeight: 80,
+              title: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161616),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(left: 16.0),
+                      child: Icon(Icons.search, color: Colors.white54, size: 20),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => search.updateQuery(value),
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: l10n.translate('searchHint'),
+                          hintStyle: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (search.searchQuery.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white54,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          search.clearSearch();
+                          _searchController.clear();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (search.searchQuery.isEmpty && homeProvider.banners.isNotEmpty)
               SliverToBoxAdapter(
                 child: _buildBannersCarousel(homeProvider.banners, lang),
               ),
 
-            if (!search.isSearchActive) ...[
+            if (search.searchQuery.isEmpty) ...[
               const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    l10n.translate('categoriesTitle'),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(
-                child: SizedBox(
+
+              // Sticky Categories Header
+              SliverAppBar(
+                pinned: true,
+                floating: false,
+                backgroundColor: Colors.black,
+                surfaceTintColor: Colors.black,
+                automaticallyImplyLeading: false,
+                toolbarHeight: 60,
+                title: SizedBox(
                   height: 50,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
                     itemCount: homeProvider.categories.length + 1,
                     itemBuilder: (context, index) {
                       final bool isAll = index == 0;
@@ -345,15 +378,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         else if (width > 520)
                           crossAxisCount = 2;
                         else
-                          crossAxisCount = 1;
+                          crossAxisCount = 2;
 
                         return SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 18,
-                                mainAxisExtent: width > 520 ? 440 : 460,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                mainAxisExtent: width > 520 ? 440 : 280,
                               ),
                           delegate: SliverChildBuilderDelegate((
                             context,
@@ -397,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: Radius.circular(28),
               ),
               child: AspectRatio(
-                aspectRatio: 1.2,
+                aspectRatio: 1.6,
                 child: product.mainImageUrl.isNotEmpty
                     ? Image.network(
                         product.mainImageUrl,
@@ -410,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -419,12 +452,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 18,
+                        fontSize: 16,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
+                    if (product.attributes.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Text(
+                          product.attributes
+                              .map((a) => a.name.getLocalized(lang))
+                              .join(', '),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -449,93 +497,33 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
-                            fontSize: 18,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
-                    const Spacer(),
-                    Consumer<CartProvider>(
-                      builder: (context, cart, child) {
-                        final quantity = cart.getItemQuantity(product.id);
-                        if (quantity == 0) {
-                          return SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: OutlinedButton(
-                              onPressed: () => _requireAuthOrExecute(
-                                () => cart.addItem(product),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                                shape: const StadiumBorder(),
-                              ),
-                              child: Text(
-                                l10n.translate('add'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _requireAuthOrExecute(
-                                () => cart.removeOneItemByProductId(product.id),
-                              ),
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.remove,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '$quantity',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 18,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => _requireAuthOrExecute(
-                                () => cart.addItem(product),
-                              ),
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.add,
-                                  color: Colors.black,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 40,
+                      child: OutlinedButton(
+                        onPressed: () => _openFoodDetail(context, product),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 1,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          l10n.translate('add'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -551,6 +539,86 @@ class _HomeScreenState extends State<HomeScreen> {
     color: const Color(0xFF1A1A1A),
     child: const Icon(Icons.fastfood, color: Colors.white24, size: 40),
   );
+
+  Widget _buildProductBanner(List<ProductModel> products, String lang) {
+    return SizedBox(
+      height: 200,
+      width: double.infinity,
+      child: PageView.builder(
+        controller: _productBannerController,
+        onPageChanged: (index) => _currentBannerPage = index,
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final product = products[index];
+          return GestureDetector(
+            onTap: () => _openFoodDetail(context, product),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFF1A1A1A),
+                image: product.mainImageUrl.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(product.mainImageUrl),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withValues(alpha: 0.3),
+                          BlendMode.darken,
+                        ),
+                      )
+                    : null,
+              ),
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          product.name.getLocalized(lang),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${product.displayPrice.toStringAsFixed(0)}֏',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildBannersCarousel(List<BannerModel> banners, String lang) {
     return SizedBox(

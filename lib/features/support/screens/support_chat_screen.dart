@@ -118,7 +118,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: msg.isMe ? AppColors.surface : AppColors.primary,
+          color: msg.isMe ? const Color(0xFF2A2A2A) : AppColors.primary,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(15),
             topRight: const Radius.circular(15),
@@ -128,7 +128,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         ),
         child: Text(
           msg.text,
-          style: TextStyle(color: msg.isMe ? AppColors.textPrimary : Colors.white),
+          style: TextStyle(
+            color: msg.isMe ? Colors.white : Colors.black,
+            fontSize: 15,
+          ),
         ),
       ),
     );

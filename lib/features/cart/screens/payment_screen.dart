@@ -9,10 +9,12 @@ import '../widgets/card_entry_form.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/profile_screen.dart';
 import '../../../core/localization/localization_provider.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as osm;
+import 'package:latlong2/latlong.dart' as latlong;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import '../../../core/widgets/universal_map.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -22,7 +24,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -58,7 +60,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         position.longitude,
       );
     }
-    _mapController.move(LatLng(position.latitude, position.longitude), 15.0);
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(position.latitude, position.longitude),
+        15.0,
+      ),
+    );
   }
 
   Widget _buildAddressDetailTag(String label) {
@@ -143,7 +150,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   if (locations.isNotEmpty) {
                     lat = locations.first.latitude;
                     lng = locations.first.longitude;
-                    _mapController.move(LatLng(lat, lng), 15.0);
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15.0),
+                    );
                   }
                 } catch (_) {}
               }
@@ -467,145 +476,95 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   height: 220,
                   child: Stack(
                     children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: currentPos,
-                          initialZoom: 15.0,
-                          onTap: (tapPos, point) async {
-                            // Show "Searching..." immediately for feedback
-                            if (address.selectedAddressId != null) {
-                              address.updateAddressDetails(
-                                address.selectedAddressId!,
-                                address: 'Որոնվում է...',
-                              );
-                            }
+                      UniversalMap(
+                        initialPosition: currentPos,
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                          // Night mode style only for Google Maps
+                          _mapController?.setMapStyle('''
+[
+  {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
+  {"elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
+  {"elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
+  {"elementType": "labels.text.stroke", "stylers": [{"color": "#212121"}]},
+  {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#000000"}]}
+]
+''');
+                        },
+                        onTap: (LatLng point) async {
+                          if (address.selectedAddressId != null) {
+                            address.updateAddressDetails(
+                              address.selectedAddressId!,
+                              address: 'Որոնվում է...',
+                            );
+                          }
 
-                            String readableAddress = 'Ընտրված հասցե';
-                            try {
-                              List<Placemark> placemarks =
-                                  await placemarkFromCoordinates(
-                                    point.latitude,
-                                    point.longitude,
-                                  );
-                              if (placemarks.isNotEmpty) {
-                                Placemark place = placemarks.first;
-                                List<String> parts = [];
-
-                                // Try to get a meaningful street/name
-                                String? street =
-                                    place.street ??
-                                    place.thoroughfare ??
-                                    place.name;
-                                if (street != null &&
-                                    street.isNotEmpty &&
-                                    street != place.locality) {
-                                  parts.add(street);
-                                }
-
-                                // Add city/locality
-                                String? city =
-                                    place.locality ??
-                                    place.subAdministrativeArea;
-                                if (city != null && city.isNotEmpty) {
-                                  parts.add(city);
-                                }
-
-                                if (parts.isNotEmpty) {
-                                  readableAddress = parts.join(', ');
-                                } else {
-                                  readableAddress =
-                                      place.locality ?? 'Ընտրված վայր';
-                                }
+                          String readableAddress = 'Ընտրված հասցե';
+                          try {
+                            List<Placemark> placemarks =
+                                await placemarkFromCoordinates(
+                                  point.latitude,
+                                  point.longitude,
+                                );
+                            if (placemarks.isNotEmpty) {
+                              Placemark place = placemarks.first;
+                              List<String> parts = [];
+                              String? street =
+                                  place.street ??
+                                  place.thoroughfare ??
+                                  place.name;
+                              if (street != null &&
+                                  street.isNotEmpty &&
+                                  street != place.locality) {
+                                parts.add(street);
                               }
-                            } catch (_) {
-                              // Fallback if geocoding completely fails
-                              try {
-                                List<Placemark> placemarks =
-                                    await placemarkFromCoordinates(
-                                      point.latitude,
-                                      point.longitude,
-                                    );
-                                if (placemarks.isNotEmpty) {
-                                  Placemark place = placemarks.first;
-                                  readableAddress =
-                                      place.street ??
-                                      place.name ??
-                                      "Հասցեն չգտնվեց";
-                                }
-                              } catch (e) {
-                                // Last resort
-                                readableAddress = 'Ընտրված վայր';
+                              String? city =
+                                  place.locality ??
+                                  place.subAdministrativeArea;
+                              if (city != null && city.isNotEmpty) {
+                                parts.add(city);
                               }
+                              readableAddress =
+                                  parts.isNotEmpty
+                                      ? parts.join(', ')
+                                      : (place.locality ?? 'Ընտրված վայր');
                             }
+                          } catch (_) {
+                            readableAddress = 'Ընտրված վայր';
+                          }
 
-                            if (address.selectedAddressId != null) {
-                              address.updateAddressDetails(
-                                address.selectedAddressId!,
-                                address: readableAddress,
-                                lat: point.latitude,
-                                lng: point.longitude,
-                              );
-                            } else {
-                              address.addAddress(
-                                'Առաքման վայր',
-                                readableAddress,
-                                lat: point.latitude,
-                                lng: point.longitude,
-                              );
-                            }
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            subdomains: const ['a', 'b', 'c'],
-                            tileBuilder: (context, tileWidget, tile) {
-                              return ColorFiltered(
-                                colorFilter: const ColorFilter.matrix([
-                                  -1.0,
-                                  0.0,
-                                  0.0,
-                                  0.0,
-                                  255.0,
-                                  0.0,
-                                  -1.0,
-                                  0.0,
-                                  0.0,
-                                  255.0,
-                                  0.0,
-                                  0.0,
-                                  -1.0,
-                                  0.0,
-                                  255.0,
-                                  0.0,
-                                  0.0,
-                                  0.0,
-                                  1.0,
-                                  0.0,
-                                ]),
-                                child: tileWidget,
-                              );
-                            },
+                          if (address.selectedAddressId != null) {
+                            address.updateAddressDetails(
+                              address.selectedAddressId!,
+                              address: readableAddress,
+                              lat: point.latitude,
+                              lng: point.longitude,
+                            );
+                          } else {
+                            address.addAddress(
+                              'Առաքման վայր',
+                              readableAddress,
+                              lat: point.latitude,
+                              lng: point.longitude,
+                            );
+                          }
+                        },
+                        googleMarkers: {
+                          Marker(
+                            markerId: const MarkerId('selected_address'),
+                            position: currentPos,
                           ),
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: currentPos,
-                                width: 40,
-                                height: 40,
-                                child: const Icon(
-                                  Icons.location_on,
-                                  color: Colors.white,
-                                  size: 40,
-                                ),
-                              ),
-                            ],
+                        },
+                        osmMarkers: [
+                          osm.Marker(
+                            point: latlong.LatLng(currentPos.latitude, currentPos.longitude),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(Icons.location_on, color: Colors.white, size: 40),
                           ),
                         ],
+                        myLocationEnabled: true,
                       ),
-                      // Locate Me Button
                       Positioned(
                         top: 16,
                         right: 16,
@@ -647,7 +606,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
               const SizedBox(height: 12),
-              // Styled Address Container
               GestureDetector(
                 onTap: () => _showAddressEditDialog(context, address, l10n),
                 child: Container(
@@ -802,13 +760,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: const Text(
-                      'Վճարել',
+                  child: const Center(
+                    child: Text(
+                      'Հաստատել Պատվերը',
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: 17,
+                        fontFamily: 'Segoe UI',
                         fontWeight: FontWeight.w900,
+                        fontSize: 18,
                       ),
                     ),
                   ),

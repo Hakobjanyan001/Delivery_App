@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as osm;
+import 'package:latlong2/latlong.dart' as latlong;
 import 'package:geolocator/geolocator.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/universal_map.dart';
 
 class LocationPickerDialog extends StatefulWidget {
   final LatLng initialPosition;
@@ -20,7 +22,7 @@ class LocationPickerDialog extends StatefulWidget {
 
 class _LocationPickerDialogState extends State<LocationPickerDialog> {
   late LatLng _selectedPosition;
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -58,25 +60,14 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
             width: double.maxFinite,
             child: Stack(
               children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _selectedPosition,
-                    initialZoom: 15.0,
-                    onPositionChanged: (position, hasGesture) {
-                      if (hasGesture) {
-                        setState(() {
-                          _selectedPosition = position.center;
-                        });
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.masoor.app',
-                    ),
-                  ],
+                UniversalMap(
+                  initialPosition: widget.initialPosition,
+                  onMapCreated: (controller) => _mapController = controller,
+                  onTap: (position) {
+                    setState(() {
+                      _selectedPosition = position;
+                    });
+                  },
                 ),
                 const Center(
                   child: Padding(
@@ -114,7 +105,7 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
 }
 
 class PositionReference extends StatelessWidget {
-  final MapController mapController;
+  final GoogleMapController? mapController;
   final LocalizationProvider l10n;
 
   const PositionReference({super.key, required this.mapController, required this.l10n});
@@ -128,7 +119,11 @@ class PositionReference extends StatelessWidget {
         mini: true,
         onPressed: () async {
           Position position = await Geolocator.getCurrentPosition();
-          mapController.move(LatLng(position.latitude, position.longitude), 15);
+          mapController?.animateCamera(
+            CameraUpdate.newLatLng(
+              LatLng(position.latitude, position.longitude),
+            ),
+          );
         },
         child: const Icon(Icons.my_location),
       ),

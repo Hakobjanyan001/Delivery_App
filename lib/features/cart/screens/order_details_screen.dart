@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as osm;
+import 'package:latlong2/latlong.dart' as latlong;
 import '../models/order_model.dart';
+import '../../../core/widgets/universal_map.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final OrderModel order;
@@ -206,6 +208,8 @@ class OrderDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildDeliveryCard() {
+    const LatLng deliveryLocation = LatLng(40.1811, 44.5136);
+    
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF0F0F0F),
@@ -222,25 +226,21 @@ class OrderDetailsScreen extends StatelessWidget {
             ),
             child: SizedBox(
               height: 200,
-              child: FlutterMap(
-                options: MapOptions(
-                  initialCenter: const LatLng(40.1811, 44.5136),
-                  initialZoom: 14.0,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.masoor.app',
+              child: UniversalMap(
+                initialPosition: deliveryLocation,
+                isReadOnly: true,
+                googleMarkers: {
+                  const Marker(
+                    markerId: MarkerId('delivery_location'),
+                    position: deliveryLocation,
                   ),
-                  const MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(40.1811, 44.5136),
-                        width: 40,
-                        height: 40,
-                        child: Icon(Icons.location_on, color: Colors.black, size: 40),
-                      ),
-                    ],
+                },
+                osmMarkers: [
+                  osm.Marker(
+                    point: latlong.LatLng(deliveryLocation.latitude, deliveryLocation.longitude),
+                    width: 40,
+                    height: 40,
+                    child: const Icon(Icons.location_on, color: Colors.black, size: 40),
                   ),
                 ],
               ),

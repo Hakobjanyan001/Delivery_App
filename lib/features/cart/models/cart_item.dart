@@ -21,24 +21,19 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      product: ProductModel.fromJson(json['product'] ?? {
-        '_id': json['productId'],
-        'name': json['name'],
-        'price': json['price'],
-      }),
+      product: ProductModel.fromJson(json['product']),
       selectedSize: json['selectedSize'] ?? 'Standard',
       selectedOptions: List<String>.from(json['selectedOptions'] ?? []),
-      effectiveUnitPrice: (json['price'] ?? 0).toDouble(),
+      effectiveUnitPrice: (json['effectiveUnitPrice'] ?? (json['price'] ?? 0)).toDouble(),
       quantity: json['quantity'] ?? 1,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'productId': product.id,
-      'name': product.name.toJson(),
+      'product': product.toJson(),
       'quantity': quantity,
-      'price': effectiveUnitPrice,
+      'effectiveUnitPrice': effectiveUnitPrice,
       'selectedSize': selectedSize,
       'selectedOptions': selectedOptions,
     };

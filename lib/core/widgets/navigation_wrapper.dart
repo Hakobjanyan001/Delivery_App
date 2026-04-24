@@ -10,6 +10,7 @@ import '../../features/home/widgets/search_overlay_widget.dart';
 
 import '../../features/cart/providers/cart_provider.dart';
 import '../../features/cart/screens/payment_screen.dart';
+import '../../features/auth/screens/profile_screen.dart';
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -68,112 +69,88 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
       body: Stack(
         children: [
           if (widget.child != null) widget.child!,
-          
-          // Search Overlay Layer
-          Consumer<SearchProvider>(
-            builder: (context, search, child) {
-              return AnimatedPositioned(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOutExpo,
-                top: search.isSearchActive ? 110 : MediaQuery.of(context).size.height,
-                left: 16,
-                right: 16,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 300),
-                  opacity: search.isSearchActive ? 1.0 : 0.0,
-                  child: search.isSearchActive
-                      ? SearchOverlayWidget(
-                          key: ValueKey(search.isActiveCount), // Use secondary counter to force rebuild on every open
-                          isSearchActive: search.isSearchActive,
-                          onClose: () {
-                            search.setSearchActive(false);
-                            FocusScope.of(context).unfocus();
-                          },
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              );
-            },
-          ),
 
           if (showNavBar)
-            Consumer<SearchProvider>(
-              builder: (context, search, child) {
-                final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-                final bottomOffset = search.isSearchActive ? (keyboardHeight > 0 ? keyboardHeight + 40 : 120.0) : 0.0;
-                
-                return AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  bottom: bottomOffset,
-                  left: 0,
-                  right: 0,
-                  child: Material(
-                    type: MaterialType.transparency,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_currentRoute == 'CartScreen')
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-                            child: Consumer<CartProvider>(
-                              builder: (context, cart, child) {
-                                if (cart.items.isEmpty) return const SizedBox.shrink();
-                                return GestureDetector(
-                                  onTap: () {
-                                    widget.navigatorKey.currentState?.push(
-                                      MaterialPageRoute(
-                                        settings: const RouteSettings(name: 'PaymentScreen'),
-                                        builder: (context) => const PaymentScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(vertical: 20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(40),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.5),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 10),
-                                        )
-                                      ],
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_currentRoute == 'CartScreen')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                        child: Consumer<CartProvider>(
+                          builder: (context, cart, child) {
+                            if (cart.items.isEmpty) return const SizedBox.shrink();
+                            return GestureDetector(
+                              onTap: () async {
+                                if (!isAuthenticated) {
+                                  final success = await widget.navigatorKey.currentState?.push<bool>(
+                                    MaterialPageRoute(
+                                      settings: const RouteSettings(name: 'LoginScreen'),
+                                      builder: (context) => const LoginScreen(isCheckoutFlow: true),
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
+                                  );
+                                  if (success != true) return;
+                                }
+                                widget.navigatorKey.currentState?.push(
+                                  MaterialPageRoute(
+                                    settings: const RouteSettings(name: 'PaymentScreen'),
+                                    builder: (context) => const PaymentScreen(),
                                   ),
                                 );
                               },
-                            ),
-                          ),
-                        _buildNavBar(isAuthenticated, search.isSearchActive),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(40),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    )
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    _buildNavBar(isAuthenticated),
+                  ],
+                ),
+              ),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildNavBar(bool isAuthenticated, bool isSearchActive) {
+  Widget _buildNavBar(bool isAuthenticated) {
     final l10n = Provider.of<LocalizationProvider>(context);
     final String route = _currentRoute ?? 'HomeScreen';
     final bool isHome = route == 'HomeScreen';
     final bool isCart = route == 'CartScreen';
+    final bool isProfile = route == 'ProfileScreen';
     final bool isPayment = route == 'PaymentScreen';
 
     return SafeArea(
@@ -210,14 +187,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                     label: l10n.translate('cart'),
                     isActive: isCart,
                     onTap: () {
-                      if (!isAuthenticated) {
-                        widget.navigatorKey.currentState?.push(
-                          MaterialPageRoute(
-                            settings: const RouteSettings(name: 'LoginScreen'),
-                            builder: (context) => const LoginScreen(isCheckoutFlow: false),
-                          ),
-                        );
-                      } else if (!isCart) {
+                      if (!isCart) {
                         widget.navigatorKey.currentState?.push(
                           MaterialPageRoute(
                             settings: const RouteSettings(name: 'CartScreen'),
@@ -227,37 +197,31 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
                       }
                     },
                   ),
+                  _NavBarItem(
+                    icon: Icons.person_outline,
+                    label: l10n.translate('profile'),
+                    isActive: isProfile,
+                    onTap: () {
+                      if (!isAuthenticated) {
+                        widget.navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: 'LoginScreen'),
+                            builder: (context) => const LoginScreen(isCheckoutFlow: false),
+                          ),
+                        );
+                      } else if (!isProfile) {
+                        widget.navigatorKey.currentState?.push(
+                          MaterialPageRoute(
+                            settings: const RouteSettings(name: 'ProfileScreen'),
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
-            if (!isCart && !isPayment) ...[
-              const SizedBox(width: 8),
-              // Separate Search Button
-              Consumer<SearchProvider>(
-                builder: (context, search, child) {
-                  return GestureDetector(
-                    onTap: () => search.toggleSearchActive(),
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F0F0F),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
-                        ],
-                      ),
-                      child: Icon(
-                        search.isSearchActive ? Icons.close : Icons.search,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
           ],
         ),
       ),

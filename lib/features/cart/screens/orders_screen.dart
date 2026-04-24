@@ -122,7 +122,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _buildDetailedOrderCard(dynamic order) {
     final itemNames = order.items
-        .map<String>((it) => '${it.foodItem.name} ×${it.quantity}')
+        .map<String>((it) => '${it.product.name.hy} ×${it.quantity}')
         .join('\n');
     final shortId = order.id.length > 6
         ? order.id.substring(order.id.length - 6)
