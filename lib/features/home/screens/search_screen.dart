@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/search_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_header.dart';
 import '../providers/home_provider.dart';
 import '../../../core/models/product_model.dart';
 import '../../../core/models/restaurant_model.dart';
@@ -17,6 +18,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  bool _backHovered = false;
 
   @override
   void initState() {
@@ -46,90 +48,100 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.black.withValues(alpha: 0.95),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            // Logo
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, bottom: 10),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Image.asset(
-                  'assets/images/masoor_branch.png',
-                  width: 72,
-                  height: 48,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: AppTextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                hintText: l10n.translate('searchHint') ?? 'Փնտրել...',
-                onChanged: (value) => searchProvider.updateQuery(value, homeProvider.restaurants, homeProvider.products),
-                prefixIcon: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                suffixIcon: searchProvider.searchQuery.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white54),
-                        onPressed: () {
-                          _controller.clear();
-                          searchProvider.updateQuery('', homeProvider.restaurants, homeProvider.products);
-                        },
-                      )
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 10),
-            
-            // Loading indicator
-            if (searchProvider.isLoading)
-              const LinearProgressIndicator(
-                backgroundColor: Colors.transparent,
-                color: Colors.orange,
-              ),
-
-            // Results list
-            Expanded(
-              child: searchProvider.searchResults.isEmpty && !searchProvider.isLoading
-                ? GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.search, size: 60, color: Colors.white.withValues(alpha: 0.1)),
-                            const SizedBox(height: 16),
-                            Text(
-                              searchProvider.searchQuery.isEmpty 
-                                ? 'Մուտքագրեք անունը...' 
-                                : 'Ոչինչ չի գտնվել',
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+      body: Column(
+        children: [
+          const AppHeader(),
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: AppTextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      hintText: l10n.translate('searchHint'),
+                      onChanged: (value) => searchProvider.updateQuery(
+                          value, homeProvider.restaurants, homeProvider.products),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                      prefixIcon: MouseRegion(
+                        onEnter: (_) => setState(() => _backHovered = true),
+                        onExit: (_) => setState(() => _backHovered = false),
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: 52,
+                            height: 48,
+                            margin: const EdgeInsets.only(left: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: _backHovered ? 0.15 : 0.08),
+                              borderRadius: BorderRadius.circular(80),
                             ),
-                          ],
+                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                          ),
                         ),
                       ),
+                      suffixIcon: searchProvider.searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white54),
+                              onPressed: () {
+                                _controller.clear();
+                                searchProvider.updateQuery(
+                                    '', homeProvider.restaurants, homeProvider.products);
+                              },
+                            )
+                          : null,
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: searchProvider.searchResults.length,
-                    itemBuilder: (context, index) {
-                      final item = searchProvider.searchResults[index];
-                      return SearchResultTile(item: item);
-                    },
                   ),
+                  const SizedBox(height: 10),
+                  if (searchProvider.isLoading)
+                    const LinearProgressIndicator(
+                      backgroundColor: Colors.transparent,
+                      color: Colors.orange,
+                    ),
+                  Expanded(
+                    child: searchProvider.searchResults.isEmpty && !searchProvider.isLoading
+                        ? GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              color: Colors.transparent,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.search,
+                                        size: 60,
+                                        color: Colors.white.withValues(alpha: 0.1)),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      searchProvider.searchQuery.isEmpty
+                                          ? 'Մուտքագրեք անունը...'
+                                          : 'Ոչինչ չի գտնվել',
+                                      style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.5)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            itemCount: searchProvider.searchResults.length,
+                            itemBuilder: (context, index) {
+                              return SearchResultTile(
+                                  item: searchProvider.searchResults[index]);
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

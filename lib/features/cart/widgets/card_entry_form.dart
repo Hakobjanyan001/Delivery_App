@@ -6,7 +6,8 @@ import '../providers/payment_provider.dart';
 import '../models/payment_card.dart';
 
 class CardEntryForm extends StatefulWidget {
-  const CardEntryForm({super.key});
+  final bool isDialog;
+  const CardEntryForm({super.key, this.isDialog = false});
 
   @override
   State<CardEntryForm> createState() => _CardEntryFormState();
@@ -52,11 +53,15 @@ class _CardEntryFormState extends State<CardEntryForm> {
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
 
+    final bottomInset = widget.isDialog ? 0.0 : MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F0F0F),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, bottomInset + 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: widget.isDialog
+            ? BorderRadius.circular(28)
+            : const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Form(
         key: _formKey,
@@ -65,16 +70,38 @@ class _CardEntryFormState extends State<CardEntryForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              if (!widget.isDialog)
+                Center(
+                  child: Container(
+                    width: 36, height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                l10n.translate('cardDetails'),
-                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+              if (!widget.isDialog) const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.translate('cardDetails'),
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  if (widget.isDialog)
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.07),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close, color: Colors.white54, size: 16),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 32),
               

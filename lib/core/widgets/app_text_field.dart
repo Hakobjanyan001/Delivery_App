@@ -24,6 +24,7 @@ class AppTextField extends StatefulWidget {
   final bool enabled;
   final int maxLines;
   final Widget? prefixIcon;
+  final BoxConstraints? prefixIconConstraints;
   final Widget? suffixIcon;
   final TextInputAction? textInputAction;
 
@@ -43,6 +44,7 @@ class AppTextField extends StatefulWidget {
     this.enabled = true,
     this.maxLines = 1,
     this.prefixIcon,
+    this.prefixIconConstraints,
     this.suffixIcon,
     this.textInputAction,
   });
@@ -132,6 +134,7 @@ class _AppTextFieldState extends State<AppTextField> {
             fontWeight: FontWeight.w600,
           ),
           prefixIcon: widget.prefixIcon,
+          prefixIconConstraints: widget.prefixIconConstraints,
           suffixIcon: _buildSuffix(),
         ),
         validator: widget.validator,
