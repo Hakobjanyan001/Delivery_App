@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_services.dart';
-import '../models/food_model.dart';
+import '../models/product_model.dart';
+import '../models/restaurant_model.dart';
 
 class SearchProvider extends ChangeNotifier {
   String _searchQuery = '';
@@ -15,40 +15,34 @@ class SearchProvider extends ChangeNotifier {
   List<dynamic> get searchResults => _searchResults;
   bool get isLoading => _isLoading;
 
-  final ApiManager _apiManager = ApiManager();
-
-  void updateQuery(String newQuery) {
+  void updateQuery(String newQuery, List<RestaurantModel> restaurants, List<ProductModel> products) {
     _searchQuery = newQuery;
     if (newQuery.isEmpty) {
       _searchResults = [];
       notifyListeners();
     } else {
-      _performSearch(newQuery);
+      _performSearch(newQuery, restaurants, products);
     }
   }
 
-  Future<void> _performSearch(String query) async {
+  void _performSearch(String query, List<RestaurantModel> restaurants, List<ProductModel> products) {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Պարզության համար որոնում ենք և՛ ռեստորանների, և՛ ուտեստների մեջ
-      final restaurants = await _apiManager.getRestaurants();
-      final foods = await _apiManager.getFoods();
-
       final filteredRestaurants = restaurants.where((r) => 
-        r.name.toLowerCase().contains(query.toLowerCase()) ||
-        r.nameEn.toLowerCase().contains(query.toLowerCase()) ||
-        r.nameRu.toLowerCase().contains(query.toLowerCase())
+        r.name.hy.toLowerCase().contains(query.toLowerCase()) ||
+        r.name.en.toLowerCase().contains(query.toLowerCase()) ||
+        r.name.ru.toLowerCase().contains(query.toLowerCase())
       ).toList();
 
-      final filteredFoods = foods.where((f) => 
-        f.name.toLowerCase().contains(query.toLowerCase()) ||
-        f.nameEn.toLowerCase().contains(query.toLowerCase()) ||
-        f.nameRu.toLowerCase().contains(query.toLowerCase())
+      final filteredProducts = products.where((p) => 
+        p.name.hy.toLowerCase().contains(query.toLowerCase()) ||
+        p.name.en.toLowerCase().contains(query.toLowerCase()) ||
+        p.name.ru.toLowerCase().contains(query.toLowerCase())
       ).toList();
 
-      _searchResults = [...filteredRestaurants, ...filteredFoods];
+      _searchResults = [...filteredRestaurants, ...filteredProducts];
     } catch (e) {
       _searchResults = [];
     } finally {

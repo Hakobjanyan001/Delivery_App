@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isCheckoutFlow;
@@ -22,8 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
 
   Future<void> _submit() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -68,17 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       
       if (success) {
         if (!mounted) return;
-        if (widget.isCheckoutFlow) {
-          navigator.pop(true);
-        } else {
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(
-              settings: const RouteSettings(name: 'HomeScreen'),
-              builder: (_) => const HomeScreen()
-            ),
-            (route) => false,
-          );
-        }
+        navigator.pop(true);
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.translate('registrationSuccess'))),
         );
@@ -159,32 +148,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
 
                         // Inputs
-                        _buildInputField(
+                        AppTextField(
                           controller: _nameController,
                           hintText: l10n.translate('name'),
                           autofillHints: const [AutofillHints.name],
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             return null;
                           },
                         ),
                         const SizedBox(height: 12),
-                        _buildInputField(
+                        AppTextField(
                           controller: _phoneController,
                           hintText: l10n.translate('phone'),
                           keyboardType: TextInputType.phone,
                           autofillHints: const [AutofillHints.telephoneNumber],
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             return null;
                           },
                         ),
                         const SizedBox(height: 12),
-                        _buildInputField(
+                        AppTextField(
                           controller: _emailController,
                           hintText: l10n.translate('email'),
                           autofillHints: const [AutofillHints.email],
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             if (!value.contains('@')) return l10n.translate('invalidEmail');
@@ -192,13 +184,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        _buildInputField(
+                        AppTextField(
                           controller: _passwordController,
                           hintText: l10n.translate('password'),
-                          isPassword: true,
-                          isPasswordVisible: _isPasswordVisible,
-                          onTogglePassword: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                          obscureText: true,
+                          showToggle: true,
                           autofillHints: const [AutofillHints.newPassword],
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             if (value.length < 6) return 'Գաղտնաբառը պետք է լինի առնվազն 6 նիշ:';
@@ -206,12 +198,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
-                        _buildInputField(
+                        AppTextField(
                           controller: _confirmPasswordController,
-                          hintText: 'Կրկնել գաղտնաբառը', // Repeat password
-                          isPassword: true,
-                          isPasswordVisible: _isConfirmPasswordVisible,
-                          onTogglePassword: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible),
+                          hintText: 'Կրկնել գաղտնաբառը',
+                          obscureText: true,
+                          showToggle: true,
+                          textInputAction: TextInputAction.done,
+                          onEditingComplete: _submit,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             if (value != _passwordController.text) return 'Գաղտնաբառերը չեն համընկնում:';
@@ -285,61 +278,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
   );
 }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hintText,
-    bool isPassword = false,
-    bool isPasswordVisible = false,
-    VoidCallback? onTogglePassword,
-    List<String>? autofillHints,
-    TextInputType? keyboardType,
-    VoidCallback? onEditingComplete,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword && !isPasswordVisible,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      autofillHints: autofillHints,
-      keyboardType: keyboardType,
-      onEditingComplete: onEditingComplete,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        filled: true,
-        fillColor: const Color(0xFF121212),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.white24, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white38,
-                ),
-                onPressed: onTogglePassword,
-              )
-            : null,
-      ),
-      validator: validator,
-    );
-  }
 }

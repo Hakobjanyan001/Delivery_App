@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/search_provider.dart';
 import '../../../core/localization/localization_provider.dart';
+import '../providers/home_provider.dart';
 
 class SearchOverlayWidget extends StatefulWidget {
   final VoidCallback onClose;
@@ -65,6 +66,7 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
     final searchProvider = Provider.of<SearchProvider>(context);
+    final homeProvider = Provider.of<HomeProvider>(context);
 
     // Sync controller with query if updated externally
     if (_controller.text != searchProvider.searchQuery) {
@@ -99,24 +101,25 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
               controller: _controller,
               focusNode: _focusNode,
               autofocus: true,
-              onChanged: (value) => searchProvider.updateQuery(value),
+              onChanged: (value) => searchProvider.updateQuery(value, homeProvider.restaurants, homeProvider.products),
               style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
                 hintText: l10n.translate('searchHint'),
                 hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                suffixIcon: searchProvider.searchQuery.isNotEmpty 
+                  ? IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54, size: 20),
+                      onPressed: () {
+                        _controller.clear();
+                        searchProvider.updateQuery('', homeProvider.restaurants, homeProvider.products);
+                      },
+                    )
+                  : null,
               ),
             ),
           ),
-          if (searchProvider.searchQuery.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white54, size: 20),
-              onPressed: () {
-                _controller.clear();
-                searchProvider.updateQuery('');
-              },
-            ),
         ],
       ),
     ));

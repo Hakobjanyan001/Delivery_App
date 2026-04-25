@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' as io;
 import '../providers/auth_provider.dart';
 import '../../cart/providers/payment_provider.dart';
 import '../../cart/providers/orders_provider.dart';
@@ -11,6 +8,8 @@ import '../../cart/screens/order_details_screen.dart';
 import '../../cart/widgets/card_entry_form.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/localization/widgets/language_selector.dart';
+import '../../../core/widgets/app_text_field.dart';
+import '../widgets/guest_auth_view.dart';
 import 'login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/screens/support_chat_screen.dart';
@@ -33,6 +32,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   String? _localEmail;
   String? _localPhone;
 
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -50,11 +53,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     // Fetch orders from backend
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      setState(() {
-        _localName = auth.userName;
-        _localEmail = auth.email;
-        _localPhone = auth.phone;
-      });
+      _localName = auth.userName;
+      _localEmail = auth.email;
+      _localPhone = auth.phone;
+      _nameController.text = _localName ?? '';
+      _emailController.text = _localEmail ?? '';
+      _phoneController.text = _localPhone ?? '';
+      setState(() {});
       Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
     });
   }
@@ -63,6 +68,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   void dispose() {
     _tabController.dispose();
     _pageController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -336,128 +344,65 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: !auth.isAuthenticated
-            ? _buildGuestView(context, l10n)
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: !auth.isAuthenticated
+          ? Column(
+              children: [
+                Expanded(child: const GuestAuthView()),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                // Tab navigation (hidden on edit_profile sub-screen)
+                if (_activeSection != 'edit_profile')
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Custom AppBar ───────────────────────────────────────
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (_activeSection == 'edit_profile') {
-                                  setState(() => _activeSection = 'data');
-                                } else {
-                                  Navigator.pop(context);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF161616),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_back,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _activeSection == 'edit_profile'
-                                          ? l10n.translate('editProfile')
-                                          : (_activeSection == 'data'
-                                                ? l10n.translate(
-                                                    'personalAccount',
-                                                  )
-                                                : (_activeSection == 'orders'
-                                                      ? l10n.translate(
-                                                          'orders',
-                                                        )
-                                                      : l10n.translate(
-                                                          'settings',
-                                                        ))),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (_activeSection == 'data')
-                                    GestureDetector(
-                                      onTap: () => _showSupportOptions(
-                                        context,
-                                        l10n,
-                                      ),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.05,
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.headset_mic_outlined,
-                                          color: Colors.white,
-                                          size: 22,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-
-                        if (_activeSection != 'edit_profile') ...[
-                          // ── Tab Navigation ──────────────────────────────────────
-                          _buildNavigationButtons(l10n),
-                          const SizedBox(height: 32),
-                        ],
+                        _buildNavigationButtons(l10n),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
 
-                  if (_activeSection != 'edit_profile')
-                    Expanded(
-                      child: PageView(
-                        controller: _pageController,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _activeSection = _sections[index];
-                            _tabController.animateTo(index);
-                          });
-                        },
-                        children: [
-                          // Page 1: Personal Data Dashboard
-                          Consumer<AddressProvider>(
-                            builder: (context, addressProvider, _) =>
-                            SingleChildScrollView(
+                // Back button row when editing profile
+                if (_activeSection == 'edit_profile')
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _activeSection = 'data'),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF161616),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+
+                if (_activeSection != 'edit_profile')
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _activeSection = _sections[index];
+                          _tabController.animateTo(index);
+                        });
+                      },
+                      children: [
+                        Consumer<AddressProvider>(
+                          builder: (context, addressProvider, child) =>
+                              SingleChildScrollView(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                const SizedBox(height: 4),
                                 _buildArtagersProfileCard(auth, l10n),
                                 const SizedBox(height: 36),
                                 _buildSectionHeader(
@@ -465,67 +410,54 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   trailing: _buildSeeAllButton(l10n),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildOrdersPreview(
-                                  context,
-                                  ordersProvider,
-                                  l10n,
-                                ),
+                                _buildOrdersPreview(context, ordersProvider, l10n),
                                 const SizedBox(height: 36),
                                 _buildSectionHeader('Իմ հասցեները'),
                                 const SizedBox(height: 16),
                                 _buildAddressesSection(context, addressProvider, auth),
                                 const SizedBox(height: 36),
-                                _buildSectionHeader(
-                                  l10n.translate('settings'),
-                                ),
+                                _buildSectionHeader(l10n.translate('settings')),
                                 const SizedBox(height: 16),
                                 _buildSettingsPreview(payment, l10n),
                                 const SizedBox(height: 40),
                                 _buildLogoutButton(auth, l10n),
-                                const SizedBox(height: 60),
+                                const SizedBox(height: 100),
                               ],
                             ),
                           ),
+                        ),
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 4),
+                              _buildFullOrdersList(ordersProvider, l10n),
+                              const SizedBox(height: 100),
+                            ],
                           ),
-                          // Page 2: Full Orders List
-                          SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              children: [
-                                _buildFullOrdersList(
-                                  ordersProvider,
-                                  l10n,
-                                ),
-                                const SizedBox(height: 60),
-                              ],
-                            ),
+                        ),
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 4),
+                              _buildSettingsContent(payment, l10n),
+                              const SizedBox(height: 100),
+                            ],
                           ),
-                          // Page 3: Full Settings
-                          SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              children: [
-                                _buildSettingsContent(
-                                  payment,
-                                  l10n,
-                                ),
-                                const SizedBox(height: 60),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildEditProfileView(auth, l10n),
-                      ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
-      ),
+                  )
+                else
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _buildEditProfileView(auth, l10n),
+                    ),
+                  ),
+              ],
+            ),
     );
   }
 
@@ -646,33 +578,35 @@ class _ProfileScreenState extends State<ProfileScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        _buildEditItem(
-          l10n.translate('name'),
-          _localName ?? '',
-          (v) => setState(() => _localName = v),
-          l10n,
+        AppTextField(
+          controller: _nameController,
+          hintText: l10n.translate('name'),
+          textInputAction: TextInputAction.next,
+          onChanged: (v) => _localName = v,
         ),
-        const SizedBox(height: 16),
-        _buildEditItem(
-          l10n.translate('email'),
-          _localEmail ?? '',
-          (v) => setState(() => _localEmail = v),
-          l10n,
+        const SizedBox(height: 12),
+        AppTextField(
+          controller: _emailController,
+          hintText: l10n.translate('email'),
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          onChanged: (v) => _localEmail = v,
         ),
-        const SizedBox(height: 16),
-        _buildEditItem(
-          l10n.translate('phone'),
-          _localPhone ?? '',
-          (v) => setState(() => _localPhone = v),
-          l10n,
+        const SizedBox(height: 12),
+        AppTextField(
+          controller: _phoneController,
+          hintText: l10n.translate('phone'),
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.done,
+          onChanged: (v) => _localPhone = v,
         ),
         const SizedBox(height: 32),
         GestureDetector(
           onTap: () async {
             final success = await auth.updateProfile(
-              name: _localName,
-              email: _localEmail,
-              phone: _localPhone,
+              name: _nameController.text,
+              email: _emailController.text,
+              phone: _phoneController.text,
             );
             if (success && mounted) {
               setState(() => _activeSection = 'data');
@@ -683,26 +617,23 @@ class _ProfileScreenState extends State<ProfileScreen>
           },
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(40),
             ),
             child: Center(
               child: auth.isLoading
                   ? const SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.black,
-                        strokeWidth: 2,
-                      ),
+                      child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
                     )
                   : Text(
                       l10n.translate('save'),
                       style: const TextStyle(
                         color: Colors.black,
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -710,118 +641,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEditItem(
-    String label,
-    String value,
-    Function(String) onEdit,
-    LocalizationProvider l10n,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF10100F),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value.isEmpty ? l10n.translate('enter') : value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white38, size: 20),
-            onPressed: () {
-              final auth = Provider.of<AuthProvider>(context, listen: false);
-              _showEditField(auth, label, value, onEdit, l10n);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditField(
-    AuthProvider auth,
-    String field,
-    String currentValue,
-    Function(String) onSave,
-    LocalizationProvider l10n,
-  ) {
-    final controller = TextEditingController(text: currentValue);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          '${l10n.translate('editField')} $field',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: '${l10n.translate('enterNew')} $field',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white24),
-            ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              l10n.translate('cancel'),
-              style: const TextStyle(color: Colors.white54),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              onSave(controller.text);
-              Navigator.pop(ctx);
-              setState(() {});
-            },
-            child: Text(
-              l10n.translate('save'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1534,7 +1353,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   settings: const RouteSettings(name: 'LoginScreen'),
@@ -1559,18 +1378,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: GestureDetector(
         onTap: () {
           auth.logout();
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              settings: const RouteSettings(
-                name: 'LoginScreen',
-              ),
-              builder: (context) => const LoginScreen(
-                isCheckoutFlow: false,
-              ),
-            ),
-            (route) => false,
-          );
         },
         child: Container(
           padding: const EdgeInsets.symmetric(

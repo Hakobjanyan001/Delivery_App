@@ -4,13 +4,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization/localization_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/home/screens/home_screen.dart';
 import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
 import 'features/cart/providers/orders_provider.dart';
 import 'features/cart/providers/address_provider.dart';
 import 'core/providers/search_provider.dart';
+import 'core/providers/main_tabs_controller.dart';
 import 'core/widgets/navigation_wrapper.dart';
+import 'core/widgets/main_tabs_screen.dart';
 import 'features/home/providers/home_provider.dart';
 import 'features/onboarding/providers/onboarding_provider.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
@@ -30,6 +31,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
+        ChangeNotifierProvider(create: (_) => MainTabsController()),
       ],
       child: const MasoorApp(),
     ),
@@ -78,10 +80,13 @@ class _MasoorAppState extends State<MasoorApp> {
             ),
           ],
           builder: (context, child) {
-            return NavigationWrapper(
-              key: _wrapperKey,
-              navigatorKey: _navigatorKey,
-              child: child,
+            return GestureDetector(
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              child: NavigationWrapper(
+                key: _wrapperKey,
+                navigatorKey: _navigatorKey,
+                child: child,
+              ),
             );
           },
           home: Consumer2<AuthProvider, OnboardingProvider>(
@@ -89,7 +94,7 @@ class _MasoorAppState extends State<MasoorApp> {
               if (!onboardingProvider.hasSeenOnboarding) {
                 return const OnboardingScreen();
               }
-              return const HomeScreen();
+              return const MainTabsScreen();
             },
           ),
         );

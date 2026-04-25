@@ -1,16 +1,19 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../localization/localization_provider.dart';
 import '../../features/onboarding/providers/onboarding_provider.dart';
-import '../../features/cart/screens/cart_screen.dart';
-import '../providers/search_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/home/widgets/search_overlay_widget.dart';
-
 import '../../features/cart/providers/cart_provider.dart';
 import '../../features/cart/screens/payment_screen.dart';
-import '../../features/auth/screens/profile_screen.dart';
+import '../providers/main_tabs_controller.dart';
+
+// Figma specs (nav node 16:599):
+//   Outer:        gradient bg (transparent→black), px:16 py:8
+//   Inner pill:   h:72  radius:48  blur:8  bg:rgba(15,15,15,0.9)  border:rgba(255,255,255,0.1)
+//   Indicator:    radius:64  bg:rgba(255,255,255,0.1)  4px inset on all sides
+//   Tab items:    flex-1  gap:8  icon:24  label:14px bold white
 
 class NavigationWrapper extends StatefulWidget {
   final Widget? child;
@@ -26,42 +29,34 @@ class NavigationWrapper extends StatefulWidget {
   State<NavigationWrapper> createState() => _NavigationWrapperState();
 }
 
-class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
-  String? _currentRoute;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentRoute = 'HomeScreen';
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() {});
-    });
-  }
+class _NavigationWrapperState extends State<NavigationWrapper> {
+  String? _currentRoute = 'HomeScreen';
 
   void updateRoute(String? routeName) {
-    if (routeName == null || routeName.isEmpty) return; // Ignore dialogs/menus without explicit names
-
+    if (routeName == null || routeName.isEmpty) return;
     String name = (routeName == '/') ? 'HomeScreen' : routeName;
     if (name.startsWith('/')) name = name.substring(1);
-    if (_currentRoute != name) {
-      if (mounted) setState(() => _currentRoute = name);
+    if (_currentRoute != name && mounted) {
+      setState(() => _currentRoute = name);
     }
+  }
+
+  bool get _showNavBar {
+    final onboarding = context.read<OnboardingProvider>();
+    if (!onboarding.hasSeenOnboarding) return false;
+    const hidden = {
+      'OnboardingScreen', 'FoodDetail', 'LoginScreen',
+      'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
+      'PaymentScreen', 'PaymentWebViewScreen', 'CheckoutScreen',
+      'SearchScreen', 'SupportChatScreen', 'PhoneAuthScreen',
+    };
+    return !hidden.contains(_currentRoute);
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final bool isAuthenticated = authProvider.isAuthenticated;
-    final bool hasSeenOnboarding = context.watch<OnboardingProvider>().hasSeenOnboarding;
-
-    final bool showNavBar = hasSeenOnboarding &&
-        _currentRoute != 'OnboardingScreen' &&
-        _currentRoute != 'FoodDetail' &&
-        _currentRoute != 'LoginScreen' &&
-        _currentRoute != 'RegisterScreen' &&
-        _currentRoute != 'OrdersScreen' &&
-        _currentRoute != 'OrderDetailsScreen' &&
-        _currentRoute != 'ProfileScreen';
+    final isAuthenticated = context.watch<AuthProvider>().isAuthenticated;
+    context.watch<OnboardingProvider>();
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -69,202 +64,223 @@ class _NavigationWrapperState extends State<NavigationWrapper> with RouteAware {
       body: Stack(
         children: [
           if (widget.child != null) widget.child!,
-
-          if (showNavBar)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
+          if (_showNavBar)
+            Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_currentRoute == 'CartScreen')
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-                        child: Consumer<CartProvider>(
-                          builder: (context, cart, child) {
-                            if (cart.items.isEmpty) return const SizedBox.shrink();
-                            return GestureDetector(
-                              onTap: () async {
-                                if (!isAuthenticated) {
-                                  final success = await widget.navigatorKey.currentState?.push<bool>(
-                                    MaterialPageRoute(
-                                      settings: const RouteSettings(name: 'LoginScreen'),
-                                      builder: (context) => const LoginScreen(isCheckoutFlow: true),
-                                    ),
-                                  );
-                                  if (success != true) return;
-                                }
-                                widget.navigatorKey.currentState?.push(
-                                  MaterialPageRoute(
-                                    settings: const RouteSettings(name: 'PaymentScreen'),
-                                    builder: (context) => const PaymentScreen(),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(40),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    )
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    _buildNavBar(isAuthenticated),
-                  ],
-                ),
+              child: _NavBar(
+                navigatorKey: widget.navigatorKey,
+                isAuthenticated: isAuthenticated,
               ),
             ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildNavBar(bool isAuthenticated) {
+class _NavBar extends StatelessWidget {
+  final GlobalKey<NavigatorState> navigatorKey;
+  final bool isAuthenticated;
+
+  const _NavBar({
+    required this.navigatorKey,
+    required this.isAuthenticated,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
-    final String route = _currentRoute ?? 'HomeScreen';
-    final bool isHome = route == 'HomeScreen';
-    final bool isCart = route == 'CartScreen';
-    final bool isProfile = route == 'ProfileScreen';
-    final bool isPayment = route == 'PaymentScreen';
+    final tabs = context.watch<MainTabsController>();
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 24.0, left: 16, right: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Main Navigation Pill (Home & Cart)
-            Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F0F0F),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 20, offset: const Offset(0, 8)),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _NavBarItem(
-                    icon: Icons.home_outlined,
-                    label: l10n.translate('home'),
-                    isActive: isHome,
-                    onTap: () {
-                      if (!isHome) widget.navigatorKey.currentState?.popUntil((route) => route.isFirst);
-                    },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Checkout button — visible when on Cart tab
+        if (tabs.currentIndex == 1)
+          Consumer<CartProvider>(
+            builder: (context, cart, _) {
+              if (cart.items.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: GestureDetector(
+                  onTap: () async {
+                    if (!isAuthenticated) {
+                      final success = await navigatorKey.currentState
+                          ?.push<bool>(MaterialPageRoute(
+                        settings: const RouteSettings(name: 'LoginScreen'),
+                        builder: (_) => const LoginScreen(isCheckoutFlow: true),
+                      ));
+                      if (success != true) return;
+                    }
+                    navigatorKey.currentState?.push(MaterialPageRoute(
+                      settings: const RouteSettings(name: 'PaymentScreen'),
+                      builder: (_) => const PaymentScreen(),
+                    ));
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(40),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
                   ),
-                  _NavBarItem(
-                    icon: Icons.shopping_cart_outlined,
-                    label: l10n.translate('cart'),
-                    isActive: isCart,
-                    onTap: () {
-                      if (!isCart) {
-                        widget.navigatorKey.currentState?.push(
-                          MaterialPageRoute(
-                            settings: const RouteSettings(name: 'CartScreen'),
-                            builder: (context) => const CartScreen(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  _NavBarItem(
-                    icon: Icons.person_outline,
-                    label: l10n.translate('profile'),
-                    isActive: isProfile,
-                    onTap: () {
-                      if (!isAuthenticated) {
-                        widget.navigatorKey.currentState?.push(
-                          MaterialPageRoute(
-                            settings: const RouteSettings(name: 'LoginScreen'),
-                            builder: (context) => const LoginScreen(isCheckoutFlow: false),
-                          ),
-                        );
-                      } else if (!isProfile) {
-                        widget.navigatorKey.currentState?.push(
-                          MaterialPageRoute(
-                            settings: const RouteSettings(name: 'ProfileScreen'),
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
+                ),
+              );
+            },
+          ),
+
+        // Nav pill
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black],
             ),
-          ],
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: _NavPill(tabs: tabs, l10n: l10n),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Pill with the sliding indicator. The indicator tracks
+/// `pageController.page` in real-time so swipes feel native, while
+/// tab clicks animate via the controller's easeInOut curve.
+class _NavPill extends StatelessWidget {
+  final MainTabsController tabs;
+  final LocalizationProvider l10n;
+
+  const _NavPill({required this.tabs, required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(48),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F0F0F).withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(48),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tabWidth = constraints.maxWidth / 3;
+
+              return Stack(
+                children: [
+                  // Sliding indicator — driven by PageController for real-time tracking
+                  AnimatedBuilder(
+                    animation: tabs.pageController,
+                    builder: (context, child) {
+                      final page = tabs.pageController.hasClients &&
+                              tabs.pageController.page != null
+                          ? tabs.pageController.page!.clamp(0.0, 2.0)
+                          : tabs.currentIndex.toDouble();
+
+                      return Positioned(
+                        top: 4,
+                        bottom: 4,
+                        left: tabWidth * page + 4,
+                        width: tabWidth - 8,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(64),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Tabs
+                  Row(
+                    children: [
+                      _NavTab(
+                        icon: Icons.home_outlined,
+                        label: l10n.translate('home'),
+                        onTap: () => tabs.switchTo(0),
+                      ),
+                      _NavTab(
+                        icon: Icons.shopping_cart_outlined,
+                        label: l10n.translate('cart'),
+                        onTap: () => tabs.switchTo(1),
+                      ),
+                      _NavTab(
+                        icon: Icons.person_outline,
+                        label: l10n.translate('profile'),
+                        onTap: () => tabs.switchTo(2),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-class _NavBarItem extends StatelessWidget {
+class _NavTab extends StatelessWidget {
   final IconData icon;
   final String label;
-  final bool isActive;
   final VoidCallback onTap;
 
-  const _NavBarItem({
+  const _NavTab({
     required this.icon,
     required this.label,
-    required this.isActive,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF1F1F1F) : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w900 : FontWeight.w500,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -275,7 +291,7 @@ class _NavBarItem extends StatelessWidget {
 }
 
 class AppNavigatorObserver extends NavigatorObserver {
-  final Function(String?) onRouteChanged;
+  final void Function(String?) onRouteChanged;
   AppNavigatorObserver({required this.onRouteChanged});
 
   @override

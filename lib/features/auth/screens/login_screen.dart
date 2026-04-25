@@ -5,6 +5,7 @@ import '../../../core/localization/localization_provider.dart';
 import 'register_screen.dart';
 import '../../home/screens/home_screen.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_text_field.dart';
 import 'phone_auth_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,18 +20,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
 
   void _handleSuccess() {
     if (widget.isCheckoutFlow) {
       Navigator.of(context).pop(true);
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: 'HomeScreen'),
-          builder: (context) => const HomeScreen(),
-        ),
-      );
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -144,22 +139,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                         // Inputs
-                        _buildInputField(
+                        AppTextField(
                           controller: _emailController,
                           hintText: l10n.translate('usernameOrEmail'),
                           autofillHints: const [AutofillHints.email, AutofillHints.username],
                           keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
-                        _buildInputField(
+                        AppTextField(
                           controller: _passwordController,
                           hintText: l10n.translate('password'),
-                          isPassword: true,
+                          obscureText: true,
+                          showToggle: true,
                           autofillHints: const [AutofillHints.password],
+                          textInputAction: TextInputAction.done,
+                          onEditingComplete: _submit,
                           validator: (value) {
                             if (value == null || value.isEmpty) return l10n.translate('requiredField');
                             return null;
@@ -240,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                             if (!context.mounted) return;
-                            if (success == true && widget.isCheckoutFlow) {
+                            if (success == true) {
                               Navigator.of(context).pop(true);
                             }
                           },
@@ -278,60 +277,6 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 }
-
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hintText,
-    bool isPassword = false,
-    List<String>? autofillHints,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword && !_isPasswordVisible,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      autofillHints: autofillHints,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        filled: true,
-        fillColor: const Color(0xFF121212),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.white24, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(80),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white38,
-                ),
-                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-              )
-            : null,
-      ),
-      validator: validator,
-    );
-  }
 
   Widget _socialButton({required IconData icon, required VoidCallback onTap}) {
     return InkWell(

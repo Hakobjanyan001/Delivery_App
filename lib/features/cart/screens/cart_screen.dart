@@ -3,10 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../auth/screens/profile_screen.dart';
 import '../../auth/screens/login_screen.dart';
 import '../models/cart_item.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../home/providers/home_provider.dart';
 import '../../../core/models/restaurant_model.dart';
 import 'payment_screen.dart';
@@ -22,84 +20,34 @@ class CartScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        toolbarHeight: 70,
-        leadingWidth: 101,
-        automaticallyImplyLeading: false,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12.0),
-          child: Image.asset(
-            'assets/images/masoor_branch.png',
-            width: 72,
-            height: 48,
-            fit: BoxFit.contain,
-          ),
-        ),
-        actions: [
-          Center(
-            child: GestureDetector(
-              onTap: () async {
-                final Uri url = Uri.parse('tel:+37460515515');
-                if (await canLaunchUrl(url)) await launchUrl(url);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(
-                      Icons.phone_outlined,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      '+374 60 515515',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+      body: Column(
+        children: [
+          Expanded(
+            child: cart.items.isEmpty
+                ? _buildEmptyState(context, l10n)
+                : Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ListView(
+                          padding: const EdgeInsets.only(top: 10, bottom: 120),
+                          children: [
+                            ...cart.items.map(
+                              (item) => _buildCartItem(context, cart, item),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: _buildCheckoutBar(context, cart, l10n, auth),
+                      ),
+                    ],
+                  ),
           ),
-          const SizedBox(width: 16),
         ],
       ),
-      body: cart.items.isEmpty
-          ? _buildEmptyState(context, l10n)
-            : Stack(
-                children: [
-                  Positioned.fill(
-                    child: ListView(
-                      padding: const EdgeInsets.only(top: 10, bottom: 120),
-                      children: [
-                        ...cart.items.map(
-                          (item) => _buildCartItem(context, cart, item),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildCheckoutBar(context, cart, l10n, auth),
-                  ),
-                ],
-              ),
     );
   }
 

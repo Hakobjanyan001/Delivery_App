@@ -9,8 +9,8 @@ import '../providers/orders_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/card_entry_form.dart';
 import '../../auth/screens/login_screen.dart';
-import '../../auth/screens/profile_screen.dart';
 import '../../../core/localization/localization_provider.dart';
+import '../../../core/providers/main_tabs_controller.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart' as osm;
 import 'package:latlong2/latlong.dart' as latlong;
@@ -456,13 +456,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 );
               } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    settings: const RouteSettings(name: 'ProfileScreen'),
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
+                // Pop back to root and switch to Profile tab
+                Navigator.popUntil(context, (r) => r.isFirst);
+                context.read<MainTabsController>().switchTo(2);
               }
             },
             child: Container(

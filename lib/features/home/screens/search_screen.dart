@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/search_provider.dart';
 import '../../../core/localization/localization_provider.dart';
-import '../../../core/models/food_model.dart';
+import '../../../core/widgets/app_text_field.dart';
+import '../providers/home_provider.dart';
+import '../../../core/models/product_model.dart';
+import '../../../core/models/restaurant_model.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -34,6 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
     final searchProvider = Provider.of<SearchProvider>(context);
+    final homeProvider = Provider.of<HomeProvider>(context);
 
     if (_controller.text != searchProvider.searchQuery && !searchProvider.isLoading) {
       _controller.text = searchProvider.searchQuery;
@@ -62,41 +66,24 @@ class _SearchScreenState extends State<SearchScreen> {
             // Search Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              child: AppTextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                hintText: l10n.translate('searchHint') ?? 'Փնտրել...',
+                onChanged: (value) => searchProvider.updateQuery(value, homeProvider.restaurants, homeProvider.products),
+                prefixIcon: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        onChanged: (value) => searchProvider.updateQuery(value),
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: l10n.translate('searchHint') ?? 'Փնտրել...',
-                          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    if (searchProvider.searchQuery.isNotEmpty)
-                      IconButton(
+                suffixIcon: searchProvider.searchQuery.isNotEmpty 
+                    ? IconButton(
                         icon: const Icon(Icons.close, color: Colors.white54),
                         onPressed: () {
                           _controller.clear();
-                          searchProvider.updateQuery('');
+                          searchProvider.updateQuery('', homeProvider.restaurants, homeProvider.products);
                         },
-                      ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
             ),
             const SizedBox(height: 10),
@@ -154,8 +141,14 @@ class SearchResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRestaurant = item is Restaurant;
+    final bool isRestaurant = item is RestaurantModel;
+    final l10n = Provider.of<LocalizationProvider>(context, listen: false);
+    final lang = l10n.currentLocale.languageCode;
     
+    final imageUrl = isRestaurant ? (item as RestaurantModel).logo ?? '' : (item as ProductModel).mainImageUrl;
+    final name = isRestaurant ? (item as RestaurantModel).name.getLocalized(lang) : (item as ProductModel).name.getLocalized(lang);
+    final subtitle = isRestaurant ? 'Ռեստորան' : 'Ուտեստ • ${(item as ProductModel).displayPrice} ֏';
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Container(
@@ -163,18 +156,19 @@ class SearchResultTile extends StatelessWidget {
         height: 50,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          image: DecorationImage(
-            image: NetworkImage(item.imageUrl),
+          image: imageUrl.isNotEmpty ? DecorationImage(
+            image: NetworkImage(imageUrl),
             fit: BoxFit.cover,
-          ),
+          ) : null,
+          color: Colors.white10,
         ),
       ),
       title: Text(
-        item.name,
+        name,
         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        isRestaurant ? 'Ռեստորան' : 'Ուտեստ • ${item.price} ֏',
+        subtitle,
         style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
       ),
       trailing: const Icon(Icons.chevron_right, color: Colors.white24),

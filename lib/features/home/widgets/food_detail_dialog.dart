@@ -342,14 +342,34 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> {
                       note: _noteController.text.isNotEmpty ? _noteController.text : null,
                     );
 
-                    Navigator.pop(context);
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text('$cartItemName $addedMsg'),
-                        backgroundColor: Colors.green,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
+                    FocusScope.of(context).unfocus();
+
+                    Future.delayed(const Duration(milliseconds: 50), () {
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.green),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  '$cartItemName $addedMsg',
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                          backgroundColor: const Color(0xFF1E1E1E),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
