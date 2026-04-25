@@ -71,20 +71,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               );
             },
             children: [
-              // Primary title
-              const Positioned(
-                bottom: 175,
+              Positioned(
+                bottom: 150, // Both texts raised higher up together
                 left: 20,
                 right: 20,
-                child: Text(
-                  'Crafted with heart. Baked with fire.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
-                    height: 1.1,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Primary title
+                    const Text(
+                      'Crafted with heart.\nBaked with fire.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Body text in exactly 3 lines as requested
+                    const Opacity(
+                      opacity: 1.0,
+                      child: Text(
+                        'From golden khachapuri to slow-simmered\nclassics, our kitchen serves tradition on every\nplate.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Segoe UI',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          height: 1.5, // 24px line-height / 16px font-size
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -98,20 +120,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               context.read<OnboardingProvider>().setHasSeenOnboarding(true);
             },
             children: [
-              // Primary title
-              const Positioned(
-                bottom: 175,
+              Positioned(
+                bottom: 150,
                 left: 20,
                 right: 20,
-                child: Text(
-                  'Your table is waiting.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
-                    height: 1.1,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Primary title
+                    const Text(
+                      'Your table is waiting.',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        fontStyle: FontStyle.italic,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Subtitle text
+                    const Opacity(
+                      opacity: 1.0,
+                      child: Text(
+                        'Browse the menu, book a table, or order your\nfavorites to go.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Segoe UI',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          height: 1.5,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
