@@ -12,6 +12,7 @@ import '../../../core/widgets/app_text_field.dart';
 import '../widgets/guest_auth_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/screens/support_chat_screen.dart';
+import '../../../core/providers/main_tabs_controller.dart';
 
 // Active view within the profile screen
 enum _View { home, editProfile, orders, addresses }
@@ -824,14 +825,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ── Responsive sheet helper ───────────────────────────────────────────────
 
   // Shows a bottom sheet on mobile, a centered dialog on desktop.
-  void _showSheet(
+  Future<void> _showSheet(
     BuildContext context, {
     required Widget Function(BuildContext ctx, bool isDesktop) builder,
     bool scrollControlled = false,
   }) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     if (isDesktop) {
-      showDialog(
+      return showDialog(
         context: context,
         barrierColor: Colors.black.withValues(alpha: 0.6),
         builder: (ctx) => Dialog(
@@ -844,7 +845,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     } else {
-      showModalBottomSheet(
+      return showModalBottomSheet(
         context: context,
         isScrollControlled: scrollControlled,
         backgroundColor: Colors.transparent,
@@ -861,6 +862,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     PaymentProvider payment,
     LocalizationProvider l10n,
   ) {
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
+
     _showSheet(context, builder: (ctx, isDesktop) {
       return _SheetContainer(
         isDesktop: isDesktop,
@@ -918,6 +922,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
     });
   }
 
@@ -950,6 +958,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ── Support ───────────────────────────────────────────────────────────────
 
   void _showSupportOptions(BuildContext context, LocalizationProvider l10n) {
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
+
     _showSheet(context, builder: (ctx, isDesktop) {
       return _SheetContainer(
         isDesktop: isDesktop,
@@ -994,13 +1005,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.pop(ctx);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SupportChatScreen()),
+                  MaterialPageRoute(
+                    settings: const RouteSettings(name: 'SupportChatScreen'),
+                    builder: (_) => const SupportChatScreen(),
+                  ),
                 );
               },
             ),
           ],
         ),
       );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
     });
   }
 
@@ -1009,6 +1027,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showAddNewAddressDialog(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
     final titleCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
+
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
 
     _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
       return _SheetContainer(
@@ -1047,6 +1068,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
     });
   }
 
@@ -1054,6 +1079,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       BuildContext context, AddressProvider addressProvider, dynamic addr, LocalizationProvider l10n) {
     final titleCtrl = TextEditingController(text: addr.title);
     final addrCtrl = TextEditingController(text: addr.address);
+
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
 
     _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
       return _SheetContainer(
@@ -1108,6 +1136,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
     });
   }
 }

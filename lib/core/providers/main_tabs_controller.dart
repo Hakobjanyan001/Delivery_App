@@ -12,12 +12,21 @@ class MainTabsController extends ChangeNotifier {
 
   final PageController pageController = PageController(initialPage: 0);
   int _currentIndex = 0;
+  bool _isNavBarVisible = true;
 
   MainTabsController() {
     pageController.addListener(_onPageChanged);
   }
 
   int get currentIndex => _currentIndex;
+  bool get isNavBarVisible => _isNavBarVisible;
+
+  void setNavBarVisibility(bool visible) {
+    if (_isNavBarVisible != visible) {
+      _isNavBarVisible = visible;
+      notifyListeners();
+    }
+  }
 
   void _onPageChanged() {
     if (!pageController.hasClients) return;

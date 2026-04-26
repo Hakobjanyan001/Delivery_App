@@ -44,6 +44,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   bool get _showNavBar {
     final onboarding = context.read<OnboardingProvider>();
     if (!onboarding.hasSeenOnboarding) return false;
+
+    // Check if the tabs controller has explicitly hidden the nav bar
+    final tabs = context.watch<MainTabsController>();
+    if (!tabs.isNavBarVisible) return false;
+
     const hidden = {
       'OnboardingScreen', 'FoodDetail', 'LoginScreen',
       'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
