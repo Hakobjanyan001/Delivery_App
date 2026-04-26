@@ -29,6 +29,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   UniversalMapController? _mapController;
+  String? _selectedSavedAddressId;
 
   @override
   void initState() {
@@ -264,115 +265,121 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  void _showSavedAddressesBottomSheet(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
+  void _showSavedAddressesBottomSheet(BuildContext context, AuthProvider authProvider, AddressProvider addressProvider, LocalizationProvider l10n) {
+    final savedAddresses = authProvider.user?.addresses ?? [];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        margin: const EdgeInsets.only(bottom: 90),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          margin: const EdgeInsets.only(bottom: 0),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Իմ հասցեները',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 24),
-            if (addressProvider.addresses.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF161616),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                ),
-                child: const Text(
-                  'Պահպանված հասցեներ չկան',
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              )
-            else
-              ...addressProvider.addresses.map((addr) {
-                final isSelected = addressProvider.selectedAddressId == addr.id;
-                return GestureDetector(
-                  onTap: () {
-                    addressProvider.selectAddress(addr.id);
-                    if (addr.latitude != null && addr.longitude != null) {
-                      _mapController?.animateTo(addr.latitude!, addr.longitude!);
-                    }
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : const Color(0xFF161616),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: isSelected ? Colors.black : Colors.white,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                addr.title,
-                                style: TextStyle(
-                                  color: isSelected ? Colors.black : Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              if (addr.address.isNotEmpty) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  addr.address,
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.black.withOpacity(0.6) : Colors.white.withValues(alpha: 0.5),
-                                    fontSize: 13,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (isSelected)
-                          const Icon(Icons.check_circle, color: Colors.black, size: 24),
-                      ],
-                    ),
+              const Text(
+                'Իմ հասցեները',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 20),
+              if (savedAddresses.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161616),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
-                );
-              }),
-          ],
+                  child: const Text(
+                    'Պահպանված հասցեներ չկան',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                )
+              else
+                ...savedAddresses.map((addr) {
+                  final isSelected = _selectedSavedAddressId == addr.id;
+                  return GestureDetector(
+                    onTap: () {
+                      if (addr.id != null) {
+                        setState(() => _selectedSavedAddressId = addr.id);
+                      }
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white : const Color(0xFF161616),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.06),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: isSelected ? Colors.black : Colors.white70,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  addr.label ?? 'Հասցե',
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.black : Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                if (addr.address != null && addr.address!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    addr.address!,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.black.withOpacity(0.55)
+                                          : Colors.white.withValues(alpha: 0.45),
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle, color: Colors.black, size: 22),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+            ],
+          ),
         ),
       ),
     );
@@ -886,34 +893,98 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              // Show selected saved address label
+              if (_selectedSavedAddressId != null)
+                Builder(builder: (context) {
+                  final saved = auth.user?.addresses.where((a) => a.id == _selectedSavedAddressId).firstOrNull;
+                  if (saved == null) return const SizedBox.shrink();
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                saved.label ?? 'Ընտրված հասցե',
+                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                              ),
+                              if (saved.address != null && saved.address!.isNotEmpty)
+                                Text(
+                                  saved.address!,
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => _selectedSavedAddressId = null),
+                          child: Icon(Icons.close, color: Colors.white.withValues(alpha: 0.4), size: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
               GestureDetector(
-                onTap: () => _showSavedAddressesBottomSheet(context, address, l10n),
+                onTap: () => _showSavedAddressesBottomSheet(context, auth, address, l10n),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10100F),
+                    color: _selectedSavedAddressId != null
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : const Color(0xFF10100F),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border: Border.all(
+                      color: _selectedSavedAddressId != null
+                          ? Colors.greenAccent.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.05),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Իմ հասցեները',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Segoe UI',
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            _selectedSavedAddressId != null
+                                ? Icons.check_circle_outline
+                                : Icons.bookmark_border_outlined,
+                            color: _selectedSavedAddressId != null
+                                ? Colors.greenAccent
+                                : Colors.white54,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _selectedSavedAddressId != null ? '\u0538\u0576\u057f\u0580\u057e\u0561\u056e \u0570\u0561\u057d\u0581\u0565\u0576' : '\u053b\u0574 \u0570\u0561\u057d\u0581\u0565\u0576\u0565\u0580\u0568',
+                            style: TextStyle(
+                              color: _selectedSavedAddressId != null
+                                  ? Colors.greenAccent
+                                  : Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Segoe UI',
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        color: _selectedSavedAddressId != null
+                            ? Colors.greenAccent.withValues(alpha: 0.7)
+                            : Colors.white38,
+                        size: 20,
                       ),
                     ],
                   ),
@@ -972,7 +1043,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       deliveryPrice: deliveryFee,
                       paymentMethod: payment.selectedMethodType.name,
                       phone: auth.phone ?? '',
-                      address: {'address': deliveryAddress?.address ?? ""},
+                      address: _selectedSavedAddressId != null
+                          ? {} // Backend will resolve address from addressId
+                          : {'address': deliveryAddress?.address ?? ""},
+                      addressId: _selectedSavedAddressId,
                     );
                     await cart.clearCart();
                     if (context.mounted) {

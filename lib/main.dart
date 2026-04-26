@@ -24,7 +24,15 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => CartProvider(), lazy: false),
         ChangeNotifierProvider(create: (_) => AuthProvider(), lazy: false),
-        ChangeNotifierProvider(create: (_) => LocalizationProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, LocalizationProvider>(
+          create: (_) => LocalizationProvider(),
+          update: (context, auth, l10n) {
+            if (auth.user != null) {
+              l10n!.syncWithUser(auth.user!.language);
+            }
+            return l10n!;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),

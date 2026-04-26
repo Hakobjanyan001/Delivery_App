@@ -13,6 +13,7 @@ class OrdersRepository {
     required Map<String, dynamic> address,
     required String phone,
     required String paymentMethod,
+    String? addressId,
     double deliveryPrice = 0.0,
   }) async {
     // We need a way to get the token. 
@@ -36,6 +37,7 @@ class OrdersRepository {
           'totalAmount': totalAmount,
           'deliveryPrice': deliveryPrice,
           'address': address,
+          if (addressId != null) 'addressId': addressId,
           'phone': phone,
           'paymentMethod': paymentMethod,
         }),

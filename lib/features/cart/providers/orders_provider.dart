@@ -33,6 +33,7 @@ class OrdersProvider with ChangeNotifier {
     required Map<String, dynamic> address,
     required String phone,
     required String paymentMethod,
+    String? addressId,
     double deliveryPrice = 0.0,
   }) async {
     _isLoading = true;
@@ -45,6 +46,7 @@ class OrdersProvider with ChangeNotifier {
         totalAmount: total,
         deliveryPrice: deliveryPrice,
         address: address,
+        addressId: addressId,
         phone: phone,
         paymentMethod: paymentMethod,
       );

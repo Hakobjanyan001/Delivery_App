@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/auth_repository.dart';
 import '../models/user_model.dart';
+import '../models/address_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
@@ -58,6 +59,7 @@ class AuthProvider with ChangeNotifier {
       _firestoreName ?? _user?.name.toString() ?? _user?.email.split('@')[0];
   String? get email => _user?.email;
   String? get phone => _firestorePhone ?? _user?.phone;
+  AppUser? get user => _user;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -231,6 +233,52 @@ class AuthProvider with ChangeNotifier {
         phone: phone,
       );
       notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> changeLanguage(String language) async {
+    try {
+      await _repository.changeLanguage(language);
+    } catch (e) {
+      _setError(e.toString());
+    }
+  }
+
+  Future<void> fetchAddresses() async {
+    try {
+      await _repository.fetchAddresses();
+      // fetchAddresses in repository updates the _currentUser and authStateChanges,
+      // which AuthProvider listens to. So _user will be updated automatically.
+    } catch (e) {
+      _setError(e.toString());
+    }
+  }
+
+  Future<bool> addAddress(Address address) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _repository.addAddress(address);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteAddress(String id) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _repository.deleteAddress(id);
       return true;
     } catch (e) {
       _setError(e.toString());

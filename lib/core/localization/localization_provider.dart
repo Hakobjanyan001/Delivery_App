@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:masoor/features/auth/data/auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// import '../features/auth/data/auth_repository.dart';
 
 class LocalizationProvider with ChangeNotifier {
   Locale _currentLocale = const Locale('hy');
@@ -421,10 +423,32 @@ class LocalizationProvider with ChangeNotifier {
 
   void setLocale(Locale locale) async {
     if (!['hy', 'en', 'ru'].contains(locale.languageCode)) return;
+    if (_currentLocale == locale) return;
+
     _currentLocale = locale;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_localeKey, locale.languageCode);
+
+    // Sync with backend if logged in
+    final authRepo = AuthRepository();
+    if (authRepo.token != null) {
+      try {
+        await authRepo.changeLanguage(locale.languageCode);
+      } catch (e) {
+        debugPrint('Failed to sync language with backend: $e');
+      }
+    }
+  }
+
+  void syncWithUser(String languageCode) async {
+    if (!['hy', 'en', 'ru'].contains(languageCode)) return;
+    if (_currentLocale.languageCode == languageCode) return;
+
+    _currentLocale = Locale(languageCode);
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, languageCode);
   }
 
   String translate(String key) {

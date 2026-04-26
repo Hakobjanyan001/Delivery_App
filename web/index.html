@@ -42,10 +42,23 @@
 <body>
   <div id="recaptcha-container" style="display: none;"></div>
   <script src="flutter_bootstrap.js" async></script>
-  <script async src="https://telegram.org/js/telegram-widget.js?23" data-telegram-login="restmasoorbot" data-size="small" data-onauth="onTelegramAuth(user)"></script>
-  <script type="text/javascript">
-    function onTelegramAuth(user) {
-      alert('Logged in as ' + user.first_name + ' ' + user.last_name + ' (' + user.id + (user.username ? ', @' + user.username : '') + ')');
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/flutter_service_worker.js').then(reg => {
+        reg.update();
+
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // New version available → reload
+                window.location.reload();
+              }
+            }
+          };
+        };
+      });
     }
   </script>
 </body>

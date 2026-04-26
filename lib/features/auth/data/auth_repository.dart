@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:masoor/features/auth/models/address_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/user_model.dart';
@@ -321,6 +322,141 @@ class AuthRepository {
       } else {
         final error = jsonDecode(response.body);
         throw error['message'] ?? 'Թարմացումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Future<void> changeLanguage(String language) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.changeLanguage),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+        body: jsonEncode({'language': language}),
+      );
+
+      if (response.statusCode == 200) {
+        if (_currentUser != null) {
+          // Update local user model
+          _currentUser = AppUser.fromJson({
+            ..._currentUser!.toJson(),
+            'language': language,
+          });
+          await _saveAuthData(_currentUser!, _token!);
+          _authStateController.add(_currentUser);
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Լեզվի փոփոխությունը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Future<List<Address>> fetchAddresses() async {
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConstants.getAddresses),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => Address.fromJson(e)).toList();
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Հասցեների բեռնումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Future<List<Address>> addAddress(Address address) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.addAddress),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+        body: jsonEncode(address.toJson()),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> addressesJson = data['addresses'];
+        final addresses = addressesJson.map((e) => Address.fromJson(e)).toList();
+        
+        if (_currentUser != null) {
+          _currentUser = AppUser(
+            id: _currentUser!.id,
+            name: _currentUser!.name,
+            username: _currentUser!.username,
+            email: _currentUser!.email,
+            phone: _currentUser!.phone,
+            emailVerified: _currentUser!.emailVerified,
+            firebaseUid: _currentUser!.firebaseUid,
+            role: _currentUser!.role,
+            is18Plus: _currentUser!.is18Plus,
+            language: _currentUser!.language,
+            addresses: addresses,
+          );
+          await _saveAuthData(_currentUser!, _token!);
+          _authStateController.add(_currentUser);
+        }
+        return addresses;
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Հասցեի ավելացումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Future<List<Address>> deleteAddress(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.deleteAddress}/$id'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> addressesJson = data['addresses'];
+        final addresses = addressesJson.map((e) => Address.fromJson(e)).toList();
+
+        if (_currentUser != null) {
+          _currentUser = AppUser(
+            id: _currentUser!.id,
+            name: _currentUser!.name,
+            username: _currentUser!.username,
+            email: _currentUser!.email,
+            phone: _currentUser!.phone,
+            emailVerified: _currentUser!.emailVerified,
+            firebaseUid: _currentUser!.firebaseUid,
+            role: _currentUser!.role,
+            is18Plus: _currentUser!.is18Plus,
+            language: _currentUser!.language,
+            addresses: addresses,
+          );
+          await _saveAuthData(_currentUser!, _token!);
+          _authStateController.add(_currentUser);
+        }
+        return addresses;
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Հասցեի ջնջումը ձախողվեց:';
       }
     } catch (e) {
       throw e.toString();
