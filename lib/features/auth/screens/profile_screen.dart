@@ -10,9 +10,12 @@ import '../../../core/localization/localization_provider.dart';
 import '../../../core/localization/widgets/language_selector.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../widgets/guest_auth_view.dart';
-import 'login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/screens/support_chat_screen.dart';
+import '../../../core/providers/main_tabs_controller.dart';
+
+// Active view within the profile screen
+enum _View { home, editProfile, orders, addresses }
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,16 +24,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
-  String _activeSection = 'data';
-  late TabController _tabController;
-  late PageController _pageController;
-  final List<String> _sections = ['data', 'orders', 'settings'];
-
-  String? _localName;
-  String? _localEmail;
-  String? _localPhone;
+class _ProfileScreenState extends State<ProfileScreen> {
+  _View _view = _View.home;
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -39,1363 +34,1416 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _pageController = PageController(initialPage: 0);
-
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {
-          _activeSection = _sections[_tabController.index];
-        });
-      }
-    });
-
-    // Fetch orders from backend
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      _localName = auth.userName;
-      _localEmail = auth.email;
-      _localPhone = auth.phone;
-      _nameController.text = _localName ?? '';
-      _emailController.text = _localEmail ?? '';
-      _phoneController.text = _localPhone ?? '';
-      setState(() {});
+      _nameController.text = auth.userName ?? '';
+      _emailController.text = auth.email ?? '';
+      _phoneController.text = auth.phone ?? '';
       Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
     });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final l10n = Provider.of<LocalizationProvider>(context);
+
+    if (!auth.isAuthenticated) return const GuestAuthView();
+
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final content = _buildCurrentView(context, auth, l10n, isDesktop);
+
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: content,
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: content,
+    );
+  }
+
+  Widget _buildCurrentView(
+    BuildContext context,
+    AuthProvider auth,
+    LocalizationProvider l10n,
+    bool isDesktop,
+  ) {
+    final payment = Provider.of<PaymentProvider>(context);
+    final ordersProvider = Provider.of<OrdersProvider>(context);
+
+    switch (_view) {
+      case _View.home:
+        return _buildHome(context, auth, payment, ordersProvider, l10n, isDesktop);
+      case _View.editProfile:
+        return _buildEditProfile(context, auth, l10n);
+      case _View.orders:
+        return _buildOrdersView(context, ordersProvider, l10n);
+      case _View.addresses:
+        return Consumer<AddressProvider>(
+          builder: (ctx, addressProvider, _) =>
+              _buildAddressesView(ctx, addressProvider, auth, l10n),
+        );
+    }
+  }
+
+  // ── Home ─────────────────────────────────────────────────────────────────
+
+  Widget _buildHome(
+    BuildContext context,
+    AuthProvider auth,
+    PaymentProvider payment,
+    OrdersProvider ordersProvider,
+    LocalizationProvider l10n,
+    bool isDesktop,
+  ) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(20, isDesktop ? 32 : 20, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Profile card
+          _buildProfileCard(auth, l10n),
+          const SizedBox(height: 28),
+
+          // Quick stats row
+          _buildStatsRow(ordersProvider),
+          const SizedBox(height: 28),
+
+          // My account section
+          _buildSectionLabel(l10n.translate('orders')),
+          const SizedBox(height: 10),
+          _buildMenuCard([
+            _buildMenuRow(
+              icon: Icons.receipt_long_outlined,
+              label: l10n.translate('orders'),
+              onTap: () => setState(() => _view = _View.orders),
+            ),
+            _buildDivider(),
+            _buildMenuRow(
+              icon: Icons.location_on_outlined,
+              label: l10n.translate('myAddresses'),
+              onTap: () => setState(() => _view = _View.addresses),
+            ),
+          ]),
+
+          const SizedBox(height: 28),
+
+          // Settings section
+          _buildSectionLabel(l10n.translate('settings')),
+          const SizedBox(height: 10),
+          _buildMenuCard([
+            _buildMenuRow(
+              icon: Icons.credit_card_outlined,
+              label: l10n.translate('paymentMethods'),
+              subtitle: _currentPaymentLabel(payment, l10n),
+              onTap: () => _showPaymentSelection(context, payment, l10n),
+            ),
+            _buildDivider(),
+            _buildMenuRow(
+              icon: Icons.language_outlined,
+              label: l10n.translate('language'),
+              trailing: const LanguageSelector(color: Colors.white),
+            ),
+            _buildDivider(),
+            _buildMenuRow(
+              icon: Icons.headset_mic_outlined,
+              label: l10n.translate('support'),
+              onTap: () => _showSupportOptions(context, l10n),
+            ),
+          ]),
+
+          const SizedBox(height: 28),
+
+          // Logout
+          _buildLogoutButton(auth, l10n),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(AuthProvider auth, LocalizationProvider l10n) {
+    return GestureDetector(
+      onTap: () => setState(() => _view = _View.editProfile),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_outline, color: Colors.white54, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auth.userName?.isNotEmpty == true ? auth.userName! : l10n.translate('user'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    auth.phone ?? '+374 -- -- -- --',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                l10n.translate('editShort'),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(OrdersProvider ordersProvider) {
+    final orderCount = ordersProvider.orders.length;
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            icon: Icons.shopping_bag_outlined,
+            value: orderCount.toString(),
+            label: l10n(context).translate('orders'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Consumer<AddressProvider>(
+            builder: (ctx, ap, _) => _buildStatCard(
+              icon: Icons.location_on_outlined,
+              value: ap.addresses.length.toString(),
+              label: l10n(context).translate('addresses'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white38, size: 22),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.35),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildMenuRow({
+    required IconData icon,
+    required String label,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white70, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.38),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            trailing ??
+                (onTap != null
+                    ? Icon(Icons.chevron_right,
+                        color: Colors.white.withValues(alpha: 0.25), size: 20)
+                    : const SizedBox.shrink()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      indent: 70,
+      endIndent: 0,
+      color: Colors.white.withValues(alpha: 0.06),
+    );
+  }
+
+  Widget _buildLogoutButton(AuthProvider auth, LocalizationProvider l10n) {
+    return GestureDetector(
+      onTap: auth.logout,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              l10n.translate('logout'),
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Edit Profile ──────────────────────────────────────────────────────────
+
+  Widget _buildEditProfile(
+    BuildContext context,
+    AuthProvider auth,
+    LocalizationProvider l10n,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSubHeader(l10n.translate('personalData')),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppTextField(
+                  controller: _nameController,
+                  hintText: l10n.translate('name'),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _emailController,
+                  hintText: l10n.translate('email'),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  controller: _phoneController,
+                  hintText: l10n.translate('phone'),
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 32),
+                GestureDetector(
+                  onTap: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final success = await auth.updateProfile(
+                      name: _nameController.text,
+                      email: _emailController.text,
+                      phone: _phoneController.text,
+                    );
+                    if (success && mounted) {
+                      setState(() => _view = _View.home);
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.translate('profileUpdated'))),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Center(
+                      child: auth.isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.black, strokeWidth: 2),
+                            )
+                          : Text(
+                              l10n.translate('save'),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Orders view ───────────────────────────────────────────────────────────
+
+  Widget _buildOrdersView(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    LocalizationProvider l10n,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSubHeader(l10n.translate('orders')),
+        Expanded(
+          child: ordersProvider.isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white54))
+              : ordersProvider.orders.isEmpty
+                  ? _buildEmptyState(l10n.translate('noOrders'), Icons.receipt_long_outlined)
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                      itemCount: ordersProvider.orders.length,
+                      separatorBuilder: (_, i) => const SizedBox(height: 10),
+                      itemBuilder: (ctx, i) {
+                        final order = ordersProvider.orders[i];
+                        return _buildOrderCard(ctx, order, l10n);
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderCard(BuildContext context, dynamic order, LocalizationProvider l10n) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => OrderDetailsScreen(order: order)),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.shopping_bag_outlined, color: Colors.white38, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.address,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '#${order.id.substring(order.id.length - 6)}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _getStatusColor(order.status).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _getStatusLabel(order.status, l10n),
+                style: TextStyle(
+                  color: _getStatusColor(order.status),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Addresses view ────────────────────────────────────────────────────────
+
+  Widget _buildAddressesView(
+    BuildContext context,
+    AddressProvider addressProvider,
+    AuthProvider auth,
+    LocalizationProvider l10n,
+  ) {
+    final addresses = addressProvider.addresses;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSubHeader(l10n.translate('myAddresses'), action: GestureDetector(
+          onTap: () => _showAddNewAddressDialog(context, addressProvider, l10n),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '+ ${l10n.translate('add')}',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        )),
+        Expanded(
+          child: addresses.isEmpty
+              ? _buildEmptyState(l10n.translate('noAddresses'), Icons.location_on_outlined)
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                  itemCount: addresses.length,
+                  separatorBuilder: (_, i) => const SizedBox(height: 10),
+                  itemBuilder: (ctx, i) {
+                    final addr = addresses[i];
+                    return Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF141414),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.location_on_outlined,
+                                color: Colors.white38, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  addr.title.isNotEmpty ? addr.title : 'Հասցե',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (addr.address.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    addr.address,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.38),
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                _showAddressEditInline(ctx, addressProvider, addr, l10n),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.edit_outlined,
+                                  color: Colors.white38, size: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  // ── Shared sub-screen header ──────────────────────────────────────────────
+
+  Widget _buildSubHeader(String title, {Widget? action}) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => setState(() => _view = _View.home),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            ?action,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white10, size: 56),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  LocalizationProvider l10n(BuildContext context) =>
+      Provider.of<LocalizationProvider>(context, listen: false);
+
+  String _currentPaymentLabel(PaymentProvider payment, LocalizationProvider l10n) {
+    if (payment.selectedMethodType == PaymentMethodType.card &&
+        payment.selectedCard != null) {
+      return '•••• ${payment.selectedCard!.last4}';
+    } else if (payment.selectedMethodType == PaymentMethodType.idram) {
+      return l10n.translate('idram');
+    }
+    return l10n.translate('cash');
+  }
+
+  String _getStatusLabel(String status, LocalizationProvider l10n) {
+    final key = status.toLowerCase() == 'on_way' ? 'on_the_way' : status.toLowerCase();
+    return l10n.translate(key);
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':   return Colors.orange;
+      case 'accepted':  return Colors.blue;
+      case 'preparing': return Colors.amber;
+      case 'on_way':    return Colors.purple;
+      case 'delivered': return Colors.green;
+      case 'cancelled': return Colors.red;
+      default:          return Colors.white38;
+    }
+  }
+
+  // ── Responsive sheet helper ───────────────────────────────────────────────
+
+  // Shows a bottom sheet on mobile, a centered dialog on desktop.
+  Future<void> _showSheet(
+    BuildContext context, {
+    required Widget Function(BuildContext ctx, bool isDesktop) builder,
+    bool scrollControlled = false,
+  }) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    if (isDesktop) {
+      return showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.6),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: builder(ctx, true),
+          ),
+        ),
+      );
+    } else {
+      return showModalBottomSheet(
+        context: context,
+        isScrollControlled: scrollControlled,
+        backgroundColor: Colors.transparent,
+        useRootNavigator: true,
+        builder: (ctx) => builder(ctx, false),
+      );
+    }
+  }
+
+  // ── Payment selection ─────────────────────────────────────────────────────
 
   void _showPaymentSelection(
     BuildContext context,
     PaymentProvider payment,
     LocalizationProvider l10n,
   ) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      useRootNavigator: true,
-      builder: (context) => Container(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              l10n.translate('paymentMethod'),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildPaymentTypeItem(
-              context,
-              payment,
-              l10n,
-              PaymentMethodType.cash,
-              Icons.payments_outlined,
-              l10n.translate('cash'),
-            ),
-            const SizedBox(height: 12),
-            _buildPaymentTypeItem(
-              context,
-              payment,
-              l10n,
-              PaymentMethodType.idram,
-              Icons.account_balance_wallet_outlined,
-              l10n.translate('idram'),
-            ),
-            const SizedBox(height: 12),
-            _buildPaymentTypeItem(
-              context,
-              payment,
-              l10n,
-              PaymentMethodType.card,
-              Icons.credit_card,
-              l10n.translate('card'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
 
-  Widget _buildPaymentTypeItem(
-    BuildContext context,
-    PaymentProvider payment,
-    LocalizationProvider l10n,
-    PaymentMethodType type,
-    IconData icon,
-    String title,
-  ) {
-    final isSelected = payment.selectedMethodType == type;
-    return GestureDetector(
-      onTap: () {
-        if (type == PaymentMethodType.card && payment.cards.isEmpty) {
-          Navigator.pop(context);
-          _showCardEntry(context);
-        } else {
-          payment.setMethodType(type);
-          Navigator.pop(context);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : const Color(0xFF161616),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.black : Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
+    _showSheet(context, builder: (ctx, isDesktop) {
+      return _SheetContainer(
+        isDesktop: isDesktop,
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SheetHeader(
+                title: l10n.translate('paymentMethod'),
+                isDesktop: isDesktop,
+                onClose: () => Navigator.pop(ctx),
               ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: Colors.black, size: 24),
-          ],
+              const SizedBox(height: 20),
+              _PaymentOption(
+                icon: Icons.payments_outlined,
+                label: l10n.translate('cash'),
+                description: l10n.translate('cashDescription'),
+                isSelected: payment.selectedMethodType == PaymentMethodType.cash,
+                onTap: () {
+                  payment.setMethodType(PaymentMethodType.cash);
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 10),
+              _PaymentOption(
+                icon: Icons.account_balance_wallet_outlined,
+                label: 'iDram',
+                description: l10n.translate('idramDescription'),
+                isSelected: payment.selectedMethodType == PaymentMethodType.idram,
+                onTap: () {
+                  payment.setMethodType(PaymentMethodType.idram);
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 10),
+              _PaymentOption(
+                icon: Icons.credit_card_outlined,
+                label: l10n.translate('card'),
+                description: payment.cards.isNotEmpty
+                    ? '•••• ${payment.cards.first.last4}'
+                    : l10n.translate('addCardDescription'),
+                isSelected: payment.selectedMethodType == PaymentMethodType.card,
+                onTap: () {
+                  if (payment.cards.isEmpty) {
+                    Navigator.pop(ctx);
+                    _showCardEntry(context);
+                  } else {
+                    payment.setMethodType(PaymentMethodType.card);
+                    Navigator.pop(ctx);
+                  }
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
+    });
   }
 
   void _showCardEntry(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      useRootNavigator: true,
-      builder: (context) => const CardEntryForm(),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.6),
+        builder: (ctx) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: const CardEntryForm(isDialog: true),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        useRootNavigator: true,
+        builder: (_) => const CardEntryForm(isDialog: false),
+      );
+    }
   }
 
+  // ── Support ───────────────────────────────────────────────────────────────
+
   void _showSupportOptions(BuildContext context, LocalizationProvider l10n) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-        decoration: const BoxDecoration(
-          color: Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
+
+    _showSheet(context, builder: (ctx, isDesktop) {
+      return _SheetContainer(
+        isDesktop: isDesktop,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+            _SheetHeader(
+              title: l10n.translate('support'),
+              isDesktop: isDesktop,
+              onClose: () => Navigator.pop(ctx),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Աջակցության կենտրոն',
+            const SizedBox(height: 8),
+            Text(
+              l10n.translate('howCanWeHelp'),
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 13,
               ),
             ),
-            const SizedBox(height: 24),
-            _buildSupportOption(
+            const SizedBox(height: 20),
+            _SupportOption(
               icon: Icons.phone_outlined,
+              iconBg: Colors.green.withValues(alpha: 0.12),
+              iconColor: Colors.greenAccent,
               title: '+374 60 515515',
-              subtitle: 'Զանգահարել աջակցության կենտրոն',
+              subtitle: l10n.translate('callSupport'),
               onTap: () async {
-                final Uri url = Uri.parse('tel:+37460515515');
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
-                }
-                if (context.mounted) Navigator.pop(context);
+                final uri = Uri.parse('tel:+37460515515');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
-            const SizedBox(height: 12),
-            _buildSupportOption(
-              icon: Icons.chat_bubble_outline,
-              title: 'Օպերատորի հետ չատ',
-              subtitle: 'Գրեք մեր մասնագետին',
+            const SizedBox(height: 10),
+            _SupportOption(
+              icon: Icons.chat_bubble_outline_rounded,
+              iconBg: Colors.blue.withValues(alpha: 0.12),
+              iconColor: Colors.lightBlueAccent,
+              title: l10n.translate('onlineChat'),
+              subtitle: l10n.translate('chatDescription'),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(ctx);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SupportChatScreen(),
+                    settings: const RouteSettings(name: 'SupportChatScreen'),
+                    builder: (_) => const SupportChatScreen(),
                   ),
                 );
               },
             ),
           ],
         ),
-      ),
-    );
+      );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
+    });
   }
 
-  Widget _buildSupportOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF161616),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Row(
+  // ── Address forms ─────────────────────────────────────────────────────────
+
+  void _showAddNewAddressDialog(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
+    final titleCtrl = TextEditingController();
+    final addrCtrl = TextEditingController();
+
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
+
+    _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
+      return _SheetContainer(
+        isDesktop: isDesktop,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 24),
+            _SheetHeader(
+              title: l10n.translate('newAddress'),
+              isDesktop: isDesktop,
+              onClose: () => Navigator.pop(ctx),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 20),
+            _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
+            const SizedBox(height: 12),
+            _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+            if (!isDesktop)
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
               ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white24,
-              size: 14,
+            const SizedBox(height: 24),
+            _PrimaryButton(
+              label: l10n.translate('save'),
+              onTap: () {
+                if (addrCtrl.text.trim().isNotEmpty) {
+                  addressProvider.addAddress(
+                    titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
+                    addrCtrl.text.trim(),
+                  );
+                  Navigator.pop(ctx);
+                }
+              },
             ),
           ],
         ),
-      ),
-    );
+      );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
+    });
   }
+
+  void _showAddressEditInline(
+      BuildContext context, AddressProvider addressProvider, dynamic addr, LocalizationProvider l10n) {
+    final titleCtrl = TextEditingController(text: addr.title);
+    final addrCtrl = TextEditingController(text: addr.address);
+
+    // Hide nav bar
+    Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
+
+    _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
+      return _SheetContainer(
+        isDesktop: isDesktop,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _SheetHeader(
+                    title: l10n.translate('editAddress'),
+                    isDesktop: isDesktop,
+                    onClose: () => Navigator.pop(ctx),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    addressProvider.removeAddress(addr.id);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
+            const SizedBox(height: 12),
+            _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+            if (!isDesktop)
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              ),
+            const SizedBox(height: 24),
+            _PrimaryButton(
+              label: l10n.translate('save'),
+              onTap: () {
+                addressProvider.updateAddressDetails(addr.id, address: addrCtrl.text.trim());
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      );
+    }).then((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
+    });
+  }
+}
+
+// ── Sheet chrome widgets ──────────────────────────────────────────────────────
+
+class _SheetContainer extends StatelessWidget {
+  final Widget child;
+  final bool isDesktop;
+
+  const _SheetContainer({required this.child, required this.isDesktop});
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final payment = Provider.of<PaymentProvider>(context);
-    final ordersProvider = Provider.of<OrdersProvider>(context);
-    final l10n = Provider.of<LocalizationProvider>(context);
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: !auth.isAuthenticated
-          ? Column(
-              children: [
-                Expanded(child: const GuestAuthView()),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                // Tab navigation (hidden on edit_profile sub-screen)
-                if (_activeSection != 'edit_profile')
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildNavigationButtons(l10n),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-
-                // Back button row when editing profile
-                if (_activeSection == 'edit_profile')
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _activeSection = 'data'),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF161616),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
-                      ),
-                    ),
-                  ),
-
-                if (_activeSection != 'edit_profile')
-                  Expanded(
-                    child: PageView(
-                      controller: _pageController,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _activeSection = _sections[index];
-                          _tabController.animateTo(index);
-                        });
-                      },
-                      children: [
-                        Consumer<AddressProvider>(
-                          builder: (context, addressProvider, child) =>
-                              SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                _buildArtagersProfileCard(auth, l10n),
-                                const SizedBox(height: 36),
-                                _buildSectionHeader(
-                                  l10n.translate('activeOrders'),
-                                  trailing: _buildSeeAllButton(l10n),
-                                ),
-                                const SizedBox(height: 16),
-                                _buildOrdersPreview(context, ordersProvider, l10n),
-                                const SizedBox(height: 36),
-                                _buildSectionHeader('Իմ հասցեները'),
-                                const SizedBox(height: 16),
-                                _buildAddressesSection(context, addressProvider, auth),
-                                const SizedBox(height: 36),
-                                _buildSectionHeader(l10n.translate('settings')),
-                                const SizedBox(height: 16),
-                                _buildSettingsPreview(payment, l10n),
-                                const SizedBox(height: 40),
-                                _buildLogoutButton(auth, l10n),
-                                const SizedBox(height: 100),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 4),
-                              _buildFullOrdersList(ordersProvider, l10n),
-                              const SizedBox(height: 100),
-                            ],
-                          ),
-                        ),
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 4),
-                              _buildSettingsContent(payment, l10n),
-                              const SizedBox(height: 100),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _buildEditProfileView(auth, l10n),
-                    ),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  // ── Tab Navigation Builder ─────────────────────────────────────────────
-  Widget _buildNavigationButtons(LocalizationProvider l10n) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _buildNavTab('data', l10n.translate('personalData')),
-          const SizedBox(width: 12),
-          _buildNavTab('orders', l10n.translate('orders')),
-          const SizedBox(width: 12),
-          _buildNavTab('settings', l10n.translate('settings')),
-        ],
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        borderRadius: isDesktop
+            ? BorderRadius.circular(28)
+            : const BorderRadius.vertical(top: Radius.circular(28)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
+      child: child,
     );
   }
+}
 
-  Widget _buildNavTab(String id, String label) {
-    final index = _sections.indexOf(id);
-    final isActive = _activeSection == id;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _activeSection = id);
-        _tabController.animateTo(index);
-        _pageController.animateToPage(
-          index,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.black,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isActive
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.black : Colors.white,
-            fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
+class _SheetHeader extends StatelessWidget {
+  final String title;
+  final bool isDesktop;
+  final VoidCallback onClose;
 
-  // ── Profile Card ───────────────────────────────────────────────────────
-  Widget _buildArtagersProfileCard(
-    AuthProvider auth,
-    LocalizationProvider l10n,
-  ) {
-    return GestureDetector(
-      onTap: () => setState(() => _activeSection = 'edit_profile'),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    auth.userName ?? 'User Name',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    auth.phone ?? '+374 -- -- -- --',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  const _SheetHeader({
+    required this.title,
+    required this.isDesktop,
+    required this.onClose,
+  });
 
-  Widget _buildEditProfileView(AuthProvider auth, LocalizationProvider l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        AppTextField(
-          controller: _nameController,
-          hintText: l10n.translate('name'),
-          textInputAction: TextInputAction.next,
-          onChanged: (v) => _localName = v,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: _emailController,
-          hintText: l10n.translate('email'),
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          onChanged: (v) => _localEmail = v,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: _phoneController,
-          hintText: l10n.translate('phone'),
-          keyboardType: TextInputType.phone,
-          textInputAction: TextInputAction.done,
-          onChanged: (v) => _localPhone = v,
-        ),
-        const SizedBox(height: 32),
-        GestureDetector(
-          onTap: () async {
-            final success = await auth.updateProfile(
-              name: _nameController.text,
-              email: _emailController.text,
-              phone: _phoneController.text,
-            );
-            if (success && mounted) {
-              setState(() => _activeSection = 'data');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Պրոֆիլը թարմացված է')),
-              );
-            }
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(40),
-            ),
-            child: Center(
-              child: auth.isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
-                    )
-                  : Text(
-                      l10n.translate('save'),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Section Header ─────────────────────────────────────────────────────
-  Widget _buildSectionHeader(String title, {Widget? trailing}) {
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        if (!isDesktop) ...[
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ],
         Expanded(
           child: Text(
             title,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (trailing != null) ...[const SizedBox(width: 12), trailing],
-      ],
-    );
-  }
-
-  Widget _buildSeeAllButton(LocalizationProvider l10n) {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _activeSection = 'orders');
-        _tabController.animateTo(1);
-        _pageController.animateToPage(
-          1,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF121212),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Text(
-          l10n.translate('seeAll'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Dashboard Previews ─────────────────────────────────────────────────
-  Widget _buildOrdersPreview(
-    BuildContext context,
-    OrdersProvider provider,
-    LocalizationProvider l10n,
-  ) {
-    if (provider.isLoading) {
-      return Container(
-        height: 100,
-        alignment: Alignment.center,
-        child: const CircularProgressIndicator(color: Colors.white),
-      );
-    }
-
-    if (provider.error != null) {
-      return Container(
-        height: 100,
-        alignment: Alignment.center,
-        child: Text(
-          provider.error!,
-          style: const TextStyle(color: Colors.redAccent),
-        ),
-      );
-    }
-
-    final activeOrders = provider.orders.where((o) {
-      final s = o.status.toLowerCase();
-      return s != 'delivered' && s != 'cancelled' && s != 'canceled';
-    }).toList();
-
-    if (activeOrders.isEmpty) {
-      return Container(
-        height: 100,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-        child: Text(
-          l10n.translate('noActiveOrders') ?? 'Ակտիվ պատվերներ չկան',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        ),
-      );
-    }
-    return Column(
-      children: [
-        _buildPreviewOrderCard(
-          context,
-          provider,
-          l10n,
-          activeOrders.first,
-          isTop: true,
-          isBottom: activeOrders.length == 1,
-        ),
-        if (activeOrders.length > 1)
-          _buildPreviewOrderCard(
-            context,
-            provider,
-            l10n,
-            activeOrders[1],
-            isBottom: true,
+        if (isDesktop)
+          GestureDetector(
+            onTap: onClose,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.07),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white54, size: 16),
+            ),
           ),
       ],
     );
   }
+}
 
-  Widget _buildPreviewOrderCard(
-    BuildContext context,
-    OrdersProvider provider,
-    LocalizationProvider l10n,
-    dynamic order, {
-    bool isTop = false,
-    bool isBottom = false,
-  }) {
+// ── Reusable option tiles ─────────────────────────────────────────────────────
+
+class _PaymentOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String description;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PaymentOption({
+    required this.icon,
+    required this.label,
+    required this.description,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderDetailsScreen(order: order),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.only(
-            topLeft: isTop ? const Radius.circular(24) : Radius.zero,
-            topRight: isTop ? const Radius.circular(24) : Radius.zero,
-            bottomLeft: isBottom ? const Radius.circular(24) : Radius.zero,
-            bottomRight: isBottom ? const Radius.circular(24) : Radius.zero,
+          color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.08),
           ),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              order.address,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: isSelected ? Colors.black87 : Colors.white70, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? Colors.black : Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.black.withValues(alpha: 0.45)
+                          : Colors.white.withValues(alpha: 0.35),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Order #${order.id.substring(order.id.length - 6)}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? Colors.black : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.black
+                      : Colors.white.withValues(alpha: 0.2),
+                  width: 2,
                 ),
-                Text(
-                  _getStatusLabel(order.status, l10n),
-                  style: TextStyle(
-                    color: _getStatusColor(order.status),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 13)
+                  : null,
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildSettingsPreview(
-    PaymentProvider payment,
-    LocalizationProvider l10n,
-  ) {
-    String currentPaymentLabel = l10n.translate('cash');
-    if (payment.selectedMethodType == PaymentMethodType.card &&
-        payment.selectedCard != null) {
-      currentPaymentLabel = '•••• ${payment.selectedCard!.last4}';
-    } else if (payment.selectedMethodType == PaymentMethodType.idram) {
-      currentPaymentLabel = l10n.translate('idram');
-    }
+class _SupportOption extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
-    return Column(
-      children: [
-        _buildLanguageButton(l10n),
-        const SizedBox(height: 12),
-        _buildListButton(
-          l10n.translate('paymentMethods'),
-          subtitle: currentPaymentLabel,
-          onTap: () => _showPaymentSelection(context, payment, l10n),
-        ),
-      ],
-    );
-  }
+  const _SupportOption({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
-  Widget _buildLanguageButton(LocalizationProvider l10n) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            l10n.translate('language'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const LanguageSelector(color: Colors.white),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListButton(
-    String title, {
-    String? subtitle,
-    VoidCallback? onTap,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 12,
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.38), fontSize: 12)),
+                ],
               ),
             ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withValues(alpha: 0.2), size: 14),
           ],
         ),
       ),
     );
   }
+}
 
-  // ── Addresses Section ──────────────────────────────────────────────────
-  Widget _buildAddressesSection(
-    BuildContext context,
-    AddressProvider addressProvider,
-    AuthProvider auth,
-  ) {
-    final addresses = addressProvider.addresses;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+class _AddressField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
 
-        // Saved addresses list
-        if (addresses.isEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F0F0F),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-            ),
-            child: Text(
-              'Հասցեներ չկան',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-            ),
-          )
-        else
-          ...addresses.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final addr = entry.value;
-            final isFirst = idx == 0;
-            final isLast = idx == addresses.length - 1;
-            return Container(
-              margin: EdgeInsets.only(bottom: isLast ? 0 : 2),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F0F0F),
-                borderRadius: BorderRadius.only(
-                  topLeft: isFirst ? const Radius.circular(20) : Radius.zero,
-                  topRight: isFirst ? const Radius.circular(20) : Radius.zero,
-                  bottomLeft: isLast ? const Radius.circular(20) : Radius.zero,
-                  bottomRight: isLast ? const Radius.circular(20) : Radius.zero,
-                ),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.location_on_outlined, color: Colors.white70, size: 18),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          addr.title.isNotEmpty ? addr.title : 'Հասցե',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        if (addr.address.isNotEmpty) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            addr.address,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _showAddressEditInline(context, addressProvider, addr),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.edit_outlined, color: Colors.white54, size: 16),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        const SizedBox(height: 12),
-        // Add address button
-        GestureDetector(
-          onTap: () => _showAddNewAddressDialog(context, addressProvider),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.add, color: Colors.white70, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Ավելացնել հասցե',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  const _AddressField({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+  });
 
-  void _showAddNewAddressDialog(BuildContext context, AddressProvider addressProvider) {
-    final titleController = TextEditingController();
-    final addressController = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F0F0F),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Նոր հասցե',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 20),
-              _buildAddressField(titleController, 'Հասցեի անուն (օր.՝ Տուն, Աշխատանք)'),
-              const SizedBox(height: 12),
-              _buildAddressField(addressController, 'Փողոց, տուն'),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  if (addressController.text.trim().isNotEmpty) {
-                    addressProvider.addAddress(
-                      titleController.text.trim().isNotEmpty
-                          ? titleController.text.trim()
-                          : 'Հասցե',
-                      addressController.text.trim(),
-                    );
-                    Navigator.pop(ctx);
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Պահպանել',
-                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAddressEditInline(BuildContext context, AddressProvider addressProvider, dynamic addr) {
-    final titleController = TextEditingController(text: addr.title);
-    final addressController = TextEditingController(text: addr.address);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F0F0F),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Խմբագրել հասցե',
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      addressProvider.removeAddress(addr.id);
-                      Navigator.pop(ctx);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildAddressField(titleController, 'Հասցեի անուն'),
-              const SizedBox(height: 12),
-              _buildAddressField(addressController, 'Փողոց, տուն'),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: () {
-                  addressProvider.updateAddressDetails(
-                    addr.id,
-                    address: addressController.text.trim(),
-                  );
-                  Navigator.pop(ctx);
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Պահպանել',
-                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddressField(TextEditingController controller, String hint) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF161616),
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
-          border: InputBorder.none,
-        ),
-      ),
-    );
-  }
-
-  // ── Tab Content Logic ──────────────────────────────────────────────────
-  Widget _buildFullOrdersList(
-    OrdersProvider ordersProvider,
-    LocalizationProvider l10n,
-  ) {
-    if (ordersProvider.isLoading) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-      );
-    }
-
-    if (ordersProvider.error != null) {
-      return _buildEmptyState(ordersProvider.error!);
-    }
-
-    if (ordersProvider.orders.isEmpty) {
-      return _buildEmptyState(l10n.translate('emptyCart'));
-    }
-    return Column(
-      children: ordersProvider.orders
-          .map((o) => _buildDetailedOrderCard(o, l10n))
-          .toList(),
-    );
-  }
-
-  Widget _buildSettingsContent(
-    PaymentProvider payment,
-    LocalizationProvider l10n,
-  ) {
-    return _buildSettingsPreview(payment, l10n);
-  }
-
-  Widget _buildDetailedOrderCard(dynamic order, LocalizationProvider l10n) {
-    return _buildPreviewOrderCard(
-      context,
-      Provider.of<OrdersProvider>(context, listen: false),
-      l10n,
-      order,
-      isTop: true,
-      isBottom: true,
-    );
-  }
-
-  String _getStatusLabel(String status, LocalizationProvider l10n) {
-    final statusKey = status.toLowerCase() == 'on_way' ? 'on_the_way' : status.toLowerCase();
-    return l10n.translate(statusKey);
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'accepted':
-        return Colors.blue;
-      case 'preparing':
-        return Colors.yellow;
-      case 'on_way':
-        return Colors.purple;
-      case 'delivered':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.white54;
-    }
-  }
-
-  Widget _buildEmptyState(String message) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Center(
-        child: Text(
-          message,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGuestView(BuildContext context, LocalizationProvider l10n) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          const Icon(
-            Icons.account_circle_outlined,
-            size: 80,
-            color: Colors.white24,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            l10n.translate('loginToSeeProfile'),
-            style: const TextStyle(color: Colors.white54),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  settings: const RouteSettings(name: 'LoginScreen'),
-                  builder: (context) =>
-                      const LoginScreen(isCheckoutFlow: false),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+          const SizedBox(width: 16),
+          Icon(icon, color: Colors.white30, size: 18),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 14),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              ),
             ),
-            child: Text(l10n.translate('login')),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildLogoutButton(AuthProvider auth, LocalizationProvider l10n) {
-    return Center(
-      child: GestureDetector(
-        onTap: () {
-          auth.logout();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-            vertical: 14,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xFF161616),
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(
-            l10n.translate('logout'),
-            style: const TextStyle(
-              color: Colors.redAccent,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+class _PrimaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PrimaryButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Center(
+          child: Text(label,
+              style: const TextStyle(
+                  color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900)),
         ),
       ),
     );

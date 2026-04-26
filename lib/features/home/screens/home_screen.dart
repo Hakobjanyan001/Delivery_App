@@ -100,13 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openFoodDetail(BuildContext ctx, ProductModel product) {
-    showModalBottomSheet(
-      context: ctx,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      routeSettings: const RouteSettings(name: 'FoodDetail'),
-      builder: (_) => FoodDetailDialog(product: product),
-    );
+    showFoodDetail(ctx, product);
   }
 
   @override
@@ -161,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Banner carousel
                   if (hp.banners.isNotEmpty)
-                    SliverToBoxAdapter(child: _buildBanner(hp.banners, lang)),
+                    SliverToBoxAdapter(child: _buildBanner(context, hp.banners, lang)),
 
                   // Sticky category chips
                   SliverPersistentHeader(
@@ -185,18 +179,23 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text('Ապրանքներ չկան', style: TextStyle(color: Colors.white54)),
                             ),
                           )
-                        : SliverGrid(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              mainAxisExtent: 290,
-                            ),
-                            delegate: SliverChildBuilderDelegate(
-                              (ctx, i) => _buildProductCard(ctx, displayProducts[i], lang, l10n),
-                              childCount: displayProducts.length,
-                            ),
-                          ),
+                        : Builder(builder: (ctx) {
+                            final w = MediaQuery.of(ctx).size.width;
+                            final cols = w >= 900 ? 5 : 2;
+                            final extent = w >= 900 ? 310.0 : 290.0;
+                            return SliverGrid(
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: cols,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                mainAxisExtent: extent,
+                              ),
+                              delegate: SliverChildBuilderDelegate(
+                                (ctx, i) => _buildProductCard(ctx, displayProducts[i], lang, l10n),
+                                childCount: displayProducts.length,
+                              ),
+                            );
+                          }),
                   ),
                 ],
               ),
@@ -209,9 +208,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Banner ─────────────────────────────────────────────────────────────────
 
-  Widget _buildBanner(List<BannerModel> banners, String lang) {
+  Widget _buildBanner(BuildContext ctx, List<BannerModel> banners, String lang) {
+    final isDesktop = MediaQuery.of(ctx).size.width >= 900;
+    final bannerHeight = isDesktop ? 464.0 : 232.0;
+    final textTop = isDesktop ? 108.0 : 54.0;
+    final descTop = isDesktop ? 146.0 : 73.0;
     return SizedBox(
-      height: 232, // 16 top padding + 200 content + 16 bottom padding
+      height: bannerHeight,
       child: PageView.builder(
         controller: _bannersController,
         onPageChanged: (i) => _currentBannerPage = i,
@@ -257,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   // Title
                   Positioned(
-                    top: 54,
+                    top: textTop,
                     left: 32,
                     right: 32,
                     child: Text(
@@ -271,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   // Description / price
                   Positioned(
-                    top: 73,
+                    top: descTop,
                     left: 32,
                     right: 32,
                     child: Text(
@@ -296,6 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Product card ───────────────────────────────────────────────────────────
 
   Widget _buildProductCard(BuildContext ctx, ProductModel product, String lang, LocalizationProvider l10n) {
+    final isDesktop = MediaQuery.of(ctx).size.width >= 900;
     return GestureDetector(
       onTap: () => _openFoodDetail(ctx, product),
       child: Container(
@@ -307,9 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fixed 170px image
             SizedBox(
-              height: 170,
+              height: isDesktop ? 160 : 170,
               width: double.infinity,
               child: product.mainImageUrl.isNotEmpty
                   ? Image.network(
@@ -542,13 +545,17 @@ class _CategoryBarDelegate extends SliverPersistentHeaderDelegate {
             controller: scrollController,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            itemCount: categories.length,
-            itemBuilder: (_, i) {
-              final cat = categories[i];
-              final isSelected = selectedCategoryId == cat.id ||
-                  (selectedCategoryId == null && i == 0);
+            itemCount: categories.length + 1,
+            itemBuilder: (context, i) {
+              final isAll = i == 0;
+              final isSelected = isAll
+                  ? selectedCategoryId == null
+                  : selectedCategoryId == categories[i - 1].id;
+              final label = isAll
+                  ? Provider.of<LocalizationProvider>(context, listen: false).translate('catAll')
+                  : categories[i - 1].name.getLocalized(lang);
               return GestureDetector(
-                onTap: () => onSelected(cat.id),
+                onTap: () => onSelected(isAll ? null : categories[i - 1].id),
                 child: Container(
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -563,7 +570,7 @@ class _CategoryBarDelegate extends SliverPersistentHeaderDelegate {
                     ],
                   ),
                   child: Text(
-                    cat.name.getLocalized(lang),
+                    label,
                     style: TextStyle(
                       color: isSelected ? Colors.black : Colors.white,
                       fontSize: 12,

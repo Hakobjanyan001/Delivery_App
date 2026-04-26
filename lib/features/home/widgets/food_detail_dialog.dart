@@ -2,396 +2,568 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/product_model.dart';
 import '../../cart/providers/cart_provider.dart';
-import '../../cart/models/cart_item.dart';
 import '../../../core/localization/localization_provider.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../auth/providers/auth_provider.dart';
-import '../../auth/screens/login_screen.dart';
+
+// ─── entry point ────────────────────────────────────────────────────────────
+
+void showFoodDetail(BuildContext context, ProductModel product) {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (_) => _FoodDetailDesktop(product: product),
+    );
+  } else {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      routeSettings: const RouteSettings(name: 'FoodDetail'),
+      builder: (_) => FoodDetailDialog(product: product),
+    );
+  }
+}
+
+// ─── shared state mixin ──────────────────────────────────────────────────────
+
+mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
+  late ProductModel product;
+  String? selectedVariantName;
+  int quantity = 1;
+  bool isLoading = false;
+  final TextEditingController noteController = TextEditingController();
+
+  void initProduct(ProductModel p) {
+    product = p;
+    if (p.variants.isNotEmpty) {
+      selectedVariantName = p.variants.first.name.hy;
+    }
+  }
+
+  @override
+  void dispose() {
+    noteController.dispose();
+    super.dispose();
+  }
+
+  double get effectivePrice {
+    if (selectedVariantName != null && product.variants.isNotEmpty) {
+      try {
+        final v = product.variants.firstWhere(
+          (v) =>
+              v.name.en == selectedVariantName ||
+              v.name.hy == selectedVariantName ||
+              v.name.ru == selectedVariantName,
+        );
+        return v.price;
+      } catch (_) {}
+    }
+    return product.displayPrice;
+  }
+
+  Future<void> addToCart(BuildContext ctx) async {
+    if (isLoading) return;
+    setState(() => isLoading = true);
+
+    final cart = Provider.of<CartProvider>(ctx, listen: false);
+    final l10n = Provider.of<LocalizationProvider>(ctx, listen: false);
+    final lang = l10n.currentLocale.languageCode;
+    final messenger = ScaffoldMessenger.of(ctx);
+    final name = product.name.getLocalized(lang);
+
+    String? variantId;
+    if (selectedVariantName != null) {
+      try {
+        variantId = product.variants.firstWhere(
+          (v) =>
+              v.name.en == selectedVariantName ||
+              v.name.hy == selectedVariantName ||
+              v.name.ru == selectedVariantName,
+        ).id;
+      } catch (_) {}
+    }
+
+    final nav = Navigator.of(ctx);
+
+    try {
+      await cart.addItem(
+        product,
+        variantId: variantId,
+        variantName: selectedVariantName,
+        attributes: const [],
+        unitPrice: effectivePrice,
+        quantity: quantity,
+        note: noteController.text.trim().isEmpty ? null : noteController.text.trim(),
+      );
+
+      if (mounted) nav.pop();
+
+      messenger.showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('$name ${l10n.translate('addedToCart')}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          ),
+        ]),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        duration: const Duration(seconds: 2),
+      ));
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+      messenger.showSnackBar(SnackBar(
+        content: Text(e.toString(), style: const TextStyle(fontSize: 15)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        backgroundColor: Colors.red.shade800,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        duration: const Duration(seconds: 3),
+      ));
+    }
+  }
+
+  // ── shared widgets ──────────────────────────────────────────────────────
+
+  Widget buildVariants(String lang) {
+    if (product.variants.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel(lang == 'hy' ? 'Տարբերակ' : (lang == 'en' ? 'Size' : 'Размер')),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: product.variants.map((variant) {
+            final vName = variant.name.getLocalized(lang);
+            final isSelected = selectedVariantName == variant.name.en ||
+                selectedVariantName == variant.name.hy ||
+                selectedVariantName == variant.name.ru;
+            return GestureDetector(
+              onTap: () => setState(() => selectedVariantName = variant.name.hy),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : const Color(0xFF1C1C1C),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Column(children: [
+                  Text(vName,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.black : Colors.white,
+                      )),
+                  Text('${variant.price.toStringAsFixed(0)} ֏',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected
+                            ? Colors.black.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.45),
+                      )),
+                ]),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget buildNoteField(String lang) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel(lang == 'hy' ? 'Մեկնաբանություն' : (lang == 'en' ? 'Note' : 'Комментарий')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: noteController,
+          maxLines: 3,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: lang == 'hy'
+                ? 'Թողնել մեկնաբանություն...'
+                : (lang == 'en' ? 'Leave a note...' : 'Оставить комментарий...'),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+            filled: true,
+            fillColor: const Color(0xFF1C1C1C),
+            contentPadding: const EdgeInsets.all(14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget buildCta(BuildContext ctx, String lang) {
+    final totalPrice = (effectivePrice * quantity).toStringAsFixed(0);
+    return Row(children: [
+      // stepper
+      Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C1C1C),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          _StepperButton(
+            icon: quantity == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
+            onTap: () {
+              if (quantity == 1) {
+                Navigator.pop(ctx);
+              } else {
+                setState(() => quantity--);
+              }
+            },
+          ),
+          SizedBox(
+            width: 36,
+            child: Text('$quantity',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white)),
+          ),
+          _StepperButton(
+            icon: Icons.add_rounded,
+            onTap: () => setState(() => quantity++),
+          ),
+        ]),
+      ),
+      const SizedBox(width: 10),
+      // add button
+      Expanded(
+        child: GestureDetector(
+          onTap: isLoading ? null : () => addToCart(ctx),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            height: 52,
+            decoration: BoxDecoration(
+              color: isLoading ? Colors.white.withValues(alpha: 0.7) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: isLoading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+                    )
+                  : Text(
+                      '${lang == 'hy' ? 'Ավելացնել' : (lang == 'en' ? 'Add' : 'Добавить')}  •  $totalPrice ֏',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _sectionLabel(String text) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Colors.white.withValues(alpha: 0.5),
+          letterSpacing: 0.4,
+        ),
+      );
+
+  Widget imagePlaceholder() => Container(
+        color: const Color(0xFF1C1C1C),
+        child: const Center(
+          child: Icon(Icons.fastfood_rounded, size: 56, color: Colors.white12),
+        ),
+      );
+}
+
+// ─── mobile bottom sheet ─────────────────────────────────────────────────────
 
 class FoodDetailDialog extends StatefulWidget {
   final ProductModel product;
-
   const FoodDetailDialog({super.key, required this.product});
 
   @override
   State<FoodDetailDialog> createState() => _FoodDetailDialogState();
 }
 
-class _FoodDetailDialogState extends State<FoodDetailDialog> {
-  String? _selectedVariantName;
-  final Map<String, String> _selectedAttributes = {};
-  int _quantity = 1;
-  final TextEditingController _noteController = TextEditingController();
-
-  double get _effectivePrice {
-    double price = widget.product.displayPrice;
-
-    // Add variant price if selected
-    if (_selectedVariantName != null) {
-      final variant = widget.product.variants.firstWhere(
-        (v) =>
-            v.name.en == _selectedVariantName ||
-            v.name.hy == _selectedVariantName ||
-            v.name.ru == _selectedVariantName,
-      );
-      price = variant.price;
-    }
-
-    // Add attribute prices
-    _selectedAttributes.forEach((attrId, optionName) {
-      final attribute = widget.product.attributes.firstWhere(
-        (a) => a.id == attrId,
-      );
-      final option = attribute.options.firstWhere(
-        (o) =>
-            o == optionName,
-      );
-    });
-
-    return price;
-  }
-
+class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMixin {
   @override
   void initState() {
     super.initState();
-    if (widget.product.variants.isNotEmpty) {
-      _selectedVariantName =
-          widget.product.variants.first.name.hy; // Default to Armenian
-    }
-  }
-
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
+    initProduct(widget.product);
   }
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
     final l10n = Provider.of<LocalizationProvider>(context);
     final lang = l10n.currentLocale.languageCode;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.92,
+      initialChildSize: 0.75,
+      maxChildSize: 0.95,
       minChildSize: 0.5,
-      builder: (context, scrollController) {
+      builder: (ctx, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            color: Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 40,
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        product.mainImageUrl,
-                        height: 250,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 200,
-                          color: const Color(0xFF1A1A1A),
-                          child: const Icon(
-                            Icons.fastfood,
-                            size: 60,
-                            color: Colors.white24,
-                          ),
-                        ),
-                      ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                children: [
+                  // hero image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: product.mainImageUrl.isNotEmpty
+                          ? Image.network(product.mainImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) => imagePlaceholder())
+                          : imagePlaceholder(),
                     ),
-                    const SizedBox(height: 16),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name.getLocalized(lang),
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                if (product.description
-                                    .getLocalized(lang)
-                                    .isNotEmpty)
-                                  Text(
-                                    product.description.getLocalized(lang),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
+                  ),
+                  const SizedBox(height: 16),
+                  // name + price
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(product.name.getLocalized(lang),
                             style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.black,
-                            ),
-                          ),
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                height: 1.2)),
+                        if (product.description.getLocalized(lang).isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(product.description.getLocalized(lang),
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  height: 1.4)),
                         ],
-                      ),
+                      ]),
                     ),
-                    const SizedBox(height: 20),
-
-                    if (product.variants.isNotEmpty) ...[
-                      const Text(
-                        'Տարբերակներ',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 10,
-                        children: product.variants.map((variant) {
-                          final variantName = variant.name.getLocalized(lang);
-                          final isSelected =
-                              _selectedVariantName == variantName;
-                          return ChoiceChip(
-                            label: Text(
-                              '$variantName (${variant.price.toStringAsFixed(0)} ֏)',
-                            ),
-                            selected: isSelected,
-                            onSelected: (_) => setState(
-                              () => _selectedVariantName = variantName,
-                            ),
-                            selectedColor: Colors.white,
-                            backgroundColor: Colors.black,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.black : Colors.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-
-                    // Comment Section
-                    const Text(
-                      'Մեկնաբանություն',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _noteController,
-                      maxLines: 3,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Թողնել մեկնաբանություն...',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFF1A1A1A),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                onPressed: _quantity > 1
-                                    ? () => setState(() => _quantity--)
-                                    : null,
-                                icon: const Icon(Icons.remove_circle_outline),
-                                color: Colors.black,
-                                iconSize: 32,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Text(
-                                  '$_quantity',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => setState(() => _quantity++),
-                                icon: const Icon(Icons.add_circle_outline),
-                                color: Colors.black,
-                                iconSize: 32,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                    const SizedBox(width: 12),
+                    Text('${product.displayPrice.toStringAsFixed(0)} ֏',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
+                  ]),
+                  const SizedBox(height: 20),
+                  buildVariants(lang),
+                  buildNoteField(lang),
+                  const SizedBox(height: 24),
+                ],
               ),
-
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  0,
-                  20,
-                  MediaQuery.of(context).padding.bottom + 16,
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    final authProvider = Provider.of<AuthProvider>(
-                      context,
-                      listen: false,
-                    );
-                    final l10n = Provider.of<LocalizationProvider>(
-                      context,
-                      listen: false,
-                    );
-                    final messenger = ScaffoldMessenger.of(context);
-                    final cartItemName = product.name.getLocalized(lang);
-                    final addedMsg = l10n.translate('addedToCart');
-
-                    final cart = Provider.of<CartProvider>(
-                      context,
-                      listen: false,
-                    );
-                    
-                    String? selectedVariantId;
-                    if (_selectedVariantName != null) {
-                      try {
-                        final variant = product.variants.firstWhere(
-                          (v) => v.name.getLocalized(lang) == _selectedVariantName,
-                        );
-                        selectedVariantId = variant.id;
-                      } catch (_) {}
-                    }
-
-                    final attributes = _selectedAttributes.entries.map<CartAttribute>((e) {
-                      // e.key is attrId, we might want the localized name instead?
-                      // Let's stick to what's available.
-                      final attr = product.attributes.firstWhere((a) => a.id == e.key);
-                      return CartAttribute(
-                        name: attr.name.getLocalized(lang),
-                        values: [e.value],
-                      );
-                    }).toList();
-
-                    cart.addItem(
-                      product,
-                      variantId: selectedVariantId,
-                      variantName: _selectedVariantName,
-                      attributes: attributes,
-                      unitPrice: _effectivePrice,
-                      quantity: _quantity,
-                      note: _noteController.text.isNotEmpty ? _noteController.text : null,
-                    );
-
-                    FocusScope.of(context).unfocus();
-
-                    Future.delayed(const Duration(milliseconds: 50), () {
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
-
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.green),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  '$cartItemName $addedMsg',
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ),
-                            ],
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
-                          backgroundColor: const Color(0xFF1E1E1E),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    '${lang == 'hy' ? 'Ավելացնել' : (lang == 'en' ? 'Add' : 'Добавить')} • ${(_effectivePrice * _quantity).toStringAsFixed(0)} ֏',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+            ),
+            // CTA
+            Container(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(ctx).padding.bottom + 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F0F0F),
+                border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
               ),
-            ],
-          ),
+              child: buildCta(ctx, lang),
+            ),
+          ]),
         );
       },
+    );
+  }
+}
+
+// ─── desktop center dialog ───────────────────────────────────────────────────
+
+class _FoodDetailDesktop extends StatefulWidget {
+  final ProductModel product;
+  const _FoodDetailDesktop({required this.product});
+
+  @override
+  State<_FoodDetailDesktop> createState() => _FoodDetailDesktopState();
+}
+
+class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetailMixin {
+  @override
+  void initState() {
+    super.initState();
+    initProduct(widget.product);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final lang = l10n.currentLocale.languageCode;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 860, maxHeight: 580),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            // ── left: image ──────────────────────────────────
+            Container(
+              width: 340,
+              color: const Color(0xFF1C1C1C),
+              child: Stack(fit: StackFit.expand, children: [
+                product.mainImageUrl.isNotEmpty
+                    ? Image.network(product.mainImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stack) => imagePlaceholder())
+                    : imagePlaceholder(),
+                // subtle gradient so left edge blends into dialog bg
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [Colors.transparent, const Color(0xFF0F0F0F).withValues(alpha: 0.15)],
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+
+            // ── right: details ───────────────────────────────
+            Expanded(
+              child: Container(
+                color: const Color(0xFF0F0F0F),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  // close button row
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 12, 12, 0),
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 22),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.06),
+                          shape: const CircleBorder(),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // scrollable content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(28, 4, 28, 16),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        // name
+                        Text(product.name.getLocalized(lang),
+                            style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                height: 1.2)),
+                        if (product.description.getLocalized(lang).isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(product.description.getLocalized(lang),
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  height: 1.5)),
+                        ],
+                        const SizedBox(height: 10),
+                        // price badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text('${product.displayPrice.toStringAsFixed(0)} ֏',
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+                        ),
+                        const SizedBox(height: 20),
+                        buildVariants(lang),
+                        buildNoteField(lang),
+                        const SizedBox(height: 20),
+                      ]),
+                    ),
+                  ),
+
+                  // CTA
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(28, 12, 28, 24),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F0F0F),
+                      border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
+                    ),
+                    child: buildCta(context, lang),
+                  ),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── shared stepper button ───────────────────────────────────────────────────
+
+class _StepperButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _StepperButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 44,
+        height: 52,
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
     );
   }
 }

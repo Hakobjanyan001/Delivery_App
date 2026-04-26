@@ -44,6 +44,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   bool get _showNavBar {
     final onboarding = context.read<OnboardingProvider>();
     if (!onboarding.hasSeenOnboarding) return false;
+
+    // Check if the tabs controller has explicitly hidden the nav bar
+    final tabs = context.watch<MainTabsController>();
+    if (!tabs.isNavBarVisible) return false;
+
     const hidden = {
       'OnboardingScreen', 'FoodDetail', 'LoginScreen',
       'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
@@ -102,44 +107,49 @@ class _NavBar extends StatelessWidget {
           Consumer<CartProvider>(
             builder: (context, cart, _) {
               if (cart.items.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: GestureDetector(
-                  onTap: () async {
-                    if (!isAuthenticated) {
-                      final success = await navigatorKey.currentState
-                          ?.push<bool>(MaterialPageRoute(
-                        settings: const RouteSettings(name: 'LoginScreen'),
-                        builder: (_) => const LoginScreen(isCheckoutFlow: true),
-                      ));
-                      if (success != true) return;
-                    }
-                    navigatorKey.currentState?.push(MaterialPageRoute(
-                      settings: const RouteSettings(name: 'PaymentScreen'),
-                      builder: (_) => const PaymentScreen(),
-                    ));
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(40),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: GestureDetector(
+                      onTap: () async {
+                        if (!isAuthenticated) {
+                          final success = await navigatorKey.currentState
+                              ?.push<bool>(MaterialPageRoute(
+                            settings: const RouteSettings(name: 'LoginScreen'),
+                            builder: (_) => const LoginScreen(isCheckoutFlow: true),
+                          ));
+                          if (success != true) return;
+                        }
+                        navigatorKey.currentState?.push(MaterialPageRoute(
+                          settings: const RouteSettings(name: 'PaymentScreen'),
+                          builder: (_) => const PaymentScreen(),
+                        ));
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(40),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
+                        child: Center(
+                          child: Text(
+                            'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -160,9 +170,14 @@ class _NavBar extends StatelessWidget {
           ),
           child: SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: _NavPill(tabs: tabs, l10n: l10n),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  child: _NavPill(tabs: tabs, l10n: l10n),
+                ),
+              ),
             ),
           ),
         ),
