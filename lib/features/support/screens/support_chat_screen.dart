@@ -164,9 +164,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             ),
             const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: AppColors.primary,
+              backgroundColor: Colors.white,
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
+                icon: const Icon(Icons.send, color: Colors.black),
                 onPressed: _sendMessage,
               ),
             ),

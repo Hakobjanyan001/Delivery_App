@@ -63,6 +63,7 @@ class SupportHubSheet extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
+                  settings: const RouteSettings(name: 'SupportChatScreen'),
                   builder: (context) => const SupportChatScreen(),
                 ),
               );
