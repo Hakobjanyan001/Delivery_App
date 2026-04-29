@@ -61,7 +61,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.login),
-        headers: {'Content-Type': 'application/json'},
+        headers: ApiConstants.getHeaders(),
         body: jsonEncode({'email': email, 'password': password}),
       );
 
@@ -95,7 +95,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.register),
-        headers: {'Content-Type': 'application/json'},
+        headers: ApiConstants.getHeaders(),
         body: jsonEncode({
           'name': name,
           'email': email,
@@ -302,10 +302,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.updateProfile),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_token',
-        },
+        headers: ApiConstants.getHeaders(_token),
         body: jsonEncode({
           if (name != null) 'name': name,
           if (phone != null) 'phone': phone,
@@ -332,10 +329,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.changeLanguage),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_token',
-        },
+        headers: ApiConstants.getHeaders(_token),
         body: jsonEncode({'language': language}),
       );
 
@@ -362,9 +356,7 @@ class AuthRepository {
     try {
       final response = await http.get(
         Uri.parse(ApiConstants.getAddresses),
-        headers: {
-          'Authorization': 'Bearer $_token',
-        },
+        headers: ApiConstants.getHeaders(_token),
       );
 
       if (response.statusCode == 200) {
@@ -383,10 +375,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.addAddress),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_token',
-        },
+        headers: ApiConstants.getHeaders(_token),
         body: jsonEncode(address.toJson()),
       );
 
@@ -426,9 +415,7 @@ class AuthRepository {
     try {
       final response = await http.delete(
         Uri.parse('${ApiConstants.deleteAddress}/$id'),
-        headers: {
-          'Authorization': 'Bearer $_token',
-        },
+        headers: ApiConstants.getHeaders(_token),
       );
 
       if (response.statusCode == 200) {

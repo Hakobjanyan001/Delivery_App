@@ -16,7 +16,10 @@ class ProductRepository {
       if (restaurantId != null) queryParams['restaurantId'] = restaurantId;
 
       final uri = Uri.parse(ApiConstants.getProducts).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-      final response = await http.get(uri);
+      final response = await http.get(
+        uri,
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -32,7 +35,10 @@ class ProductRepository {
   Future<ProductModel> getProductById(String id) async {
     try {
       final uri = Uri.parse(ApiConstants.getProductById).replace(queryParameters: {'id': id});
-      final response = await http.get(uri);
+      final response = await http.get(
+        uri,
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         return ProductModel.fromJson(jsonDecode(response.body));

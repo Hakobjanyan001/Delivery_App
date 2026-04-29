@@ -27,10 +27,7 @@ class CartRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.addToCart),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
         body: jsonEncode({
           'productId': productId,
           'variantId': variantId,
@@ -63,10 +60,7 @@ class CartRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.deleteFromCart),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
         body: jsonEncode({
           'productId': productId,
           'variantId': variantId,
@@ -89,9 +83,7 @@ class CartRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.deleteAllFromCart),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
       );
 
       if (response.statusCode != 200) {
@@ -109,9 +101,7 @@ class CartRepository {
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.getCart),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
       );
 
       if (response.statusCode == 200) {

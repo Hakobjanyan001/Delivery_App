@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform; // Use "show" to be specific
+import 'dart:io' show Platform;
+import '../../../core/constants/api_constants.dart';
 
 Future<List<dynamic>> fetchCategoryKeys() async {
   String authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTY1N2M1MTg3OGViNmU0MTViZTRlNSIsImlhdCI6MTc3NjcwNTc0NCwiZXhwIjoxNzc2NzA5MzQ0fQ.L69QyNz0L7wvLsiJh8ivzHqTR9Wj5I0lLVUF6R_ScZs";
@@ -17,10 +18,7 @@ Future<List<dynamic>> fetchCategoryKeys() async {
   try {
     final response = await http.get(
       url, 
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $authToken', // Hardcoded token
-      },
+      headers: ApiConstants.getHeaders(authToken),
     );
 
     if (response.statusCode == 200) {

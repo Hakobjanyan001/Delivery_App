@@ -7,7 +7,10 @@ class ApiManager {
   final String baseUrl = ApiConstants.baseUrl;
 
   Future<List<Restaurant>> getRestaurants() async {
-    final response = await http.get(Uri.parse(ApiConstants.getRestaurants));
+    final response = await http.get(
+      Uri.parse(ApiConstants.getRestaurants),
+      headers: ApiConstants.getHeaders(),
+    );
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => Restaurant.fromJson(json)).toList();
@@ -17,7 +20,10 @@ class ApiManager {
   }
 
   Future<List<FoodItem>> getFoods() async {
-    final response = await http.get(Uri.parse(ApiConstants.getProducts));
+    final response = await http.get(
+      Uri.parse(ApiConstants.getProducts),
+      headers: ApiConstants.getHeaders(),
+    );
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       return data.map((json) => FoodItem.fromJson(json)).toList();
@@ -27,7 +33,10 @@ class ApiManager {
   }
 
   Future<List<dynamic>> getPosts() async {
-    final response = await http.get(Uri.parse(ApiConstants.getBanners));
+    final response = await http.get(
+      Uri.parse(ApiConstants.getBanners),
+      headers: ApiConstants.getHeaders(),
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {

@@ -6,7 +6,10 @@ import '../../../core/models/category_model.dart';
 class CategoryRepository {
   Future<List<CategoryModel>> getCategories() async {
     try {
-      final response = await http.get(Uri.parse(ApiConstants.getCategories));
+      final response = await http.get(
+        Uri.parse(ApiConstants.getCategories),
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);

@@ -16,22 +16,12 @@ class OrdersRepository {
     String? addressId,
     double deliveryPrice = 0.0,
   }) async {
-    // We need a way to get the token. 
-    // Usually, tokens are stored in AuthRepository or a secure storage.
-    // For now, I'll check if we have a simple way to get it.
-    // Since AuthRepository is already in the project, I'll assume we can get the current user.
-    // However, the current AuthRepository implementation is using mock for token persistence.
-    // I'll add a placeholder for token logic.
-    
     final token = _authRepository.token;
 
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.createOrder),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
         body: jsonEncode({
           'items': items,
           'totalAmount': totalAmount,
@@ -60,9 +50,7 @@ class OrdersRepository {
     try {
       final response = await http.get(
         Uri.parse(ApiConstants.getMyOrders),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: ApiConstants.getHeaders(token),
       );
 
       if (response.statusCode == 200) {

@@ -6,7 +6,10 @@ import '../../../core/models/restaurant_model.dart';
 class RestaurantRepository {
   Future<List<RestaurantModel>> getRestaurants() async {
     try {
-      final response = await http.get(Uri.parse(ApiConstants.getRestaurants));
+      final response = await http.get(
+        Uri.parse(ApiConstants.getRestaurants),
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -21,7 +24,10 @@ class RestaurantRepository {
 
   Future<RestaurantModel> getRestaurantById(String id) async {
     try {
-      final response = await http.get(Uri.parse('${ApiConstants.getRestaurantById}?id=$id'));
+      final response = await http.get(
+        Uri.parse('${ApiConstants.getRestaurantById}?id=$id'),
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         return RestaurantModel.fromJson(jsonDecode(response.body));

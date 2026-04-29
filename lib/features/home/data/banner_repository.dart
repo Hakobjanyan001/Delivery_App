@@ -6,7 +6,10 @@ import '../../../core/models/banner_model.dart';
 class BannerRepository {
   Future<List<BannerModel>> getBanners() async {
     try {
-      final response = await http.get(Uri.parse(ApiConstants.getBanners));
+      final response = await http.get(
+        Uri.parse(ApiConstants.getBanners),
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -21,7 +24,10 @@ class BannerRepository {
 
   Future<BannerModel> getBannerById(String id) async {
     try {
-      final response = await http.get(Uri.parse('${ApiConstants.getBannerById}?id=$id'));
+      final response = await http.get(
+        Uri.parse('${ApiConstants.getBannerById}?id=$id'),
+        headers: ApiConstants.getHeaders(),
+      );
 
       if (response.statusCode == 200) {
         return BannerModel.fromJson(jsonDecode(response.body));
