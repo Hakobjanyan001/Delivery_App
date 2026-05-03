@@ -57,7 +57,6 @@ class AuthRepository {
   }
 
   Future<AppUser> signInWithEmail(String email, String password) async {
-    // --- Real API Login ---
     try {
       final response = await http.post(
         Uri.parse(ApiConstants.login),
@@ -67,8 +66,6 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print("34");
-
         _currentUser = AppUser.fromJson(data['user']);
         _token = data['token'];
         
@@ -81,7 +78,6 @@ class AuthRepository {
         throw error['message'] ?? 'Մուտքը ձախողվեց:';
       }
     } catch (e) {
-      print(e);
       throw e.toString();
     }
   }
@@ -115,24 +111,7 @@ class AuthRepository {
     }
   }
 
-  /*
-  Future<AppUser> signInWithGoogle() async {
-    await Future.delayed(const Duration(seconds: 1));
-    _currentUser = AppUser.mock();
-    _authStateController.add(_currentUser);
-    return _currentUser!;
-  }
-
-  Future<AppUser> signInWithFacebook() async {
-    await Future.delayed(const Duration(seconds: 1));
-    _currentUser = AppUser.mock();
-    _authStateController.add(_currentUser);
-    return _currentUser!;
-  }
-*/
-
   Future<AppUser> signInAnonymously() async {
-    await Future.delayed(const Duration(seconds: 500));
     _currentUser = AppUser(
       id: 'anon-${DateTime.now().millisecondsSinceEpoch}',
       email: 'anonymous@example.com',
@@ -150,47 +129,11 @@ class AuthRepository {
     required Function(AppUser user) verificationCompleted,
     required Function(String verificationId) codeAutoRetrievalTimeout,
   }) async {
-    await Future.delayed(const Duration(seconds: 1));
     codeSent('mock-verification-id', 1);
   }
 
-  /*
-
-  Future<ConfirmationResult> signInWithPhoneNumberWeb(String phoneNumber) async {
-    try {
-      // Firebase-y inqnabern invisible reCAPTCHA e steghtsum ete verifier chi petranvum
-      return await _auth.signInWithPhoneNumber(phoneNumber);
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    } catch (e) {
-      throw 'Սխալ (${e.runtimeType}): $e';
-    }
-  }
-
-  // Web: confirm the SMS code using ConfirmationResult
-  Future<UserCredential> confirmPhoneCodeWeb(
-      ConfirmationResult confirmationResult, String smsCode) async {
-    try {
-      return await confirmationResult.confirm(smsCode);
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-    }
-  }
-
-  // Mobile: confirm using verificationId + smsCode
-  Future<UserCredential> signInWithPhone(String verificationId, String smsCode) async {
-    try {
-      final AuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationId,
-        smsCode: smsCode,
-      );
-      return await _auth.signInWithCredential(credential);
-    } on FirebaseAuthException catch (e) {
-      throw AuthRepository.handleAuthError(e);
-*/
   Future<AppUser> signInWithPhone(String verificationId, String smsCode) async {
     if (smsCode == '123456') {
-      await Future.delayed(const Duration(seconds: 1));
       _currentUser = AppUser.fromJson({
         "username": "testuser",
         "email": "test@example.com",
@@ -204,7 +147,7 @@ class AuthRepository {
       _authStateController.add(_currentUser);
       return _currentUser!;
     } else {
-      throw 'Սխալ SMS կոդ։'; // Invalid SMS code
+      throw 'Սխալ SMS կոդ։';
     }
   }
 
@@ -220,80 +163,22 @@ class AuthRepository {
     String? phone,
     String? username,
   }) async {
-    /* 
-       if (email != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: email.toLowerCase())
-          .get();
-      if (snapshot.docs.isNotEmpty) return true;
-    }
-    
-    if (username != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .where('username', isEqualTo: username.toLowerCase())
-          .get();
-      if (snapshot.docs.isNotEmpty) return true;
-    }
-    
-    if (phone != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .where('phoneNumber', isEqualTo: phone)
-          .get();
-      if (snapshot.docs.isNotEmpty) return true;
-    }
-    */
-
-    await Future.delayed(const Duration(milliseconds: 500));
     if (email == 'test@example.com') return true;
     return false;
   }
 
   Future<String?> getEmailFromUsername(String username) async {
-    /*
-        final snapshot = await _firestore
-        .collection('users')
-        .where('username', isEqualTo: username.toLowerCase())
-        .limit(1)
-        .get();
-    
-    if (snapshot.docs.isNotEmpty) {
-      return snapshot.docs.first.get('email') as String?;
-    }
-    */
     if (username.toLowerCase() == 'testuser') return 'test@example.com';
     return null;
   }
 
   Future<Map<String, dynamic>?> fetchUserData(String uid) async {
-    /*
-        final doc = await _firestore.collection('users').doc(uid).get();
-    return doc.data();
-    */
-    await Future.delayed(const Duration(milliseconds: 500));
     if (_currentUser != null) {
       return _currentUser!.toJson();
     }
     return null;
   }
 
-  /*
-    Future<void> saveUserData(User user, {String? name, String? phone, String? username}) async {
-    final userDoc = _firestore.collection('users').doc(user.uid);
-    
-    // Ogtagorcum enq set-y merge-ov, vor chjnjvi eghac tvyalnery ete ughaki mutq enq anum
-    await userDoc.set({
-      'uid': user.uid,
-      'email': user.email?.toLowerCase(),
-      'username': username?.toLowerCase(),
-      'phoneNumber': phone ?? user.phoneNumber,
-      'displayName': name ?? user.displayName,
-      'lastLogin': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    */
   Future<AppUser> updateProfile({
     String? name,
     String? phone,
@@ -335,7 +220,6 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         if (_currentUser != null) {
-          // Update local user model
           _currentUser = AppUser.fromJson({
             ..._currentUser!.toJson(),
             'language': language,
@@ -411,6 +295,46 @@ class AuthRepository {
     }
   }
 
+  Future<List<Address>> updateAddress(Address address) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.updateAddress),
+        headers: ApiConstants.getHeaders(_token),
+        body: jsonEncode(address.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> addressesJson = data['addresses'];
+        final addresses = addressesJson.map((e) => Address.fromJson(e)).toList();
+
+        if (_currentUser != null) {
+          _currentUser = AppUser(
+            id: _currentUser!.id,
+            name: _currentUser!.name,
+            username: _currentUser!.username,
+            email: _currentUser!.email,
+            phone: _currentUser!.phone,
+            emailVerified: _currentUser!.emailVerified,
+            firebaseUid: _currentUser!.firebaseUid,
+            role: _currentUser!.role,
+            is18Plus: _currentUser!.is18Plus,
+            language: _currentUser!.language,
+            addresses: addresses,
+          );
+          await _saveAuthData(_currentUser!, _token!);
+          _authStateController.add(_currentUser);
+        }
+        return addresses;
+      } else {
+        final error = jsonDecode(response.body);
+        throw error['message'] ?? 'Հասցեի թարմացումը ձախողվեց:';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
   Future<List<Address>> deleteAddress(String id) async {
     try {
       final response = await http.delete(
@@ -450,33 +374,6 @@ class AuthRepository {
     }
   }
 
-  /*
-  static String handleAuthError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'Օգտատերը չի գտնվել:';
-      case 'wrong-password':
-        return 'Սխալ գաղտնաբառ:';
-      case 'email-already-in-use':
-        return 'Այս էլ. հասցեն արդեն օգտագործվում է:';
-      case 'weak-password':
-        return 'Գաղտնաբառը շատ թույլ է:';
-      case 'invalid-email':
-        return 'Անվավեր էլ. հասցե:';
-      case 'operation-not-allowed':
-        return 'Այս մեթոդը միացված չէ Firebase-ում: Ստուգեք Console-ը (Authentication -> Sign-in methods):';
-      case 'invalid-phone-number':
-        return 'Անվավեր հեռախոսահամար:';
-      case 'too-many-requests':
-        return 'Շատ հարցումներ: Փորձեք քիչ ուշ:';
-      case 'network-request-failed':
-        return 'Ինտերնետ կապի սխալ:';
-      case 'invalid-verification-code':
-        return 'Սխալ SMS կոդ:';
-      default:
-        return e.message ?? 'Տեղի է ունեցել սխալ (${e.code}):';
-    }
-    */
   void dispose() {
     _authStateController.close();
   }

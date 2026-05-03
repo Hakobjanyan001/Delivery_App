@@ -64,7 +64,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     context.watch<OnboardingProvider>();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -131,24 +132,27 @@ class _NavBar extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           borderRadius: BorderRadius.circular(40),
+
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.5),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
+
                             ),
                           ],
                         ),
                         child: Center(
                           child: Text(
                             'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
-                            style: const TextStyle(
-                              color: Colors.black,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.surface,
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
                             ),
+
                           ),
                         ),
                       ),
@@ -161,13 +165,17 @@ class _NavBar extends StatelessWidget {
 
         // Nav pill
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black],
+              colors: [
+                Colors.transparent,
+                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+              ],
             ),
           ),
+
           child: SafeArea(
             top: false,
             child: Center(
@@ -204,10 +212,11 @@ class _NavPill extends StatelessWidget {
         child: Container(
           height: 72,
           decoration: BoxDecoration(
-            color: const Color(0xFF0F0F0F).withValues(alpha: 0.9),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(48),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           ),
+
           child: LayoutBuilder(
             builder: (context, constraints) {
               final tabWidth = constraints.maxWidth / 3;
@@ -230,9 +239,10 @@ class _NavPill extends StatelessWidget {
                         width: tabWidth - 8,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(64),
                           ),
+
                         ),
                       );
                     },
@@ -288,15 +298,17 @@ class _NavTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 24),
+            Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 24),
+
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
+
             ),
           ],
         ),

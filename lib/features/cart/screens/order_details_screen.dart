@@ -16,27 +16,31 @@ class OrderDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = Provider.of<LocalizationProvider>(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF161616),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 20),
             ),
+
           ),
         ),
         title: Text(
           'Պատվեր #${order.id.substring(order.id.length - 5)}',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900, fontSize: 22),
         ),
+
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -44,21 +48,24 @@ class OrderDetailsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Status Timeline ───────────────────────────────────────────
-            _buildSectionTitle(l10n.translate('status')),
+            _buildSectionTitle(context, l10n.translate('status')),
             const SizedBox(height: 16),
-            _buildStatusTimeline(l10n),
+            _buildStatusTimeline(context, l10n),
+
             const SizedBox(height: 40),
 
             // ── Items List ────────────────────────────────────────────────
-            _buildSectionTitle(l10n.translate('items')),
+            _buildSectionTitle(context, l10n.translate('items')),
             const SizedBox(height: 16),
-            _buildItemsCard(order, l10n),
+            _buildItemsCard(context, order, l10n),
+
             const SizedBox(height: 40),
 
             // ── Delivery Section ──────────────────────────────────────────
-            _buildSectionTitle(l10n.translate('delivery')),
+            _buildSectionTitle(context, l10n.translate('delivery')),
             const SizedBox(height: 16),
-            _buildDeliveryCard(l10n),
+            _buildDeliveryCard(context, l10n),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -66,18 +73,21 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+
     return Text(
       title,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
         fontSize: 20,
         fontWeight: FontWeight.w900,
       ),
     );
+
   }
 
-  Widget _buildStatusTimeline(LocalizationProvider l10n) {
+  Widget _buildStatusTimeline(BuildContext context, LocalizationProvider l10n) {
+
     final status = order.status.toLowerCase();
     
     // Define steps
@@ -95,10 +105,11 @@ class OrderDetailsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
+
       child: Column(
         children: List.generate(steps.length, (index) {
           final step = steps[index];
@@ -106,6 +117,7 @@ class OrderDetailsScreen extends StatelessWidget {
           final bool isCurrent = index == currentStepIndex;
           
           return _buildStatusRow(
+            context,
             step['label'] ?? '',
             '', // We don't have exact times for each step yet
             isActive: isPast,
@@ -113,12 +125,14 @@ class OrderDetailsScreen extends StatelessWidget {
             isLast: index == steps.length - 1,
             isHighlighted: isCurrent,
           );
+
         }).reversed.toList(),
       ),
     );
   }
 
-  Widget _buildStatusRow(String label, String time, {required bool isActive, bool isFirst = false, bool isLast = false, bool isHighlighted = false}) {
+  Widget _buildStatusRow(BuildContext context, String label, String time, {required bool isActive, bool isFirst = false, bool isLast = false, bool isHighlighted = false}) {
+
     return IntrinsicHeight(
       child: Row(
         children: [
@@ -128,18 +142,20 @@ class OrderDetailsScreen extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: isHighlighted ? Colors.green : (isActive ? Colors.white : Colors.white24),
+                  color: isHighlighted ? Colors.green : (isActive ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
                   shape: BoxShape.circle,
                   boxShadow: isHighlighted ? [
                     BoxShadow(color: Colors.green.withValues(alpha: 0.5), blurRadius: 10, spreadRadius: 2)
                   ] : null,
                 ),
+
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
                     width: 1,
-                    color: Colors.white24,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
+
                   ),
                 ),
             ],
@@ -154,18 +170,20 @@ class OrderDetailsScreen extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isHighlighted ? Colors.green : (isActive ? Colors.white : Colors.white24),
+                      color: isHighlighted ? Colors.green : (isActive ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
                       fontSize: 16,
                       fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w700,
                     ),
+
                   ),
                   Text(
                     time,
                     style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white24,
+                      color: isActive ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
                     ),
+
                   ),
                 ],
               ),
@@ -176,17 +194,19 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItemsCard(OrderModel order, LocalizationProvider l10n) {
+  Widget _buildItemsCard(BuildContext context, OrderModel order, LocalizationProvider l10n) {
+
     return Consumer<LocalizationProvider>(
       builder: (context, l10n, child) {
         final lang = l10n.currentLocale.languageCode;
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F0F0F),
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
           ),
+
           child: Column(
             children: [
               ...order.items.map((item) => Padding(
@@ -200,14 +220,16 @@ class OrderDetailsScreen extends StatelessWidget {
                           flex: 3,
                           child: Text(
                             item.product.name.getLocalized(lang),
-                            style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 15, fontWeight: FontWeight.w600),
+
                           ),
                         ),
                         Expanded(
                           flex: 2,
                           child: Text(
                             '${item.quantity.toInt()} ${l10n.translate('portion')}',
-                            style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 13, fontWeight: FontWeight.bold),
+
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -215,7 +237,8 @@ class OrderDetailsScreen extends StatelessWidget {
                           flex: 2,
                           child: Text(
                             '${item.totalPrice.toStringAsFixed(0)} ֏',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
+
                             textAlign: TextAlign.right,
                           ),
                         ),
@@ -227,7 +250,8 @@ class OrderDetailsScreen extends StatelessWidget {
                         child: Text(
                           '${l10n.translate('note') ?? 'Մեկնաբանություն'}՝ ${item.note}',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
                           ),
@@ -236,17 +260,20 @@ class OrderDetailsScreen extends StatelessWidget {
                   ],
                 ),
               )),
-              const Divider(color: Colors.white10, height: 32),
+              Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), height: 32),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     l10n.translate('total'),
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.w900),
+
                   ),
                   Text(
                     '${order.totalAmount.toStringAsFixed(0)} ֏',
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w900),
+
                   ),
                 ],
               ),
@@ -257,15 +284,17 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDeliveryCard(LocalizationProvider l10n) {
+  Widget _buildDeliveryCard(BuildContext context, LocalizationProvider l10n) {
+
     final LatLng deliveryLocation = LatLng(order.latitude ?? 40.8142, order.longitude ?? 44.4842);
     
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -304,12 +333,14 @@ class OrderDetailsScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     order.address,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
+
                   ),
                 ),
                 Text(
                   '500֏',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
+
                 ),
               ],
             ),

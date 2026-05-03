@@ -108,12 +108,14 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
 
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        title: const Text("Մուտք հեռախոսով", style: TextStyle(color: AppColors.textPrimary)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text("Մուտք հեռախոսով", style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -121,76 +123,86 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
-              const Icon(Icons.phone_android, size: 80, color: AppColors.primary),
+              Icon(Icons.phone_android, size: 80, color: Theme.of(context).colorScheme.onSurface),
+
               const SizedBox(height: 30),
               if (authProvider.errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20),
                   child: Text(
                     authProvider.errorMessage!,
-                    style: const TextStyle(color: AppColors.error),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+
                   ),
                 ),
               if (!_codeSent) ...[
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+
                   decoration: InputDecoration(
                     labelText: "Հեռախոսահամար (+374...)",
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     filled: true,
-                    fillColor: AppColors.inputFill,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                    prefixIcon: const Icon(Icons.phone, color: AppColors.textSecondary),
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface, width: 2)),
+                    prefixIcon: Icon(Icons.phone, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     hintText: "+374XXXXXXXX",
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                   ),
+
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: authProvider.isLoading ? null : _verifyPhone,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 55),
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
+
                   child: authProvider.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: Theme.of(context).colorScheme.surface)
+
                       : const Text("Ուղարկել կոդը"),
                 ),
               ] else ...[
                 TextFormField(
                   controller: _otpController,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+
                   decoration: InputDecoration(
                     labelText: "SMS կոդ",
-                    labelStyle: const TextStyle(color: AppColors.textSecondary),
+                    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     filled: true,
-                    fillColor: AppColors.inputFill,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                    prefixIcon: const Icon(Icons.lock_open, color: AppColors.textSecondary),
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface, width: 2)),
+                    prefixIcon: Icon(Icons.lock_open, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                     hintText: "123456",
-                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                   ),
+
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: authProvider.isLoading ? null : _signInWithOtp,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 55),
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.onSurface,
+                    foregroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
+
                   child: authProvider.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: Theme.of(context).colorScheme.surface)
+
                       : const Text("Հաստատել"),
                 ),
                 TextButton(

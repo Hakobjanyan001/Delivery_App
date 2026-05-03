@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -82,7 +83,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       body: SafeArea(
         child: Column(
           children: [
@@ -95,21 +97,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onTap: () => Navigator.pop(context),
                     child: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF161616),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+
+                      child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24),
+
                     ),
                   ),
                   const SizedBox(width: 16),
                   Text(
                     l10n.translate('register'),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                     ),
+
                   ),
                 ],
               ),
@@ -119,7 +124,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
-                  color: Colors.black,
+                  color: Theme.of(context).scaffoldBackgroundColor,
+
                   child: AutofillGroup(
                   child: Form(
                     key: _formKey,
@@ -128,11 +134,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 20),
                         // Logo
                         Center(
-                          child: Image.asset(
-                            'assets/images/masoor_branch.png',
-                            height: 165,
-                            width: 248,
-                            fit: BoxFit.contain,
+                          child: Consumer<OnboardingProvider>(
+                            builder: (context, onboarding, _) {
+                              final logo = onboarding.partner?.logo;
+                              if (logo != null && logo.isNotEmpty) {
+                                return Image.network(
+                                  logo,
+                                  height: 165,
+                                  width: 248,
+                                  fit: BoxFit.contain,
+                                );
+                              }
+                              return Image.asset(
+                                'assets/images/masoor_branch.png',
+                                height: 165,
+                                width: 248,
+                                fit: BoxFit.contain,
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 40),
@@ -143,7 +162,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             padding: const EdgeInsets.only(bottom: 20),
                             child: Text(
                               authProvider.errorMessage!,
-                              style: const TextStyle(color: AppColors.error),
+                              style: TextStyle(color: Theme.of(context).colorScheme.error),
+
                             ),
                           ),
 
@@ -216,19 +236,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         // Register Button
                         if (authProvider.isLoading)
-                          const CircularProgressIndicator(color: Colors.white)
+                          CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)
+
                         else
                           ElevatedButton(
                             onPressed: _submit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
+                              backgroundColor: Theme.of(context).colorScheme.onSurface,
+                              foregroundColor: Theme.of(context).colorScheme.surface,
                               minimumSize: const Size(double.infinity, 65),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(35),
                               ),
                               elevation: 0,
                             ),
+
                             child: Text(
                               l10n.translate('register'),
                               style: const TextStyle(
@@ -246,19 +268,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: RichText(
                             textAlign: TextAlign.center,
                             text: TextSpan(
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 13,
                                 fontFamily: 'Segoe UI',
                               ),
+
                               children: [
                                 TextSpan(
                                   text: '${l10n.translate('alreadyHaveAccount')} ',
-                                  style: const TextStyle(fontWeight: FontWeight.w400),
+                                  style: TextStyle(fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface),
+
                                 ),
                                 TextSpan(
                                   text: l10n.translate('login'),
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+
                                 ),
                               ],
                             ),

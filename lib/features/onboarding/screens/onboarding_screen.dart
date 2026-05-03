@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/localization_provider.dart';
 import '../widgets/onboarding_page_widget.dart';
 import '../providers/onboarding_provider.dart';
-
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,151 +16,167 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final onboardingProvider = context.watch<OnboardingProvider>();
+    final localeProvider = context.watch<LocalizationProvider>();
+    final lang = localeProvider.currentLocale.languageCode;
+    final partner = onboardingProvider.partner;
 
+    // Default slides if partner data is not available
+    final List<Widget> defaultSlides = [
+      OnboardingPageWidget(
+        backgroundImage: 'assets/images/order_bg_1.png',
+        isLogoPage: true,
+        buttonText: localeProvider.translate('explore'),
+        onButtonPressed: () {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        },
+        children: [
+          Positioned(
+            top: 355,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  localeProvider.translate('onboarding1'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Segoe UI',
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      OnboardingPageWidget(
+        backgroundImage: 'assets/images/order_bg_2.jpg',
+        buttonText: localeProvider.translate('next'),
+        onButtonPressed: () {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+          );
+        },
+        children: [
+          Positioned(
+            bottom: 150,
+            left: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  localeProvider.translate('onboarding2'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      OnboardingPageWidget(
+        backgroundImage: 'assets/images/order_bg_3.png',
+        buttonText: localeProvider.translate('start'),
+        onButtonPressed: () {
+          context.read<OnboardingProvider>().setHasSeenOnboarding(true);
+        },
+        children: [
+          Positioned(
+            bottom: 150,
+            left: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  localeProvider.translate('onboarding3'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    // Build dynamic slides if partner has onboarding data
+    List<Widget> slides = defaultSlides;
+    if (partner != null && partner.onboarding != null && partner.onboarding!.isNotEmpty) {
+      slides = partner.onboarding!.asMap().entries.map((entry) {
+        int idx = entry.key;
+        var slide = entry.value;
+        bool isLast = idx == partner.onboarding!.length - 1;
+
+        return OnboardingPageWidget(
+          backgroundImage: slide.image ?? '',
+          isLogoPage: idx == 0,
+          buttonText: isLast ? localeProvider.translate('start') : localeProvider.translate('next'),
+          onButtonPressed: () {
+            if (isLast) {
+              context.read<OnboardingProvider>().setHasSeenOnboarding(true);
+            } else {
+              _pageController.nextPage(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          children: [
+            Positioned(
+              bottom: 150,
+              left: 20,
+              right: 20,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    slide.text.get(lang),
+                    textAlign: idx == 0 ? TextAlign.center : TextAlign.start,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: idx == 0 ? 16 : 24,
+                      fontWeight: idx == 0 ? FontWeight.w600 : FontWeight.w900,
+                      fontStyle: idx == 0 ? FontStyle.normal : FontStyle.italic,
+                      fontFamily: 'Segoe UI',
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }).toList();
+    }
 
     return Scaffold(
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: [
-          // ej 1: 
-          OnboardingPageWidget(
-            backgroundImage: 'assets/images/order_bg_1.png',
-            isLogoPage: true,
-            buttonText: 'Explore',
-            onButtonPressed: () {
-              _pageController.nextPage(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-              );
-            },
-            children: [
-              // Tagline
-              const Positioned(
-                top: 355,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'Where every dish tells a story, and every guest leaves with one.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Segoe UI',
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // ej 2: 
-          OnboardingPageWidget(
-            backgroundImage: 'assets/images/order_bg_2.jpg',
-            buttonText: 'Next',
-            onButtonPressed: () {
-              _pageController.nextPage(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-              );
-            },
-            children: [
-              Positioned(
-                bottom: 150, // Both texts raised higher up together
-                left: 20,
-                right: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Primary title
-                    const Text(
-                      'Crafted with heart.\nBaked with fire.',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Body text in exactly 3 lines as requested
-                    const Opacity(
-                      opacity: 1.0,
-                      child: Text(
-                        'From golden khachapuri to slow-simmered\nclassics, our kitchen serves tradition on every\nplate.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Segoe UI',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          height: 1.5, // 24px line-height / 16px font-size
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // ej 3: 
-          OnboardingPageWidget(
-            backgroundImage: 'assets/images/order_bg_3.png',
-            buttonText: 'Start',
-            onButtonPressed: () {
-              context.read<OnboardingProvider>().setHasSeenOnboarding(true);
-            },
-            children: [
-              Positioned(
-                bottom: 150,
-                left: 20,
-                right: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Primary title
-                    const Text(
-                      'Your table is waiting.',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: FontStyle.italic,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Subtitle text
-                    const Opacity(
-                      opacity: 1.0,
-                      child: Text(
-                        'Browse the menu, book a table, or order your\nfavorites to go.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Segoe UI',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          height: 1.5,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        children: slides,
       ),
     );
   }

@@ -52,7 +52,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   bool get isAuthenticated => _user != null;
-  // bool get isAnonymous => _user?.isAnonymous ?? false;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get userName =>
@@ -80,7 +79,7 @@ class AuthProvider with ChangeNotifier {
       if (!email.contains('@')) {
         final resolvedEmail = await _repository.getEmailFromUsername(email);
         if (resolvedEmail == null) {
-          _setError('Օգտատերը չի գտնվել:'); // User not found
+          _setError('Օգտատերը չի գտնվել:');
           return false;
         }
         email = resolvedEmail;
@@ -120,38 +119,6 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
-
-  /*
-  Future<bool> signInWithGoogle() async {
-    _setLoading(true);
-    _setError(null);
-    try {
-      await _repository.signInWithGoogle();
-      return true;
-    } catch (e) {
-      _setError(e.toString());
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-*/
-
-  /*
-  Future<bool> signInWithFacebook() async {
-    _setLoading(true);
-    _setError(null);
-    try {
-      await _repository.signInWithFacebook();
-      return true;
-    } catch (e) {
-      _setError(e.toString());
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-*/
 
   Future<bool> signInAnonymously() async {
     _setLoading(true);
@@ -253,8 +220,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> fetchAddresses() async {
     try {
       await _repository.fetchAddresses();
-      // fetchAddresses in repository updates the _currentUser and authStateChanges,
-      // which AuthProvider listens to. So _user will be updated automatically.
     } catch (e) {
       _setError(e.toString());
     }
@@ -265,6 +230,20 @@ class AuthProvider with ChangeNotifier {
     _setError(null);
     try {
       await _repository.addAddress(address);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateAddress(Address address) async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      await _repository.updateAddress(address);
       return true;
     } catch (e) {
       _setError(e.toString());

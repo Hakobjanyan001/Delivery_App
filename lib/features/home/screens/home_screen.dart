@@ -78,21 +78,24 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF121212),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(80),
         ),
+
         child: Row(
           children: [
-            Icon(Icons.search, color: Colors.white.withValues(alpha: 0.3), size: 20),
+            Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), size: 20),
+
             const SizedBox(width: 12),
             Text(
               l10n.translate('searchHint') ?? 'Փնտրել...',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
             ),
+
           ],
         ),
       ),
@@ -110,20 +113,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final hp = Provider.of<HomeProvider>(context);
 
     if (hp.isLoading && hp.products.isEmpty) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)),
       );
+
     }
 
     if (hp.error != null && hp.products.isEmpty) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Սխալ: ${hp.error}', style: const TextStyle(color: Colors.white)),
+              Text('Սխալ: ${hp.error}', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: hp.fetchHomeData,
@@ -140,14 +146,16 @@ class _HomeScreenState extends State<HomeScreen> {
         : hp.products.where((p) => p.categoryId == _selectedCategoryId).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF030302),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       body: Column(
         children: [
           Expanded(
             child: RefreshIndicator(
               onRefresh: hp.fetchHomeData,
-              color: Colors.white,
-              backgroundColor: Colors.black,
+              color: Theme.of(context).colorScheme.onSurface,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+
               child: CustomScrollView(
                 slivers: [
                   // Search bar
@@ -173,10 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     sliver: displayProducts.isEmpty
-                        ? const SliverFillRemaining(
+                        ? SliverFillRemaining(
                             hasScrollBody: false,
                             child: Center(
-                              child: Text('Ապրանքներ չկան', style: TextStyle(color: Colors.white54)),
+                                child: Text('Ապրանքներ չկան', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                             ),
                           )
                         : Builder(builder: (ctx) {
@@ -235,7 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: const Color(0xFF1A1A1A),
+                color: Theme.of(context).colorScheme.surface,
+
                 image: banner.image != null
                     ? DecorationImage(image: NetworkImage(banner.image!), fit: BoxFit.cover)
                     : null,
@@ -304,9 +313,10 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () => _openFoodDetail(ctx, product),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF10100F),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
         ),
+
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,14 +343,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Title — 12px bold
                     Text(
                       product.name.getLocalized(lang),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+
                     const SizedBox(height: 8),
 
                     // Portion + price row — 12px
@@ -352,16 +363,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(
                               qty > 0 ? '$qty x' : '1 ${l10n.translate('portion')}',
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 12),
                             ),
+
                             Text(
                               '${product.displayPrice.toStringAsFixed(0)}֏',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
+
                           ],
                         );
                       },
@@ -396,8 +409,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _fallbackImage() => Container(
-    color: const Color(0xFF1A1A1A),
-    child: const Center(child: Icon(Icons.fastfood, color: Colors.white24, size: 40)),
+    color: Theme.of(context).colorScheme.surface,
+
+    child: Center(child: Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), size: 40)),
+
   );
 }
 
@@ -419,20 +434,22 @@ class _AddButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
-          boxShadow: const [
-            BoxShadow(color: Colors.black, offset: Offset(0, 4), blurRadius: 0),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+          boxShadow: [
+            BoxShadow(color: Theme.of(context).colorScheme.surface, offset: const Offset(0, 4), blurRadius: 0),
           ],
+
         ),
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
+
         ),
       ),
     );
@@ -490,21 +507,23 @@ class _PillBtn extends StatelessWidget {
         width: fixedWidth,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: filled ? Colors.white : Colors.transparent,
+          color: filled ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
           borderRadius: BorderRadius.circular(40),
-          border: filled ? null : Border.all(color: Colors.white.withValues(alpha: 0.7)),
-          boxShadow: const [
-            BoxShadow(color: Colors.black, offset: Offset(0, 4), blurRadius: 0),
+          border: filled ? null : Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+          boxShadow: [
+            BoxShadow(color: Theme.of(context).colorScheme.surface, offset: const Offset(0, 4), blurRadius: 0),
           ],
         ),
+
         alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
-            color: filled ? Colors.black : Colors.white,
+            color: filled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
+
         ),
       ),
     );
@@ -540,7 +559,8 @@ class _CategoryBarDelegate extends SliverPersistentHeaderDelegate {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
-          color: const Color(0xFF030302).withValues(alpha: 0.9),
+          color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
+
           child: ListView.builder(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
@@ -560,22 +580,24 @@ class _CategoryBarDelegate extends SliverPersistentHeaderDelegate {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.transparent,
+                    color: isSelected ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
                     borderRadius: BorderRadius.circular(40),
                     border: isSelected
                         ? null
-                        : Border.all(color: Colors.white.withValues(alpha: 0.7)),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black, offset: Offset(0, 4), blurRadius: 0),
+                        : Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+                    boxShadow: [
+                      BoxShadow(color: Theme.of(context).colorScheme.surface, offset: const Offset(0, 4), blurRadius: 0),
                     ],
+
                   ),
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
+                      color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
+
                   ),
                 ),
               );

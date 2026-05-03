@@ -90,11 +90,12 @@ class _LocationPickerDialogState extends State<LocationPickerDialog> {
                 Navigator.of(context).pop(_selectedPosition);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.onSurface,
+                foregroundColor: Theme.of(context).colorScheme.surface,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
+
               child: Text(l10n.translate('confirmLocation')),
             ),
           ),

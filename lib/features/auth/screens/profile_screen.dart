@@ -14,6 +14,13 @@ import '../widgets/guest_auth_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../../core/providers/main_tabs_controller.dart';
+import '../../../core/providers/theme_provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as osm;
+import 'package:latlong2/latlong.dart' as latlong;
+import '../../../core/widgets/universal_map.dart';
+import '../../../core/widgets/location_picker_modal.dart';
+
 
 // Active view within the profile screen
 enum _View { home, editProfile, orders, addresses }
@@ -64,8 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
+
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 680),
             child: content,
@@ -75,9 +83,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: content,
     );
+
   }
 
   Widget _buildCurrentView(
@@ -111,7 +120,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     LocalizationProvider l10n,
     bool isDesktop,
   ) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return SingleChildScrollView(
+
       padding: EdgeInsets.fromLTRB(20, isDesktop ? 32 : 20, 20, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,9 +166,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             _buildDivider(),
             _buildMenuRow(
-              icon: Icons.language_outlined,
+               icon: Icons.language_outlined,
               label: l10n.translate('language'),
-              trailing: const LanguageSelector(color: Colors.white),
+              trailing: LanguageSelector(color: Theme.of(context).colorScheme.onSurface),
+            ),
+
+            _buildDivider(),
+            _buildMenuRow(
+              icon: themeProvider.isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+              label: themeProvider.isDarkMode ? l10n.translate('darkMode') : l10n.translate('lightMode'),
+              trailing: Switch.adaptive(
+                value: themeProvider.isDarkMode,
+                onChanged: (val) => themeProvider.toggleTheme(),
+                activeColor: Theme.of(context).colorScheme.surface,
+                activeTrackColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+
+              ),
             ),
             _buildDivider(),
             _buildMenuRow(
@@ -166,6 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _showSupportOptions(context, l10n),
             ),
           ]),
+
 
           const SizedBox(height: 28),
 
@@ -182,21 +207,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07)),
         ),
+
         child: Row(
           children: [
             Container(
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person_outline, color: Colors.white54, size: 28),
+
+              child: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 28),
             ),
+
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -204,38 +232,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     auth.userName?.isNotEmpty == true ? auth.userName! : l10n.translate('user'),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
+
                   const SizedBox(height: 4),
                   Text(
                     auth.phone ?? '+374 -- -- -- --',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.07),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(20),
               ),
+
               child: Text(
                 l10n.translate('editShort'),
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
             ),
           ],
         ),
@@ -276,33 +308,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
       ),
+
       child: Row(
         children: [
-          Icon(icon, color: Colors.white38, size: 22),
+          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 22),
           const SizedBox(width: 12),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
+
             ],
           ),
         ],
@@ -316,11 +352,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.35),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
         ),
+
       ),
     );
   }
@@ -328,10 +365,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
       ),
+
       child: Column(children: children),
     );
   }
@@ -354,11 +392,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Colors.white70, size: 18),
+              child: Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), size: 18),
             ),
+
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -366,22 +405,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.38),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+
                   ],
                 ],
               ),
@@ -389,8 +430,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             trailing ??
                 (onTap != null
                     ? Icon(Icons.chevron_right,
-                        color: Colors.white.withValues(alpha: 0.25), size: 20)
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25), size: 20)
                     : const SizedBox.shrink()),
+
           ],
         ),
       ),
@@ -402,8 +444,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 1,
       indent: 70,
       endIndent: 0,
-      color: Colors.white.withValues(alpha: 0.06),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
     );
+
   }
 
   Widget _buildLogoutButton(AuthProvider auth, LocalizationProvider l10n) {
@@ -492,25 +535,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       borderRadius: BorderRadius.circular(40),
                     ),
-                    child: Center(
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.black, strokeWidth: 2),
-                            )
+
+                      child: Center(
+                        child: auth.isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Theme.of(context).colorScheme.primary, strokeWidth: 2),
+                              )
+
                           : Text(
                               l10n.translate('save'),
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
+
                     ),
                   ),
                 ),
@@ -535,8 +581,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSubHeader(l10n.translate('orders')),
         Expanded(
           child: ordersProvider.isLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white54))
+              ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)))
               : ordersProvider.orders.isEmpty
+
                   ? _buildEmptyState(l10n.translate('noOrders'), Icons.receipt_long_outlined)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -561,44 +608,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
         ),
+
         child: Row(
           children: [
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.shopping_bag_outlined, color: Colors.white38, size: 20),
+              child: Icon(Icons.shopping_bag_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
             ),
+
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    order.address,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                    Text(
+                      order.address,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+
                   const SizedBox(height: 4),
-                  Text(
-                    '#${order.id.substring(order.id.length - 6)}',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      fontSize: 12,
+                    Text(
+                      '#${order.id.substring(order.id.length - 6)}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
+
                 ],
               ),
             ),
@@ -640,17 +691,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '+ ${l10n.translate('add')}',
-              style: const TextStyle(
-                color: Colors.black,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.surface,
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
               ),
             ),
+
           ),
         )),
         Expanded(
@@ -665,43 +717,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF141414),
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
                       ),
+
                       child: Row(
                         children: [
                           Container(
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.location_on_outlined,
-                                color: Colors.white38, size: 20),
+                            child: Icon(Icons.location_on_outlined,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
                           ),
+
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  addr.label != null && addr.label!.isNotEmpty ? addr.label! : 'Հասցե',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
+                                  Text(
+                                    addr.label != null && addr.label!.isNotEmpty ? addr.label! : 'Հասցե',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
-                                ),
+
                                 if (addr.address != null && addr.address!.isNotEmpty) ...[
                                   const SizedBox(height: 3),
                                   Text(
                                     addr.address!,
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.38),
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                                       fontSize: 12,
                                     ),
+
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -715,13 +771,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.edit_outlined,
-                                  color: Colors.white38, size: 16),
+                              child: Icon(Icons.edit_outlined,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
                             ),
                           ),
+
                         ],
                       ),
                     );
@@ -747,24 +804,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 20),
               ),
+
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+
             ),
-            ?action,
+            if (action != null) action,
           ],
         ),
       ),
@@ -776,11 +835,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white10, size: 56),
+          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), size: 56),
+
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 15),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), fontSize: 15),
+
           ),
         ],
       ),
@@ -815,7 +876,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'on_way':    return Colors.purple;
       case 'delivered': return Colors.green;
       case 'cancelled': return Colors.red;
-      default:          return Colors.white38;
+      default:          return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
+
     }
   }
 
@@ -974,9 +1036,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               l10n.translate('howCanWeHelp'),
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 fontSize: 13,
               ),
+
             ),
             const SizedBox(height: 20),
             _SupportOption(
@@ -1024,6 +1087,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showAddNewAddressDialog(BuildContext context, AuthProvider auth, LocalizationProvider l10n) {
     final titleCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
+    double lat = 40.8142; 
+    double lng = 44.4842;
 
     // Hide nav bar
     Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
@@ -1044,7 +1109,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
               const SizedBox(height: 12),
-              _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+              StatefulBuilder(
+                builder: (ctx, setSheetState) {
+                  final currentPos = LatLng(lat, lng);
+                  return Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: SizedBox(
+                          height: 160,
+                          child: Stack(
+                            children: [
+                              IgnorePointer(
+                                child: UniversalMap(
+                                  key: ValueKey('preview_${lat}_${lng}'),
+                                  initialPosition: currentPos,
+                                  isReadOnly: true,
+                                  googleMarkers: {
+                                    Marker(
+                                      markerId: const MarkerId('preview'),
+                                      position: currentPos,
+                                    ),
+                                  },
+                                  osmMarkers: [
+                                    osm.Marker(
+                                      point: latlong.LatLng(lat, lng),
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 40),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => LocationPickerModal(
+                                          initialPosition: currentPos,
+                                        ),
+                                      ),
+                                    );
+                                    if (result != null) {
+                                      setSheetState(() {
+                                        lat = result['position'].latitude;
+                                        lng = result['position'].longitude;
+                                        addrCtrl.text = result['address'];
+                                      });
+                                    }
+                                  },
+                                  behavior: HitTestBehavior.opaque,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined, enabled: false,),
+                    ],
+                  );
+                },
+              ),
               if (!isDesktop)
                 Padding(
                   padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -1058,8 +1186,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final success = await auth.addAddress(Address(
                       label: titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
                       address: addrCtrl.text.trim(),
-                      lat: 0, // Default for now
-                      lng: 0, // Default for now
+                      lat: lat,
+                      lng: lng,
                     ));
                     if (success && ctx.mounted) {
                       Navigator.pop(ctx);
@@ -1082,6 +1210,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       BuildContext context, AuthProvider auth, dynamic addr, LocalizationProvider l10n) {
     final titleCtrl = TextEditingController(text: addr.label);
     final addrCtrl = TextEditingController(text: addr.address);
+    double lat = addr.lat ?? 40.8142;
+    double lng = addr.lng ?? 44.4842;
 
     // Hide nav bar
     Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
@@ -1127,7 +1257,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
               const SizedBox(height: 12),
-              _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+              StatefulBuilder(
+                builder: (ctx, setSheetState) {
+                  final currentPos = LatLng(lat, lng);
+                  return Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: SizedBox(
+                          height: 160,
+                          child: Stack(
+                            children: [
+                              IgnorePointer(
+                                child: UniversalMap(
+                                  key: ValueKey('edit_preview_${lat}_${lng}'),
+                                  initialPosition: currentPos,
+                                  isReadOnly: true,
+                                  googleMarkers: {
+                                    Marker(
+                                      markerId: const MarkerId('preview'),
+                                      position: currentPos,
+                                    ),
+                                  },
+                                  osmMarkers: [
+                                    osm.Marker(
+                                      point: latlong.LatLng(lat, lng),
+                                      width: 40,
+                                      height: 40,
+                                      child: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 40),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => LocationPickerModal(
+                                          initialPosition: currentPos,
+                                        ),
+                                      ),
+                                    );
+                                    if (result != null) {
+                                      setSheetState(() {
+                                        lat = result['position'].latitude;
+                                        lng = result['position'].longitude;
+                                        addrCtrl.text = result['address'];
+                                      });
+                                    }
+                                  },
+                                  behavior: HitTestBehavior.opaque,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _AddressField(
+                        controller: addrCtrl, 
+                        hint: l10n.translate('addressFullHint'), 
+                        icon: Icons.location_on_outlined,
+                        enabled: false,
+                      ),
+                    ],
+                  );
+                },
+              ),
               if (!isDesktop)
                 Padding(
                   padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -1136,11 +1334,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 24),
               _PrimaryButton(
                 label: l10n.translate('save'),
-                onTap: () {
-                  // Currently we don't have a specific updateAddressDetails in AuthProvider, 
-                  // but we can re-add it as addAddress if needed or just leave it for now.
-                  // For now, let's just close as the user didn't specify update logic yet.
-                  Navigator.pop(ctx);
+                onTap: () async {
+                  if (addrCtrl.text.trim().isNotEmpty) {
+                    final success = await auth.updateAddress(Address(
+                      id: addr.id,
+                      label: titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
+                      address: addrCtrl.text.trim(),
+                      lat: lat,
+                      lng: lng,
+                    ));
+                    if (success && ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
+                  }
                 },
               ),
             ],
@@ -1170,12 +1376,13 @@ class _SheetContainer extends StatelessWidget {
           ? const EdgeInsets.fromLTRB(24, 20, 24, 24)
           : const EdgeInsets.fromLTRB(24, 20, 24, 110),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: isDesktop
             ? BorderRadius.circular(28)
             : const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
       ),
+
       child: child,
     );
   }
@@ -1203,9 +1410,10 @@ class _SheetHeader extends StatelessWidget {
             height: 4,
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(2),
             ),
+
           ),
         ],
         Row(
@@ -1213,11 +1421,12 @@ class _SheetHeader extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
+
               ),
             ),
             if (isDesktop)
@@ -1227,11 +1436,12 @@ class _SheetHeader extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.07),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, color: Colors.white54, size: 16),
+                  child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 16),
                 ),
+
               ),
           ],
         ),
@@ -1265,12 +1475,13 @@ class _PaymentOption extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
+          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.08),
+            color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
           ),
         ),
+
         child: Row(
           children: [
             Container(
@@ -1278,11 +1489,12 @@ class _PaymentOption extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.black.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.07),
+                    ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.08)
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: isSelected ? Colors.black87 : Colors.white70, size: 20),
+              child: Icon(icon, color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), size: 20),
+
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1292,20 +1504,22 @@ class _PaymentOption extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
+                      color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
+
                   ),
                   const SizedBox(height: 2),
                   Text(
                     description,
                     style: TextStyle(
                       color: isSelected
-                          ? Colors.black.withValues(alpha: 0.45)
-                          : Colors.white.withValues(alpha: 0.35),
+                          ? Theme.of(context).colorScheme.surface.withOpacity(0.55)
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
                       fontSize: 12,
                     ),
+
                   ),
                 ],
               ),
@@ -1315,17 +1529,18 @@ class _PaymentOption extends StatelessWidget {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? Colors.black : Colors.transparent,
+                color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? Colors.black
-                      : Colors.white.withValues(alpha: 0.2),
+                      ? Theme.of(context).colorScheme.surface
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.check, color: Colors.white, size: 13)
+                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.onSurface, size: 13)
                   : null,
+
             ),
           ],
         ),
@@ -1358,10 +1573,11 @@ class _SupportOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
         ),
+
         child: Row(
           children: [
             Container(
@@ -1376,17 +1592,20 @@ class _SupportOption extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
+
                   const SizedBox(height: 2),
                   Text(subtitle,
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.38), fontSize: 12)),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 12)),
+
                 ],
               ),
             ),
             Icon(Icons.arrow_forward_ios_rounded,
-                color: Colors.white.withValues(alpha: 0.2), size: 14),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), size: 14),
+
           ],
         ),
       ),
@@ -1398,32 +1617,43 @@ class _AddressField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
+  final bool enabled;
 
   const _AddressField({
     required this.controller,
     required this.hint,
     required this.icon,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: enabled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
       ),
+
       child: Row(
         children: [
           const SizedBox(width: 16),
-          Icon(icon, color: Colors.white30, size: 18),
+          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: enabled ? 0.3 : 0.1), size: 18),
+
           Expanded(
             child: TextField(
               controller: controller,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+              enabled: enabled,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: enabled ? 1.0 : 0.4), 
+                fontSize: 15, 
+                fontWeight: FontWeight.w600
+              ),
+
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 14),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25), fontSize: 14),
+
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
@@ -1449,13 +1679,15 @@ class _PrimaryButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onSurface,
           borderRadius: BorderRadius.circular(18),
         ),
+
         child: Center(
           child: Text(label,
-              style: const TextStyle(
-                  color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900)),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.surface, fontSize: 16, fontWeight: FontWeight.w900)),
+
         ),
       ),
     );

@@ -20,7 +20,8 @@ Widget build(BuildContext context) {
   final auth = context.read<AuthProvider>();
 
   return Scaffold(
-    backgroundColor: Colors.black,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
     body: SafeArea(
       child: cart.items.isEmpty
           ? _buildEmptyState(context, l10n)
@@ -55,32 +56,38 @@ Widget build(BuildContext context) {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       height: 110,
       decoration: BoxDecoration(
-        color: const Color(0xFF131313),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
       ),
+
       child: Row(
         children: [
           // IMAGE
           Container(
             width: 110,
             height: 110,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 bottomLeft: Radius.circular(20),
               ),
             ),
+
+
             clipBehavior: Clip.antiAlias,
             child: item.product.mainImageUrl.isNotEmpty
                 ? Image.network(
                     item.product.mainImageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.fastfood, color: Colors.white24, size: 40),
+                        Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), size: 40),
+
                   )
-                : const Icon(Icons.fastfood, color: Colors.white24, size: 40),
+                : Icon(Icons.fastfood, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24), size: 40),
+
+
           ),
 
           // INFO
@@ -95,11 +102,12 @@ Widget build(BuildContext context) {
                     item.product.name.getLocalized(lang),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                     ),
+
                   ),
 
                   // PRICE + CONTROLS
@@ -116,25 +124,28 @@ Widget build(BuildContext context) {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
+
                               ),
                             const SizedBox(height: 4),
                             Text(
                               '${item.totalPrice.toStringAsFixed(0)} ֏',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
+
                           ],
                         ),
                       ),
 
-                      _quantityControls(cart, item),
+                      _quantityControls(context, cart, item),
+
                     ],
                   ),
                 ],
@@ -168,33 +179,40 @@ Widget build(BuildContext context) {
     }
   }
 
-  Widget _quantityControls(CartProvider cart, CartItem item) {
+  Widget _quantityControls(BuildContext context, CartProvider cart, CartItem item) {
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(25),
       ),
+
       child: Row(
         children: [
           _circleBtn(
+            context,
             icon: Icons.remove,
             onTap: () => cart.decreaseQuantity(item.uniqueKey),
             outlined: true,
           ),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               '${item.quantity}',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w900,
               ),
+
             ),
           ),
           _circleBtn(
+            context,
             icon: Icons.add,
             onTap: () => cart.addItem(
+
               item.product,
               variantId: item.variantId,
               variantName: item.variantName,
@@ -209,12 +227,14 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _circleBtn({
+  Widget _circleBtn(
+    BuildContext context, {
     required IconData icon,
     required VoidCallback onTap,
     bool filled = false,
     bool outlined = false,
   }) {
+
     return SizedBox(
       width: 32,
       height: 32,
@@ -225,15 +245,17 @@ Widget build(BuildContext context) {
         icon: Icon(
           icon,
           size: 16,
-          color: filled ? Colors.black : Colors.white,
+          color: filled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
         ),
+
         style: IconButton.styleFrom(
-          backgroundColor: filled ? Colors.white : Colors.transparent,
+          backgroundColor: filled ? Theme.of(context).colorScheme.onSurface : Colors.transparent,
           shape: const CircleBorder(),
           side: outlined
-              ? BorderSide(color: Colors.white.withOpacity(0.5))
+              ? BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))
               : null,
         ),
+
       ),
     );
   }
@@ -246,35 +268,39 @@ Widget build(BuildContext context) {
         children: [
           Container(
             padding: const EdgeInsets.all(32),
-            decoration: const BoxDecoration(
-              color: Color(0xFF10100F),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
             ),
+
             child: Icon(
               Icons.shopping_bag_outlined,
               size: 64,
-              color: Colors.white.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+
             ),
           ),
           const SizedBox(height: 24),
           Text(
             l10n.translate('emptyCart'),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
+
           ),
           const SizedBox(height: 32),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               l10n.translate('backToHome'),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),
+
           ),
         ],
       ),
@@ -313,16 +339,17 @@ Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F0F0F),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -10),
           ),
         ],
       ),
+
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -331,11 +358,12 @@ Widget build(BuildContext context) {
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
                 '${l10n.translate('freeDeliveryFrom')} ${restaurant.delivery.freeDeliveryFrom.toStringAsFixed(0)} ֏',
-                style: const TextStyle(
-                  color: Colors.white38,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
+
               ),
             ),
 
@@ -347,18 +375,20 @@ Widget build(BuildContext context) {
                 children: [
                   Text(
                     l10n.translate('total'),
-                    style: const TextStyle(
-                      color: Colors.white54,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
                       fontSize: 14,
                     ),
+
                   ),
                   Text(
                     '${total.toStringAsFixed(0)} ֏',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                     ),
+
                   ),
                 ],
               ),
@@ -383,14 +413,15 @@ Widget build(BuildContext context) {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
+
                 child: Text(
                   l10n.translate('checkout'),
                   style: const TextStyle(

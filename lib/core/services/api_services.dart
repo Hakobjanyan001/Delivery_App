@@ -43,4 +43,16 @@ class ApiManager {
       throw Exception('Failed to load banners');
     }
   }
+
+  Future<Map<String, dynamic>> getPartnerDetails() async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.getPartnerById}/${ApiConstants.partnerId}'),
+      headers: ApiConstants.getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load partner details');
+    }
+  }
 }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../screens/phone_auth_screen.dart';
 
@@ -116,11 +117,24 @@ class _GuestAuthViewState extends State<GuestAuthView> {
           children: [
             const SizedBox(height: 20),
             Center(
-              child: Image.asset(
-                'assets/images/masoor_branch.png',
-                height: 80,
-                width: 120,
-                fit: BoxFit.contain,
+              child: Consumer<OnboardingProvider>(
+                builder: (context, onboarding, _) {
+                  final logo = onboarding.partner?.logo;
+                  if (logo != null && logo.isNotEmpty) {
+                    return Image.network(
+                      logo,
+                      height: 80,
+                      width: 120,
+                      fit: BoxFit.contain,
+                    );
+                  }
+                  return Image.asset(
+                    'assets/images/masoor_branch.png',
+                    height: 80,
+                    width: 120,
+                    fit: BoxFit.contain,
+                  );
+                },
               ),
             ),
             const SizedBox(height: 30),
@@ -129,7 +143,8 @@ class _GuestAuthViewState extends State<GuestAuthView> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Text(
                   authProvider.errorMessage!,
-                  style: const TextStyle(color: AppColors.error),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+
                 ),
               ),
             AppTextField(
@@ -159,13 +174,15 @@ class _GuestAuthViewState extends State<GuestAuthView> {
             ),
             const SizedBox(height: 24),
             if (authProvider.isLoading)
-              const CircularProgressIndicator(color: Colors.white)
+              CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)
+
             else
               ElevatedButton(
                 onPressed: _submitLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
+
                   minimumSize: const Size(double.infinity, 65),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(35),
@@ -181,10 +198,11 @@ class _GuestAuthViewState extends State<GuestAuthView> {
                 ),
               ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'կամ',
-              style: TextStyle(color: Colors.white60, fontSize: 14),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
             ),
+
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -215,19 +233,22 @@ class _GuestAuthViewState extends State<GuestAuthView> {
               child: RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontFamily: 'Segoe UI',
                   ),
+
                   children: [
                     TextSpan(
                       text: '${l10n.translate('noAccount')} ',
-                      style: const TextStyle(fontWeight: FontWeight.w400),
+                      style: TextStyle(fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface),
+
                     ),
                     TextSpan(
                       text: l10n.translate('register'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+
                     ),
                   ],
                 ),
@@ -252,11 +273,24 @@ class _GuestAuthViewState extends State<GuestAuthView> {
           children: [
             const SizedBox(height: 10),
             Center(
-              child: Image.asset(
-                'assets/images/masoor_branch.png',
-                height: 70,
-                width: 100,
-                fit: BoxFit.contain,
+              child: Consumer<OnboardingProvider>(
+                builder: (context, onboarding, _) {
+                  final logo = onboarding.partner?.logo;
+                  if (logo != null && logo.isNotEmpty) {
+                    return Image.network(
+                      logo,
+                      height: 70,
+                      width: 100,
+                      fit: BoxFit.contain,
+                    );
+                  }
+                  return Image.asset(
+                    'assets/images/masoor_branch.png',
+                    height: 70,
+                    width: 100,
+                    fit: BoxFit.contain,
+                  );
+                },
               ),
             ),
             const SizedBox(height: 20),
@@ -265,7 +299,8 @@ class _GuestAuthViewState extends State<GuestAuthView> {
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Text(
                   authProvider.errorMessage!,
-                  style: const TextStyle(color: AppColors.error),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+
                 ),
               ),
             AppTextField(
@@ -333,13 +368,15 @@ class _GuestAuthViewState extends State<GuestAuthView> {
             ),
             const SizedBox(height: 24),
             if (authProvider.isLoading)
-              const CircularProgressIndicator(color: Colors.white)
+              CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)
+
             else
               ElevatedButton(
                 onPressed: _submitRegister,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
+
                   minimumSize: const Size(double.infinity, 65),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(35),
@@ -360,19 +397,22 @@ class _GuestAuthViewState extends State<GuestAuthView> {
               child: RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontFamily: 'Segoe UI',
                   ),
+
                   children: [
                     TextSpan(
                       text: '${l10n.translate('alreadyHaveAccount')} ',
-                      style: const TextStyle(fontWeight: FontWeight.w400),
+                      style: TextStyle(fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface),
+
                     ),
                     TextSpan(
                       text: l10n.translate('login'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
+
                     ),
                   ],
                 ),
@@ -392,11 +432,12 @@ class _GuestAuthViewState extends State<GuestAuthView> {
       child: Container(
         width: 60,
         height: 60,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF141414),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
-        child: Icon(icon, color: Colors.white, size: 28),
+        child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 28),
+
       ),
     );
   }

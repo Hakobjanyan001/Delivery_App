@@ -17,10 +17,11 @@ class SupportHubSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
+
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,16 +29,17 @@ class SupportHubSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Աջակցության կենտրոն',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface),
+
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -48,7 +50,8 @@ class SupportHubSheet extends StatelessWidget {
             icon: Icons.phone_in_talk,
             title: 'Զանգահարել աջակցության կենտրոն',
             subtitle: '+374 00 000000',
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.onSurface,
+
             onTap: _makeCall,
           ),
           const SizedBox(height: 12),
@@ -57,7 +60,8 @@ class SupportHubSheet extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             title: 'Աջակցության թիմ',
             subtitle: 'Պատասխանում ենք 5-ից 10 րոպեում',
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.onSurface,
+
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -89,10 +93,11 @@ class SupportHubSheet extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(15),
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
         ),
+
         child: Row(
           children: [
             CircleAvatar(
@@ -106,20 +111,23 @@ class SupportHubSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
+
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13),
+
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+
           ],
         ),
       ),

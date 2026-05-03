@@ -15,6 +15,8 @@ import 'core/widgets/main_tabs_screen.dart';
 import 'features/home/providers/home_provider.dart';
 import 'features/onboarding/providers/onboarding_provider.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
+import 'core/providers/theme_provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SearchProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => MainTabsController()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MasoorApp(),
     ),
@@ -59,13 +62,15 @@ class _MasoorAppState extends State<MasoorApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LocalizationProvider>(
-      builder: (context, l10n, child) {
+    return Consumer2<LocalizationProvider, ThemeProvider>(
+      builder: (context, l10n, themeProvider, child) {
         return MaterialApp(
           title: 'MASOOR',
           navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
           locale: l10n.currentLocale,
           supportedLocales: const [
             Locale('hy'),

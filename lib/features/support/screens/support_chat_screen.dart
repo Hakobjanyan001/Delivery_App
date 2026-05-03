@@ -69,26 +69,29 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.support_agent, color: Colors.white),
+              backgroundColor: Theme.of(context).colorScheme.onSurface,
+              child: Icon(Icons.support_agent, color: Theme.of(context).colorScheme.surface),
             ),
+
             const SizedBox(width: 12),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Աջակցության թիմ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                Text('Օնլայն', style: TextStyle(fontSize: 12, color: Colors.green)),
+                Text('Աջակցության թիմ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                const Text('Օնլայն', style: TextStyle(fontSize: 12, color: Colors.green)),
               ],
             ),
           ],
         ),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+
         elevation: 0,
       ),
       body: Column(
@@ -118,7 +121,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: msg.isMe ? const Color(0xFF2A2A2A) : AppColors.primary,
+          color: msg.isMe ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(15),
             topRight: const Radius.circular(15),
@@ -129,9 +133,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         child: Text(
           msg.text,
           style: TextStyle(
-            color: msg.isMe ? Colors.white : Colors.black,
+            color: msg.isMe ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
             fontSize: 15,
           ),
+
         ),
       ),
     );
@@ -141,21 +146,24 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1))),
       ),
+
       child: SafeArea(
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: _controller,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+
                 decoration: InputDecoration(
                   hintText: 'Գրեք հաղորդագրություն...',
-                  hintStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
-                  fillColor: AppColors.inputFill,
+                  fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+
                   filled: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
@@ -164,12 +172,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             ),
             const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.onSurface,
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.black),
+                icon: Icon(Icons.send, color: Theme.of(context).colorScheme.surface),
                 onPressed: _sendMessage,
               ),
             ),
+
           ],
         ),
       ),
