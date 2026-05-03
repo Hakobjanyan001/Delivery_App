@@ -262,6 +262,13 @@ class OrderDetailsScreen extends StatelessWidget {
               )),
               Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), height: 32),
 
+              // Breakdown: Subtotal + Delivery
+              _buildPriceRow(context, l10n.translate('subtotal') ?? 'Ապրանքներ', order.items.fold(0.0, (sum, item) => sum + item.totalPrice)),
+              const SizedBox(height: 8),
+              _buildPriceRow(context, l10n.translate('delivery') ?? 'Առաքում', order.deliveryPrice),
+              const SizedBox(height: 16),
+
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -271,7 +278,7 @@ class OrderDetailsScreen extends StatelessWidget {
 
                   ),
                   Text(
-                    '${order.totalAmount.toStringAsFixed(0)} ֏',
+                    '${(order.items.fold(0.0, (sum, item) => sum + item.totalPrice) + order.deliveryPrice).toStringAsFixed(0)} ֏',
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w900),
 
                   ),
@@ -338,7 +345,7 @@ class OrderDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '500֏',
+                  '${order.deliveryPrice.toStringAsFixed(0)}֏',
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900),
 
                 ),
@@ -347,6 +354,22 @@ class OrderDetailsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPriceRow(BuildContext context, String label, double amount) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 15, fontWeight: FontWeight.w500),
+        ),
+        Text(
+          '${amount.toStringAsFixed(0)} ֏',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }

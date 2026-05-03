@@ -38,6 +38,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isProcessingPayment = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
+      _checkAndCalculateDistance(cartProvider, addressProvider);
+    });
+  }
+
+  void _checkAndCalculateDistance(CartProvider cartProvider, AddressProvider addressProvider) {
+    final selected = addressProvider.selectedAddress;
+    
+    if (selected != null && selected.latitude != null && cartProvider.restaurantLat != null) {
+      if (cartProvider.distanceInKm == 0 && !cartProvider.isCalculatingDelivery) {
+        debugPrint('Triggering distance calculation for: ${selected.address}');
+        cartProvider.updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
+      }
+    } else if (selected != null && selected.latitude == null) {
+      debugPrint('WARNING: Selected address has NO coordinates: ${selected.address}');
+    }
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     _cashController.dispose();
@@ -58,58 +81,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
-  Future<void> _fetchLocationForAddress(LocalizationProvider l10n, TextEditingController addrController, Function(bool) setFetching) async {
-    setFetching(true);
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception(l10n.translate('locationPermissionDenied'));
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception(l10n.translate('locationPermissionDenied'));
-      }
-
-      Position position = await Geolocator.getCurrentPosition();
-      
-      if (!mounted) return;
-      
-      // Open Map Picker Dialog
-      final LatLng? pickedLocation = await showDialog<LatLng>(
-        context: context,
-        builder: (ctx) => LocationPickerDialog(
-          initialPosition: LatLng(position.latitude, position.longitude),
-        ),
-      );
-
-      if (pickedLocation != null) {
-        final address = await GeocodingHelper.getAddressFromCoordinates(
-          pickedLocation.latitude,
-          pickedLocation.longitude,
-        );
-        addrController.text = address;
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.translate('locationError'))),
-      );
-    } finally {
-      setFetching(false);
-    }
-  }
-
   void _showAddAddressDialog(BuildContext context, AddressProvider provider, LocalizationProvider l10n) {
     final titleController = TextEditingController();
     final addrController = TextEditingController();
+    LatLng? pickedCoords;
     bool isFetching = false;
 
     showDialog(
@@ -135,8 +110,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
                         : IconButton(
                             icon: Icon(Icons.my_location, color: Theme.of(context).colorScheme.onSurface),
-
-                            onPressed: () => _fetchLocationForAddress(l10n, addrController, (val) => setStateBuilder(() => isFetching = val)),
+                            onPressed: () async {
+                              setStateBuilder(() => isFetching = true);
+                              try {
+                                Position position = await Geolocator.getCurrentPosition();
+                                if (!context.mounted) return;
+                                final LatLng? picked = await showDialog<LatLng>(
+                                  context: context,
+                                  builder: (ctx) => LocationPickerDialog(
+                                    initialPosition: LatLng(position.latitude, position.longitude),
+                                  ),
+                                );
+                                if (picked != null) {
+                                  pickedCoords = picked;
+                                  final address = await GeocodingHelper.getAddressFromCoordinates(picked.latitude, picked.longitude);
+                                  addrController.text = address;
+                                }
+                              } catch (e) {
+                                debugPrint('Location Error: $e');
+                              } finally {
+                                setStateBuilder(() => isFetching = false);
+                              }
+                            },
                           ),
                   ),
                 ),
@@ -146,9 +141,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Չեղարկել')),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (addrController.text.isNotEmpty) {
-                  provider.addAddress(titleController.text, addrController.text);
+                  provider.addAddress(
+                    titleController.text, 
+                    addrController.text,
+                    lat: pickedCoords?.latitude,
+                    lng: pickedCoords?.longitude,
+                  );
+                  if (mounted) {
+                    final selected = provider.selectedAddress;
+                    if (selected != null && selected.latitude != null) {
+                      context.read<CartProvider>().updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
+                    }
+                  }
                   Navigator.pop(ctx);
                 }
               },
@@ -173,7 +179,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (_paymentMethod == 'cash') {
       final cash = double.tryParse(_cashController.text) ?? 0.0;
-      if (cash < cart.totalAmount) {
+      if (cash < cart.finalAmount) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.translate('insufficientCash'))),
@@ -183,7 +189,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (context.mounted) {
         final order = await Provider.of<OrdersProvider>(context, listen: false).addOrder(
           cart.items, 
-          cart.totalAmount,
+          cart.finalAmount,
           address: addressProvider.selectedAddress!.toJson(),
           phone: _phoneController.text,
           paymentMethod: _paymentMethod,
@@ -208,7 +214,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       try {
         final paymentUrl = await PaymentService.initiatePayment(
-          amount: cart.totalAmount,
+          amount: cart.finalAmount,
           currency: 'AMD',
           cardId: cardId,
         );
@@ -235,7 +241,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             if (context.mounted) {
               await Provider.of<OrdersProvider>(context, listen: false).addOrder(
                 cart.items, 
-                cart.totalAmount,
+                cart.finalAmount,
                 address: addressProvider.selectedAddress!.toJson(),
                 phone: _phoneController.text,
                 paymentMethod: _paymentMethod,
@@ -287,6 +293,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Avoid watching the entire providers here if possible, 
     // but localization is required for almost all labels.
     final l10n = context.watch<LocalizationProvider>();
+
+    // Trigger distance check on every build to be safe
+    final cartProv = Provider.of<CartProvider>(context, listen: false);
+    final addrProv = Provider.of<AddressProvider>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndCalculateDistance(cartProv, addrProv));
 
     return Scaffold(
       appBar: AppBar(
@@ -355,7 +366,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
-                      final total = context.read<CartProvider>().totalAmount;
+                      final total = context.read<CartProvider>().finalAmount;
                       _calculateChange(total, value);
                     },
                     validator: (value) => _paymentMethod == 'cash' && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
@@ -493,7 +504,15 @@ class AddressSelectionSection extends StatelessWidget {
 
                       ],
                     ),
-                    onTap: () => addrProv.selectAddress(addr.id),
+                    onTap: () {
+                      debugPrint('Address selected: ${addr.title}, Lat: ${addr.latitude}');
+                      addrProv.selectAddress(addr.id);
+                      if (addr.latitude != null && addr.longitude != null) {
+                        context.read<CartProvider>().updateDeliveryPriceByDistance(addr.latitude!, addr.longitude!);
+                      } else {
+                        debugPrint('Cannot calculate distance: Address has no coordinates!');
+                      }
+                    },
                   ),
                 );
               }),
@@ -744,9 +763,8 @@ class OrderSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<CartProvider, double>(
-      selector: (_, cartProv) => cartProv.totalAmount,
-      builder: (context, totalAmount, child) {
+    return Consumer<CartProvider>(
+      builder: (context, cartProv, child) {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -754,16 +772,44 @@ class OrderSummarySection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
           ),
-
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(
-                '${totalAmount.toStringAsFixed(0)} ֏',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.translate('subtotal') ?? 'Ապրանքներ', style: const TextStyle(fontSize: 16)),
+                  Text('${cartProv.totalAmount.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
+                ],
               ),
-
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(l10n.translate('delivery') ?? 'Առաքում', style: const TextStyle(fontSize: 16)),
+                      if (cartProv.distanceInKm > 0)
+                        Text(' (${cartProv.distanceInKm.toStringAsFixed(1)} կմ)', 
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                    ],
+                  ),
+                  if (cartProv.isCalculatingDelivery)
+                    Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
+                  else
+                    Text('${cartProv.deliveryPrice.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
+                ],
+              ),
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    '${cartProv.finalAmount.toStringAsFixed(0)} ֏',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                ],
+              ),
             ],
           ),
         );

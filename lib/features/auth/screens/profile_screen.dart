@@ -56,6 +56,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    // Ensure nav bar is restored when leaving this screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
+      }
+    });
     super.dispose();
   }
 
@@ -67,7 +73,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!auth.isAuthenticated) return const GuestAuthView();
 
     final isDesktop = MediaQuery.of(context).size.width >= 900;
-    final content = _buildCurrentView(context, auth, l10n, isDesktop);
+    final content = PopScope(
+      canPop: _view == _View.home,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_view != _View.home) {
+          context.read<MainTabsController>().setNavBarVisibility(true);
+          setState(() => _view = _View.home);
+        }
+      },
+      child: _buildCurrentView(context, auth, l10n, isDesktop),
+    );
 
     if (isDesktop) {
       return Scaffold(
@@ -142,13 +158,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildMenuRow(
               icon: Icons.receipt_long_outlined,
               label: l10n.translate('orders'),
-              onTap: () => setState(() => _view = _View.orders),
+              onTap: () {
+                context.read<MainTabsController>().setNavBarVisibility(false);
+                setState(() => _view = _View.orders);
+              },
             ),
             _buildDivider(),
             _buildMenuRow(
               icon: Icons.location_on_outlined,
               label: l10n.translate('myAddresses'),
-              onTap: () => setState(() => _view = _View.addresses),
+              onTap: () {
+                context.read<MainTabsController>().setNavBarVisibility(false);
+                setState(() => _view = _View.addresses);
+              },
             ),
           ]),
 
@@ -203,7 +225,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileCard(AuthProvider auth, LocalizationProvider l10n) {
     return GestureDetector(
-      onTap: () => setState(() => _view = _View.editProfile),
+      onTap: () {
+        context.read<MainTabsController>().setNavBarVisibility(false);
+        setState(() => _view = _View.editProfile);
+      },
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -799,7 +824,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () => setState(() => _view = _View.home),
+              onTap: () {
+                context.read<MainTabsController>().setNavBarVisibility(true);
+                setState(() => _view = _View.home);
+              },
               child: Container(
                 width: 40,
                 height: 40,

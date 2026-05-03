@@ -167,6 +167,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   floor: floorController.text,
                   apartment: apartmentController.text,
                 );
+                if (lat != null && lng != null) {
+                  context.read<CartProvider>().updateDeliveryPriceByDistance(lat, lng);
+                }
               } else {
                 addressProvider.addAddress(
                   'Առաքման վայր',
@@ -177,6 +180,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   floor: floorController.text,
                   apartment: apartmentController.text,
                 );
+                if (lat != null && lng != null) {
+                  context.read<CartProvider>().updateDeliveryPriceByDistance(lat, lng);
+                }
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -413,20 +419,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final orders = Provider.of<OrdersProvider>(context);
     final homeProvider = Provider.of<HomeProvider>(context);
 
-    // Get restaurant info for delivery settings
-    RestaurantModel? restaurant;
-    if (cart.items.isNotEmpty) {
-      try {
-        final restaurantId = cart.items.first.product.restaurantId;
-        restaurant = homeProvider.restaurants.firstWhere((r) => r.id == restaurantId);
-      } catch (_) {}
-    }
+    // Trigger distance check on every build in Payment screen as well
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final selected = address.selectedAddress;
+      if (selected != null && selected.latitude != null && cart.restaurantLat != null) {
+        if (cart.distanceInKm == 0 && !cart.isCalculatingDelivery) {
+          cart.updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
+        }
+      }
+    });
 
-    final double deliveryFee = (restaurant != null && cart.totalAmount < restaurant.delivery.freeDeliveryFrom) 
-        ? restaurant.delivery.basePrice 
-        : 0.0;
-    
-    final double finalTotal = cart.totalAmount + deliveryFee;
+    final double deliveryFee = cart.deliveryPrice;
+    final double finalTotal = cart.finalAmount;
 
     final currentPos = address.selectedAddress?.latitude != null
         ? LatLng(
@@ -625,15 +629,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         ),
 
-                        Text(
-                          deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
-                          style: TextStyle(
-                            color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                        if (cart.isCalculatingDelivery)
+                          Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
+                        else
+                          Text(
+                            deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
+                            style: TextStyle(
+                              color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-
-                        ),
                       ],
                     ),
                     Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), height: 32),
@@ -746,6 +752,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   lat: point.latitude,
                                   lng: point.longitude,
                                 );
+                                cart.updateDeliveryPriceByDistance(point.latitude, point.longitude);
                               } else {
                                 address.addAddress(
                                   'Առաքման վայր',
@@ -753,6 +760,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   lat: point.latitude,
                                   lng: point.longitude,
                                 );
+                                cart.updateDeliveryPriceByDistance(point.latitude, point.longitude);
                               }
                               _mapController?.animateTo(point.latitude, point.longitude);
                             }
@@ -841,16 +849,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
-                            style: TextStyle(
-                              color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
-                              fontFamily: 'Segoe UI',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                          if (cart.isCalculatingDelivery)
+                            Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
+                          else
+                            Text(
+                              deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
+                              style: TextStyle(
+                                color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
+                                fontFamily: 'Segoe UI',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
                             ),
-
-                          ),
                         ],
                       ),
                       if (address.selectedAddress != null &&

@@ -50,7 +50,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     if (!tabs.isNavBarVisible) return false;
 
     const hidden = {
-      'OnboardingScreen', 'FoodDetail', 'LoginScreen',
+      'OnboardingScreen', 'LoginScreen',
       'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
       'PaymentScreen', 'PaymentWebViewScreen', 'CheckoutScreen',
       'SearchScreen', 'SupportChatScreen', 'PhoneAuthScreen',
@@ -78,6 +78,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
               child: _NavBar(
                 navigatorKey: widget.navigatorKey,
                 isAuthenticated: isAuthenticated,
+                currentRoute: _currentRoute,
               ),
             ),
         ],
@@ -89,10 +90,12 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 class _NavBar extends StatelessWidget {
   final GlobalKey<NavigatorState> navigatorKey;
   final bool isAuthenticated;
+  final String? currentRoute;
 
   const _NavBar({
     required this.navigatorKey,
     required this.isAuthenticated,
+    required this.currentRoute,
   });
 
   @override
@@ -183,7 +186,12 @@ class _NavBar extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  child: _NavPill(tabs: tabs, l10n: l10n),
+                  child: _NavPill(
+                    tabs: tabs,
+                    l10n: l10n,
+                    currentRoute: currentRoute,
+                    navigatorKey: navigatorKey,
+                  ),
                 ),
               ),
             ),
@@ -200,8 +208,15 @@ class _NavBar extends StatelessWidget {
 class _NavPill extends StatelessWidget {
   final MainTabsController tabs;
   final LocalizationProvider l10n;
+  final String? currentRoute;
+  final GlobalKey<NavigatorState> navigatorKey;
 
-  const _NavPill({required this.tabs, required this.l10n});
+  const _NavPill({
+    required this.tabs,
+    required this.l10n,
+    required this.currentRoute,
+    required this.navigatorKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -254,17 +269,32 @@ class _NavPill extends StatelessWidget {
                       _NavTab(
                         icon: Icons.home_outlined,
                         label: l10n.translate('home'),
-                        onTap: () => tabs.switchTo(0),
+                        onTap: () {
+                          if (currentRoute == 'FoodDetail') {
+                            navigatorKey.currentState?.pop();
+                          }
+                          tabs.switchTo(0);
+                        },
                       ),
                       _NavTab(
                         icon: Icons.shopping_cart_outlined,
                         label: l10n.translate('cart'),
-                        onTap: () => tabs.switchTo(1),
+                        onTap: () {
+                          if (currentRoute == 'FoodDetail') {
+                            navigatorKey.currentState?.pop();
+                          }
+                          tabs.switchTo(1);
+                        },
                       ),
                       _NavTab(
                         icon: Icons.person_outline,
                         label: l10n.translate('profile'),
-                        onTap: () => tabs.switchTo(2),
+                        onTap: () {
+                          if (currentRoute == 'FoodDetail') {
+                            navigatorKey.currentState?.pop();
+                          }
+                          tabs.switchTo(2);
+                        },
                       ),
                     ],
                   ),

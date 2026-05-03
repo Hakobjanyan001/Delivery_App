@@ -4,18 +4,27 @@ import '../models/cart_item.dart';
 import '../data/cart_repository.dart';
 import '../data/local_cart_storage.dart';
 import '../../auth/data/auth_repository.dart';
+import '../../../core/services/routing_service.dart';
+import 'package:latlong2/latlong.dart';
+import '../../home/data/restaurant_repository.dart';
+import '../../../core/models/restaurant_model.dart';
 
 class CartProvider with ChangeNotifier {
   final CartRepository _cartRepository = CartRepository();
   final LocalCartStorage _localCartStorage = LocalCartStorage();
   final AuthRepository _authRepository = AuthRepository();
+  final RestaurantRepository _restaurantRepository = RestaurantRepository();
   Map<String, CartItem> _items = {};
   bool _isLoading = false;
   
   // Delivery logic
-  double _deliveryPrice = 0.0;
+  double _deliveryPrice = 0.0; // Base or per-km price
   double _freeDeliveryFrom = 0.0;
   String? _restaurantId;
+  double? _restaurantLat;
+  double? _restaurantLng;
+  double _distanceInKm = 0.0;
+  bool _isCalculatingDelivery = false;
 
   CartProvider() {
     _init();
@@ -67,16 +76,69 @@ class CartProvider with ChangeNotifier {
     if (_freeDeliveryFrom > 0 && totalAmount >= _freeDeliveryFrom) {
       return 0.0;
     }
-    return _deliveryPrice;
+    
+    double price = _deliveryPrice > 0 ? _deliveryPrice : 500.0; // Default min 500
+
+    if (_distanceInKm > 0) {
+      if (_distanceInKm <= 5) {
+        price = 500.0;
+      } else {
+        // 500 base + 100 for each km above 5
+        price = 500.0 + ((_distanceInKm - 5) * 100);
+      }
+    }
+    
+    // Round up to nearest 100 (e.g., 610 -> 700)
+    return (price / 100).ceil() * 100.0;
   }
+
+  double get distanceInKm => _distanceInKm;
+  bool get isCalculatingDelivery => _isCalculatingDelivery;
+  double? get restaurantLat => _restaurantLat;
+  double? get restaurantLng => _restaurantLng;
 
   double get finalAmount => totalAmount + deliveryPrice;
 
-  void setDeliverySettings(double basePrice, double freeFrom, String restaurantId) {
+  void setDeliverySettings({
+    required double basePrice,
+    required double freeFrom,
+    required String restaurantId,
+    double? lat,
+    double? lng,
+  }) {
     _deliveryPrice = basePrice;
     _freeDeliveryFrom = freeFrom;
     _restaurantId = restaurantId;
+    _restaurantLat = lat;
+    _restaurantLng = lng;
     notifyListeners();
+  }
+
+  Future<void> updateDeliveryPriceByDistance(double customerLat, double customerLng) async {
+    // Reset distance to trigger recalculation
+    _distanceInKm = 0.0;
+    
+    debugPrint('Calculating distance: Restaurant($_restaurantLat, $_restaurantLng) -> Customer($customerLat, $customerLng)');
+    if (_restaurantLat == null || _restaurantLng == null) {
+      debugPrint('Distance calculation skipped: Restaurant coordinates missing');
+      return;
+    }
+
+    _isCalculatingDelivery = true;
+    notifyListeners();
+
+    try {
+      final start = LatLng(_restaurantLat!, _restaurantLng!);
+      final end = LatLng(customerLat, customerLng);
+      
+      _distanceInKm = await RoutingService.getRoadDistance(start, end);
+      debugPrint('Distance calculated: $_distanceInKm km');
+    } catch (e) {
+      debugPrint('Error updating delivery price: $e');
+    } finally {
+      _isCalculatingDelivery = false;
+      notifyListeners();
+    }
   }
 
   Future<void> loadCart() async {
@@ -101,6 +163,38 @@ class CartProvider with ChangeNotifier {
       debugPrint('Error loading cart: $e');
     } finally {
       _isLoading = false;
+      if (_items.isNotEmpty) {
+        _restaurantId = _items.values.first.product.restaurantId;
+        _fetchRestaurantDetails();
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> _fetchRestaurantDetails() async {
+    // Set default coordinates and price for Masoor Family Restaurant
+    _restaurantLat = 40.809289;
+    _restaurantLng = 44.486711;
+    _deliveryPrice = 500.0; // Default base price
+    debugPrint('Restaurant details initialized with defaults: $_restaurantLat, $_restaurantLng');
+
+    if (_restaurantId == null || _restaurantId!.isEmpty) {
+      debugPrint('No restaurantId found, using defaults.');
+      notifyListeners();
+      return;
+    }
+    try {
+      final restaurant = await _restaurantRepository.getRestaurantById(_restaurantId!).timeout(const Duration(seconds: 5));
+      // If API provides coordinates, use them, otherwise keep defaults
+      if (restaurant.latitude != null && restaurant.longitude != null) {
+        _restaurantLat = restaurant.latitude;
+        _restaurantLng = restaurant.longitude;
+      }
+      _deliveryPrice = restaurant.delivery.basePrice;
+      _freeDeliveryFrom = restaurant.delivery.freeDeliveryFrom;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching restaurant details: $e');
       notifyListeners();
     }
   }

@@ -24,6 +24,11 @@ class AddressModel {
       'id': id,
       'title': title,
       'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'entrance': entrance,
+      'floor': floor,
+      'apartment': apartment,
     };
   }
 }

@@ -13,7 +13,7 @@ void showFoodDetail(BuildContext context, ProductModel product) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
-
+      routeSettings: const RouteSettings(name: 'FoodDetail'),
       builder: (_) => _FoodDetailDesktop(product: product),
     );
   } else {

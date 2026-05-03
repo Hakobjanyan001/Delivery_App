@@ -9,6 +9,7 @@ class OrderModel {
   final String address;
   final double? latitude;
   final double? longitude;
+  final double deliveryPrice;
 
   OrderModel({
     required this.id,
@@ -19,6 +20,7 @@ class OrderModel {
     this.status = "pending",
     this.latitude,
     this.longitude,
+    this.deliveryPrice = 0.0,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class OrderModel {
           : (addressData ?? ""),
       latitude: addressData is Map ? (addressData['lat']?.toDouble()) : null,
       longitude: addressData is Map ? (addressData['lng']?.toDouble()) : null,
+      deliveryPrice: (json['deliveryPrice'] ?? 0).toDouble(),
     );
   }
 
@@ -49,6 +52,7 @@ class OrderModel {
         'lat': latitude,
         'lng': longitude,
       },
+      'deliveryPrice': deliveryPrice,
     };
   }
 }
