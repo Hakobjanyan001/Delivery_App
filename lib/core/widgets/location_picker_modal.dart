@@ -24,6 +24,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   late google.LatLng _currentPosition;
   UniversalMapController? _mapController;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   List<dynamic> _suggestions = [];
   Timer? _debounce;
   bool _isLoading = false;
@@ -34,11 +35,15 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     super.initState();
     _currentPosition = widget.initialPosition;
     _reverseGeocode(_currentPosition);
+    _searchFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -146,7 +151,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     });
     
     _mapController?.animateTo(lat, lon);
-    FocusScope.of(context).unfocus();
+    _searchFocusNode.unfocus();
   }
 
   @override
@@ -165,6 +170,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             onTap: (point) {
               setState(() => _currentPosition = point);
               _reverseGeocode(point);
+              _searchFocusNode.unfocus();
             },
             forceOSM: true, // Use OSM for better control and free usage
           ),
@@ -209,6 +215,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       children: [
                         TextField(
                           controller: _searchController,
+                          focusNode: _searchFocusNode,
                           onChanged: _onSearchChanged,
                           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
@@ -243,7 +250,9 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                         ),
                         if (_suggestions.isNotEmpty)
                           ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 250),
+                            constraints: BoxConstraints(
+                              maxHeight: MediaQuery.of(context).size.height * 0.4,
+                            ),
                             child: ListView.separated(
                               shrinkWrap: true,
                               padding: EdgeInsets.zero,
@@ -276,97 +285,103 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           ),
 
           // Bottom Selection Info
-          Positioned(
-            bottom: 0,
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            bottom: (_searchFocusNode.hasFocus || _suggestions.isNotEmpty) ? -400 : 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          shape: BoxShape.circle,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: (_searchFocusNode.hasFocus || _suggestions.isNotEmpty) ? 0 : 1,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.my_location,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.my_location,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ընտրված հասցե',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ընտրված հասցե',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentAddress,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                              const SizedBox(height: 4),
+                              Text(
+                                _currentAddress,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context, {
-                          'position': _currentPosition,
-                          'address': _currentAddress,
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.onSurface,
-                        foregroundColor: Theme.of(context).colorScheme.surface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'position': _currentPosition,
+                            'address': _currentAddress,
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.onSurface,
+                          foregroundColor: Theme.of(context).colorScheme.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Հաստատել',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        child: const Text(
+                          'Հաստատել',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

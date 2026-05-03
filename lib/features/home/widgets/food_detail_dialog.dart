@@ -58,7 +58,7 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
               v.name.hy == selectedVariantName ||
               v.name.ru == selectedVariantName,
         );
-        return v.price;
+        return v.displayPrice;
       } catch (_) {}
     }
     return product.displayPrice;
@@ -171,13 +171,52 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
                         color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
                       )),
 
-                  Text('${variant.price.toStringAsFixed(0)} ֏',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.5)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
-                      )),
+                  if (variant.discountPrice != null && variant.discountPrice! > 0 && variant.discountPrice! != variant.price) ...[
+                    Text('${variant.price.toStringAsFixed(0)} ֏',
+                        style: TextStyle(
+                          fontSize: 11,
+                          decoration: TextDecoration.lineThrough,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                        )),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${variant.discountPrice!.toStringAsFixed(0)} ֏',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.surface
+                                  : Colors.orangeAccent,
+                            )),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.2) : Colors.orangeAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '-${(((variant.price - variant.discountPrice!) / variant.price) * 100).toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              color: isSelected ? Theme.of(context).colorScheme.surface : Colors.orangeAccent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else
+                    Text('${variant.price.toStringAsFixed(0)} ֏',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.5)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                        )),
 
                 ]),
               ),
@@ -410,9 +449,41 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMix
                       ]),
                     ),
                     const SizedBox(width: 12),
-                    Text('${product.displayPrice.toStringAsFixed(0)} ֏',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+                    if (product.discountPrice != null && product.discountPrice! > 0 && product.discountPrice! != product.price) ...[
+                      Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        Text('${product.price.toStringAsFixed(0)} ֏',
+                            style: TextStyle(
+                                fontSize: 14,
+                                decoration: TextDecoration.lineThrough,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3))),
+                        Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '-${(((product.price - product.discountPrice!) / product.price) * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.orangeAccent,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('${product.discountPrice!.toStringAsFixed(0)} ֏',
+                              style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Theme.of(context).colorScheme.onSurface)),
+                        ]),
+                      ]),
+                    ] else
+                      Text('${product.price.toStringAsFixed(0)} ֏',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
 
                   ]),
                   const SizedBox(height: 20),

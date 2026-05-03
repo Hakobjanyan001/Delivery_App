@@ -54,6 +54,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
       'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
       'PaymentScreen', 'PaymentWebViewScreen', 'CheckoutScreen',
       'SearchScreen', 'SupportChatScreen', 'PhoneAuthScreen',
+      'FoodDetail',
     };
     return !hidden.contains(_currentRoute);
   }

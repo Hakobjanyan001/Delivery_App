@@ -1,11 +1,11 @@
 class ApiConstants {
   // Change this to your production URL when deploying
-  //static const String baseUrl = 'http://localhost:3000/api';
-  static const String baseUrl = 'https://backend.digicraft.am/api';
+  static const String baseUrl = 'http://localhost:3000/api';
+  // static const String baseUrl = 'https://backend.digicraft.am/api';
 
   // Partner ID for multi-tenancy
-  static const String partnerId = '69f1eea8e4eebbf36c237404';
-  // static const String partnerId = '69f0fe1683126ee3d5324750';
+  // static const String partnerId = '69f1eea8e4eebbf36c237404';
+  static const String partnerId = '69f1046ff8627d7d87dd62c8';
 
   // Helper for headers
   static Map<String, String> getHeaders([String? token]) {
@@ -48,6 +48,7 @@ class ApiConstants {
   static const String addAddress = '$baseUrl/user/add-address';
   static const String updateAddress = '$baseUrl/user/update-address';
   static const String deleteAddress = '$baseUrl/user/delete-address';
+  static const String registerFcmToken = '$baseUrl/user/register-fcm-token';
 
   // Orders
   static const String createOrder = '$baseUrl/order/create';

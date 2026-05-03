@@ -173,9 +173,9 @@ class CartProvider with ChangeNotifier {
 
   Future<void> _fetchRestaurantDetails() async {
     // Set default coordinates and price for Masoor Family Restaurant
-    _restaurantLat = 40.809289;
-    _restaurantLng = 44.486711;
-    _deliveryPrice = 500.0; // Default base price
+    // _restaurantLat = 40.809289;
+    // _restaurantLng = 44.486711;
+    // _deliveryPrice = 500.0; // Default base price
     debugPrint('Restaurant details initialized with defaults: $_restaurantLat, $_restaurantLng');
 
     if (_restaurantId == null || _restaurantId!.isEmpty) {
@@ -184,11 +184,11 @@ class CartProvider with ChangeNotifier {
       return;
     }
     try {
-      final restaurant = await _restaurantRepository.getRestaurantById(_restaurantId!).timeout(const Duration(seconds: 5));
+      final restaurant = await _restaurantRepository.getRestaurantById(_restaurantId!, _authRepository.token).timeout(const Duration(seconds: 5));
       // If API provides coordinates, use them, otherwise keep defaults
-      if (restaurant.latitude != null && restaurant.longitude != null) {
-        _restaurantLat = restaurant.latitude;
-        _restaurantLng = restaurant.longitude;
+      if (restaurant.location?.lat != null && restaurant.location?.lng != null) {
+        _restaurantLat = restaurant.location!.lat!;
+        _restaurantLng = restaurant.location!.lng!;
       }
       _deliveryPrice = restaurant.delivery.basePrice;
       _freeDeliveryFrom = restaurant.delivery.freeDeliveryFrom;
