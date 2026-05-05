@@ -8,6 +8,7 @@ import '../../../core/models/category_model.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../../cart/providers/cart_provider.dart';
 import '../widgets/food_detail_dialog.dart';
+import '../widgets/restaurant_section.dart';
 import '../providers/home_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import 'search_screen.dart';
@@ -22,11 +23,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _selectedCategoryId;
+  String? _selectedRestaurantId;
   late PageController _bannersController;
   Timer? _bannerTimer;
   static const int _infiniteFactor = 10000;
   int _currentBannerPage = 0;
   final ScrollController _categoryScrollController = ScrollController();
+  final ScrollController _mainScrollController = ScrollController();
 
   @override
   void initState() {
@@ -141,9 +144,11 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final displayProducts = (_selectedCategoryId == null || _selectedCategoryId == 'all')
-        ? hp.products
-        : hp.products.where((p) => p.categoryId == _selectedCategoryId).toList();
+    final displayProducts = hp.products.where((p) {
+      final matchesCategory = (_selectedCategoryId == null || _selectedCategoryId == 'all' || p.categoryId == _selectedCategoryId);
+      final matchesRestaurant = (_selectedRestaurantId == null || p.restaurantId == _selectedRestaurantId);
+      return matchesCategory && matchesRestaurant;
+    }).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -157,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Theme.of(context).colorScheme.surface,
 
               child: CustomScrollView(
+                controller: _mainScrollController,
                 slivers: [
                   // Search bar
                   SliverToBoxAdapter(child: _buildSearchBar(context, l10n)),
@@ -164,6 +170,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Banner carousel
                   if (hp.banners.isNotEmpty)
                     SliverToBoxAdapter(child: _buildBanner(context, hp.banners, lang)),
+
+                  // Restaurants section
+                  if (hp.restaurants.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: RestaurantSection(
+                        restaurants: hp.restaurants,
+                        lang: lang,
+                        selectedRestaurantId: _selectedRestaurantId,
+                        onRestaurantSelected: (id) {
+                          setState(() {
+                            if (_selectedRestaurantId == id) {
+                              _selectedRestaurantId = null;
+                            } else {
+                              _selectedRestaurantId = id;
+                              // Scroll to products
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                _mainScrollController.animateTo(
+                                  350, // Adjust this value based on banner/restaurant section height
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                );
+                              });
+                            }
+                          });
+                        },
+                      ),
+                    ),
 
                   // Sticky category chips
                   SliverPersistentHeader(

@@ -11,6 +11,10 @@ class RestaurantModel {
   final WorkingHours workingHours;
   final DeliverySettings delivery;
   final LocationModel? location;
+  final double? rating;
+  final String? deliveryTime;
+  final bool isPromoted;
+  final List<LocalizedString> cuisines;
 
   RestaurantModel({
     required this.id,
@@ -23,6 +27,10 @@ class RestaurantModel {
     required this.workingHours,
     required this.delivery,
     this.location,
+    this.rating,
+    this.deliveryTime,
+    this.isPromoted = false,
+    this.cuisines = const [],
   });
 
 
@@ -38,6 +46,13 @@ class RestaurantModel {
       workingHours: WorkingHours.fromJson(json['workingHours'] ?? {}),
       delivery: DeliverySettings.fromJson(json['delivery'] ?? {}),
       location: LocationModel.fromJson(json['location'] ?? {}),
+      rating: (json['rating'] != null) ? (json['rating'] as num).toDouble() : null,
+      deliveryTime: json['deliveryTime'],
+      isPromoted: json['isPromoted'] ?? false,
+      cuisines: (json['cuisines'] as List?)
+              ?.map((c) => LocalizedString.fromJson(c))
+              .toList() ??
+          [],
     );
   }
 }

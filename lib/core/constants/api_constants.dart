@@ -1,7 +1,7 @@
 class ApiConstants {
   // Change this to your production URL when deploying
-  static const String baseUrl = 'http://localhost:3000/api';
-  // static const String baseUrl = 'https://backend.digicraft.am/api';
+  // static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://backend.digicraft.am/api';
 
   // Partner ID for multi-tenancy
   // static const String partnerId = '69f1eea8e4eebbf36c237404';

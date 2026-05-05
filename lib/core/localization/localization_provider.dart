@@ -27,6 +27,7 @@ class LocalizationProvider with ChangeNotifier {
       'appName': 'MASOOR',
       'searchHint': 'Որոնել',
       'categoriesTitle': 'Ցանկ',
+      'restaurants': 'Ռեստորաններ',
       'popularRestaurants': 'Հայտնի Ռեստորաններ',
       'noResults': 'Որոնման արդյունքում ոչինչ չի գտնվել',
       'login': 'Մուտք',
@@ -154,11 +155,13 @@ class LocalizationProvider with ChangeNotifier {
       'addressFullHint': 'Փողոց, շենք, բնակարան',
       'editAddress': 'Խմբագրել հասցե',
       'delete': 'Ջնջել',
+      'promoted': 'Գովազդ',
     },
     'en': {
       'appName': 'MASOOR',
       'searchHint': 'Search product',
       'categoriesTitle': 'Menu',
+      'restaurants': 'Restaurants',
       'popularRestaurants': 'Popular Restaurants',
       'noResults': 'No results found',
       'login': 'Login',
@@ -286,11 +289,13 @@ class LocalizationProvider with ChangeNotifier {
       'addressFullHint': 'Street, building, apartment',
       'editAddress': 'Edit address',
       'delete': 'Delete',
+      'promoted': 'Promoted',
     },
     'ru': {
       'appName': 'MASOOR',
       'searchHint': 'Поиск',
       'categoriesTitle': 'Меню',
+      'restaurants': 'Рестораны',
       'popularRestaurants': 'Популярные рестораны',
       'noResults': 'Ничего не найдено',
       'login': 'Вход',
@@ -418,6 +423,7 @@ class LocalizationProvider with ChangeNotifier {
       'addressFullHint': 'Улица, дом, квартира',
       'editAddress': 'Редактировать адрес',
       'delete': 'Удалить',
+      'promoted': 'Реклама',
     },
   };
 
