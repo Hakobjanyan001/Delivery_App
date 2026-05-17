@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/asset_constants.dart';
 
 class PromoVideoWidget extends StatefulWidget {
   final double height;
@@ -19,7 +20,7 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset('assets/videos/promo_video.mp4')
+    _controller = VideoPlayerController.asset(AssetConstants.promoVideo)
       ..initialize().then((_) {
         // Ensure the first frame is shown after the video is initialized
         if (mounted) {
@@ -102,7 +103,7 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
                           );
                         }
                         return Image.asset(
-                          'assets/images/masoor_branch.png',
+                          AssetConstants.masoorBranch,
                           width: 220,
                           fit: BoxFit.contain,
                         );

@@ -3,12 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/payment_card.dart';
 
+import '../../../core/patterns/payment_strategy.dart';
+
 enum PaymentMethodType { cash, card, idram }
 
 class PaymentProvider with ChangeNotifier {
   List<PaymentCard> _cards = [];
   String? _selectedCardId;
   PaymentMethodType _selectedMethodType = PaymentMethodType.cash;
+
+  PaymentStrategy get strategy {
+    switch (_selectedMethodType) {
+      case PaymentMethodType.card:
+        return CardPaymentStrategy(_selectedCardId ?? '');
+      case PaymentMethodType.idram:
+        return IdramPaymentStrategy();
+      case PaymentMethodType.cash:
+      default:
+        return CashPaymentStrategy();
+    }
+  }
 
   static const String _cardsKey = 'user_cards';
   static const String _methodTypeKey = 'payment_method_type';

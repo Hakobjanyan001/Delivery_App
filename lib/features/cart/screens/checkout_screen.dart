@@ -13,7 +13,12 @@ import '../../../core/services/payment_service.dart';
 import '../../support/widgets/support_hub_sheet.dart';
 import '../providers/orders_provider.dart';
 import '../providers/address_provider.dart';
-import '../../../core/theme/app_theme.dart';
+
+import '../widgets/checkout/address_selection_section.dart';
+import '../widgets/checkout/payment_method_section.dart';
+import '../widgets/checkout/card_selection_section.dart';
+import '../widgets/checkout/order_summary_section.dart';
+import '../widgets/checkout/checkout_widgets.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -49,14 +54,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _checkAndCalculateDistance(CartProvider cartProvider, AddressProvider addressProvider) {
     final selected = addressProvider.selectedAddress;
-    
     if (selected != null && selected.latitude != null && cartProvider.restaurantLat != null) {
       if (cartProvider.distanceInKm == 0 && !cartProvider.isCalculatingDelivery) {
-        debugPrint('Triggering distance calculation for: ${selected.address}');
         cartProvider.updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
       }
-    } else if (selected != null && selected.latitude == null) {
-      debugPrint('WARNING: Selected address has NO coordinates: ${selected.address}');
     }
   }
 
@@ -149,12 +150,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     lat: pickedCoords?.latitude,
                     lng: pickedCoords?.longitude,
                   );
-                  if (mounted) {
-                    final selected = provider.selectedAddress;
-                    if (selected != null && selected.latitude != null) {
-                      context.read<CartProvider>().updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
-                    }
-                  }
                   Navigator.pop(ctx);
                 }
               },
@@ -197,10 +192,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         
         if (order != null && context.mounted) {
           _showSuccessDialog(context, cart, l10n);
-        } else if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(Provider.of<OrdersProvider>(context, listen: false).error ?? 'Սխալ պատվերի ժամանակ')),
-          );
         }
       }
     } else {
@@ -248,10 +239,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               );
               _showSuccessDialog(context, cart, l10n);
             }
-          } else if (context.mounted) {
-            messenger.showSnackBar(
-              const SnackBar(content: Text('Վճարումը չհաջողվեց')),
-            );
           }
         }
       } catch (e) {
@@ -280,9 +267,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Navigator.of(ctx).pop();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-
+            child: const Text('OK'),
           )
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteCard(BuildContext context, PaymentProvider provider, PaymentCard card) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ջնջել քարտը'),
+        content: Text('Ցանկանո՞ւմ եք ջնջել ${card.last4}-ով ավարտվող քարտը։'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Չեղարկել')),
+          TextButton(
+            onPressed: () {
+              provider.removeCard(card.id);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Ջնջել', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -290,11 +296,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Avoid watching the entire providers here if possible, 
-    // but localization is required for almost all labels.
     final l10n = context.watch<LocalizationProvider>();
-
-    // Trigger distance check on every build to be safe
     final cartProv = Provider.of<CartProvider>(context, listen: false);
     final addrProv = Provider.of<AddressProvider>(context, listen: false);
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndCalculateDistance(cartProv, addrProv));
@@ -306,12 +308,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
-
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
-
         child: SingleChildScrollView(
-        child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Form(
             key: _formKey,
@@ -354,10 +353,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     onDeleteCard: (provider, card) => _confirmDeleteCard(context, provider, card),
                     l10n: l10n,
                   ),
-                ]
-                else ...[
-                   SectionTitle(title: l10n.translate('cashAmount')),
-                   TextFormField(
+                ] else ...[
+                  SectionTitle(title: l10n.translate('cashAmount')),
+                  TextFormField(
                     controller: _cashController,
                     decoration: InputDecoration(
                       hintText: '0 ֏',
@@ -371,35 +369,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     },
                     validator: (value) => _paymentMethod == 'cash' && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
                   ),
-                  const SizedBox(height: 10),
-                  if (_change > 0)
+                  if (_change > 0) ...[
+                    const SizedBox(height: 10),
                     Text(
                       '${l10n.translate('changeNeeded')}: ${_change.toStringAsFixed(0)} ֏',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green[700]),
                     ),
+                  ],
                 ],
 
                 const SizedBox(height: 40),
-                
                 OrderSummarySection(l10n: l10n),
                 const SizedBox(height: 20),
 
                 ElevatedButton(
-                  onPressed: _isProcessingPayment ? null : () {
-                    final cart = context.read<CartProvider>();
-                    _submitOrder(context, cart, l10n);
-                  },
+                  onPressed: _isProcessingPayment ? null : () => _submitOrder(context, context.read<CartProvider>(), l10n),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onSurface,
                     foregroundColor: Theme.of(context).colorScheme.surface,
-
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     minimumSize: const Size(double.infinity, 50),
                   ),
                   child: _isProcessingPayment 
                     ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
-
                     : Text(l10n.translate('confirmOrder'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ],
@@ -407,413 +400,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const SupportHubSheet(),
-          );
-        },
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const SupportHubSheet(),
+        ),
         backgroundColor: Theme.of(context).colorScheme.onSurface,
         child: Icon(Icons.support_agent, color: Theme.of(context).colorScheme.surface),
-
       ),
-    );
-  }
-
-  void _confirmDeleteCard(BuildContext context, PaymentProvider provider, PaymentCard card) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Ջնջել քարտը'),
-        content: Text('Ցանկանո՞ւմ եք ջնջել ${card.last4}-ով ավարտվող քարտը։'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Չեղարկել')),
-          TextButton(
-            onPressed: () {
-              provider.removeCard(card.id);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('Ջնջել', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class SectionTitle extends StatelessWidget {
-  final String title;
-  const SectionTitle({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-      ),
-
-    );
-  }
-}
-
-class AddressSelectionSection extends StatelessWidget {
-  final Function(AddressProvider) onAddAddress;
-
-  const AddressSelectionSection({
-    super.key,
-    required this.onAddAddress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AddressProvider>(
-      builder: (context, addrProv, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (addrProv.addresses.isNotEmpty) ...[
-              ...addrProv.addresses.map((addr) {
-                final isSelected = addrProv.selectedAddressId == addr.id;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                  ),
-
-                  child: ListTile(
-                    leading: Icon(Icons.location_on, color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-
-                    title: Text(addr.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(addr.address),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                          onPressed: () => addrProv.removeAddress(addr.id),
-                        ),
-                        if (isSelected) Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSurface),
-
-                      ],
-                    ),
-                    onTap: () {
-                      debugPrint('Address selected: ${addr.title}, Lat: ${addr.latitude}');
-                      addrProv.selectAddress(addr.id);
-                      if (addr.latitude != null && addr.longitude != null) {
-                        context.read<CartProvider>().updateDeliveryPriceByDistance(addr.latitude!, addr.longitude!);
-                      } else {
-                        debugPrint('Cannot calculate distance: Address has no coordinates!');
-                      }
-                    },
-                  ),
-                );
-              }),
-              TextButton.icon(
-                onPressed: () => onAddAddress(addrProv),
-                icon: const Icon(Icons.add),
-                label: const Text('Ավելացնել նոր հասցե'),
-              ),
-            ] else ...[
-              InkWell(
-                onTap: () => onAddAddress(addrProv),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[400]!),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-                      const SizedBox(width: 10),
-                      Text('Ավելացրեք հասցե', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 16)),
-                      const Spacer(),
-                      Icon(Icons.add_location_alt, color: Theme.of(context).colorScheme.onSurface),
-
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class PaymentMethodSection extends StatelessWidget {
-  final String selectedMethod;
-  final Function(String) onChanged;
-  final LocalizationProvider l10n;
-
-  const PaymentMethodSection({
-    super.key,
-    required this.selectedMethod,
-    required this.onChanged,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitle(title: l10n.translate('paymentMethod')),
-        Row(
-          children: [
-            Expanded(
-              child: ChoiceChip(
-                label: Center(child: Text(l10n.translate('cash'))),
-                selected: selectedMethod == 'cash',
-                onSelected: (selected) => onChanged('cash'),
-                selectedColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                checkmarkColor: Theme.of(context).colorScheme.onSurface,
-
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ChoiceChip(
-                label: Center(child: Text(l10n.translate('card'))),
-                selected: selectedMethod == 'card',
-                onSelected: (selected) => onChanged('card'),
-                selectedColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                checkmarkColor: Theme.of(context).colorScheme.onSurface,
-
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class CardSelectionSection extends StatelessWidget {
-  final bool showNewCardForm;
-  final Function(bool) onToggleNewCard;
-  final TextEditingController cardNumberController;
-  final TextEditingController expiryController;
-  final TextEditingController cvvController;
-  final Function(PaymentProvider, PaymentCard) onDeleteCard;
-  final LocalizationProvider l10n;
-
-  const CardSelectionSection({
-    super.key,
-    required this.showNewCardForm,
-    required this.onToggleNewCard,
-    required this.cardNumberController,
-    required this.expiryController,
-    required this.cvvController,
-    required this.onDeleteCard,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<PaymentProvider>(
-      builder: (context, payment, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (payment.cards.isNotEmpty && !showNewCardForm) ...[
-              const SizedBox(height: 10),
-              ...payment.cards.map((card) {
-                final isSelected = payment.selectedCardId == card.id;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                  ),
-
-                  child: ListTile(
-                    leading: Icon(Icons.credit_card, color: Theme.of(context).colorScheme.onSurface),
-
-                    title: Text('**** **** **** ${card.last4}'),
-                    subtitle: Text(card.expiryDate),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                          onPressed: () => onDeleteCard(payment, card),
-                        ),
-                        if (isSelected) Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSurface),
-
-                      ],
-                    ),
-                    onTap: () => payment.selectCard(card.id),
-                  ),
-                );
-              }),
-              const SizedBox(height: 5),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => onToggleNewCard(true),
-                  icon: const Icon(Icons.add_card, size: 20),
-                  label: const Text('Ավելացնել նոր քարտ', style: TextStyle(fontSize: 14)),
-                ),
-              ),
-            ],
-            if (payment.cards.isEmpty || showNewCardForm) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-                ),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Նոր քարտի տվյալներ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        if (payment.cards.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 20),
-                            onPressed: () => onToggleNewCard(false),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    SectionTitle(title: l10n.translate('cardNumber')),
-                    TextFormField(
-                      controller: cardNumberController,
-                      decoration: InputDecoration(
-                        hintText: 'XXXX XXXX XXXX XXXX',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) => showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
-                    ),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SectionTitle(title: l10n.translate('expiryDate')),
-                              TextFormField(
-                                controller: expiryController,
-                                decoration: InputDecoration(
-                                  hintText: 'MM/YY',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                validator: (value) => showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SectionTitle(title: l10n.translate('cvv')),
-                              TextFormField(
-                                controller: cvvController,
-                                decoration: InputDecoration(
-                                  hintText: '123',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                keyboardType: TextInputType.number,
-                                obscureText: true,
-                                validator: (value) => showNewCardForm && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class OrderSummarySection extends StatelessWidget {
-  final LocalizationProvider l10n;
-
-  const OrderSummarySection({
-    super.key,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (context, cartProv, child) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.translate('subtotal') ?? 'Ապրանքներ', style: const TextStyle(fontSize: 16)),
-                  Text('${cartProv.totalAmount.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(l10n.translate('delivery') ?? 'Առաքում', style: const TextStyle(fontSize: 16)),
-                      if (cartProv.distanceInKm > 0)
-                        Text(' (${cartProv.distanceInKm.toStringAsFixed(1)} կմ)', 
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-                    ],
-                  ),
-                  if (cartProv.isCalculatingDelivery)
-                    Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
-                  else
-                    Text('${cartProv.deliveryPrice.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-              const Divider(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(
-                    '${cartProv.finalAmount.toStringAsFixed(0)} ֏',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

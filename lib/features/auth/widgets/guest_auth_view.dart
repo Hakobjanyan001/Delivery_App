@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/localization/localization_provider.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../screens/phone_auth_screen.dart';
+import '../../../core/constants/asset_constants.dart';
 
 class GuestAuthView extends StatefulWidget {
   const GuestAuthView({super.key});
@@ -129,7 +129,7 @@ class _GuestAuthViewState extends State<GuestAuthView> {
                     );
                   }
                   return Image.asset(
-                    'assets/images/masoor_branch.png',
+                    AssetConstants.masoorBranch,
                     height: 80,
                     width: 120,
                     fit: BoxFit.contain,
@@ -285,7 +285,7 @@ class _GuestAuthViewState extends State<GuestAuthView> {
                     );
                   }
                   return Image.asset(
-                    'assets/images/masoor_branch.png',
+                    AssetConstants.masoorBranch,
                     height: 70,
                     width: 100,
                     fit: BoxFit.contain,

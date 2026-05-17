@@ -74,174 +74,222 @@ class _RestaurantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = Provider.of<LocalizationProvider>(context);
+    final bool isOpen = restaurant.isOpen;
     
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected 
-            ? Border.all(color: theme.colorScheme.primary, width: 2)
-            : Border.all(color: Colors.transparent, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image / Logo Section
-            Stack(
-            children: [
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  image: restaurant.logo != null
-                      ? DecorationImage(
-                          image: NetworkImage(restaurant.logo!),
-                          fit: BoxFit.contain,
-                        )
-                      : null,
-                ),
-                child: restaurant.logo == null
-                    ? const Center(child: Icon(Icons.restaurant, size: 40))
-                    : null,
+      onTap: isOpen ? onTap : () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.translate('closed')),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      child: ColorFiltered(
+        colorFilter: isOpen
+            ? const ColorFilter.mode(Colors.transparent, BlendMode.multiply)
+            : const ColorFilter.matrix(<double>[
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0.2126, 0.7152, 0.0722, 0, 0,
+                0,      0,      0,      1, 0,
+              ]),
+        child: Container(
+          width: 280,
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: isSelected 
+              ? Border.all(color: theme.colorScheme.primary, width: 2)
+              : Border.all(color: Colors.transparent, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              if (restaurant.isPromoted)
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image / Logo Section
+              Stack(
+                children: [
+                  Container(
+                    height: 140,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      image: restaurant.logo != null
+                          ? DecorationImage(
+                              image: NetworkImage(restaurant.logo!),
+                              fit: BoxFit.contain,
+                            )
+                          : null,
+                    ),
+                    child: restaurant.logo == null
+                        ? const Center(child: Icon(Icons.restaurant, size: 40))
+                        : null,
+                  ),
+                  if (restaurant.isPromoted && isOpen)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          l10n.translate('promoted'),
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (!isOpen)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.7),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              l10n.translate('closed').toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            restaurant.name.getLocalized(lang),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (restaurant.rating != null)
+                          Row(
+                            children: [
+                              const Icon(Icons.star, color: Colors.orange, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                restaurant.rating.toString(),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      restaurant.cuisines.isNotEmpty 
+                        ? restaurant.cuisines.first.getLocalized(lang)
+                        : (restaurant.description.getLocalized(lang)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (restaurant.deliveryTime != null) ...[
+                          Icon(Icons.access_time, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                          const SizedBox(width: 4),
+                          Text(
+                            restaurant.deliveryTime!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Icon(Icons.delivery_dining, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${restaurant.delivery.basePrice.toInt()} ֏',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
                         ),
                       ],
                     ),
-                    child: Text(
-                      Provider.of<LocalizationProvider>(context, listen: false).translate('promoted'),
-                      style: const TextStyle(
-                        color: Colors.orange,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    if (restaurant.cuisines.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          restaurant.cuisines.first.getLocalized(lang),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                  ],
                 ),
+              ),
             ],
           ),
-          
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        restaurant.name.getLocalized(lang),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (restaurant.rating != null)
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.orange, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            restaurant.rating.toString(),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  restaurant.cuisines.isNotEmpty 
-                    ? restaurant.cuisines.first.getLocalized(lang)
-                    : (restaurant.description.getLocalized(lang)),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (restaurant.deliveryTime != null) ...[
-                      Icon(Icons.access_time, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                      const SizedBox(width: 4),
-                      Text(
-                        restaurant.deliveryTime!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Icon(Icons.delivery_dining, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${restaurant.delivery.basePrice.toInt()} ֏',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (restaurant.cuisines.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      restaurant.cuisines.first.getLocalized(lang),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
+

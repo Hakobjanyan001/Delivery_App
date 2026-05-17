@@ -156,6 +156,8 @@ class LocalizationProvider with ChangeNotifier {
       'editAddress': 'Խմբագրել հասցե',
       'delete': 'Ջնջել',
       'promoted': 'Գովազդ',
+      'closed': 'Փակ է',
+      'weAreClosedNow': 'Մենք արդեն փակ ենք, համեցեք վաղը ))',
     },
     'en': {
       'appName': 'MASOOR',
@@ -290,6 +292,8 @@ class LocalizationProvider with ChangeNotifier {
       'editAddress': 'Edit address',
       'delete': 'Delete',
       'promoted': 'Promoted',
+      'closed': 'Closed',
+      'weAreClosedNow': 'We are already closed, please visit us tomorrow ))',
     },
     'ru': {
       'appName': 'MASOOR',
@@ -424,6 +428,8 @@ class LocalizationProvider with ChangeNotifier {
       'editAddress': 'Редактировать адрес',
       'delete': 'Удалить',
       'promoted': 'Реклама',
+      'closed': 'Закрыто',
+      'weAreClosedNow': 'Мы уже закрыты, приходите завтра ))',
     },
   };
 

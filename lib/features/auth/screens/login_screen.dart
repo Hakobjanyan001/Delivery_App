@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import 'register_screen.dart';
-import '../../home/screens/home_screen.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
 import 'phone_auth_screen.dart';
+import '../../../core/constants/asset_constants.dart';
+import '../../../core/constants/route_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isCheckoutFlow;
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               }
                               return Image.asset(
-                                'assets/images/masoor_branch.png',
+                                AssetConstants.masoorBranch,
                                 height: 165,
                                 width: 248,
                                 fit: BoxFit.contain,
@@ -255,12 +255,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Footer Link
                         GestureDetector(
                           onTap: () async {
-                            final success = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute(
-                                settings: const RouteSettings(name: 'RegisterScreen'),
-                                builder: (context) => RegisterScreen(isCheckoutFlow: widget.isCheckoutFlow),
-                              ),
-                            );
+                              final success = await Navigator.of(context).push<bool>(
+                                MaterialPageRoute(
+                                  settings: const RouteSettings(name: RouteConstants.register),
+                                  builder: (context) => RegisterScreen(isCheckoutFlow: widget.isCheckoutFlow),
+                                ),
+                              );
                             if (!context.mounted) return;
                             if (success == true) {
                               Navigator.of(context).pop(true);

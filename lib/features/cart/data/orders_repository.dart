@@ -5,6 +5,10 @@ import '../../auth/data/auth_repository.dart';
 import '../models/order_model.dart';
 
 class OrdersRepository {
+  static final OrdersRepository _instance = OrdersRepository._internal();
+  factory OrdersRepository() => _instance;
+  OrdersRepository._internal();
+
   final AuthRepository _authRepository = AuthRepository();
 
   Future<OrderModel> createOrder({

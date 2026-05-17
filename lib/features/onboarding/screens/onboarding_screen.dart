@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/localization_provider.dart';
 import '../widgets/onboarding_page_widget.dart';
 import '../providers/onboarding_provider.dart';
+import '../../../core/constants/asset_constants.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -24,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Default slides if partner data is not available
     final List<Widget> defaultSlides = [
       OnboardingPageWidget(
-        backgroundImage: 'assets/images/order_bg_1.png',
+        backgroundImage: AssetConstants.onboardingBg1,
         isLogoPage: true,
         buttonText: localeProvider.translate('explore'),
         onButtonPressed: () {
@@ -58,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ],
       ),
       OnboardingPageWidget(
-        backgroundImage: 'assets/images/order_bg_2.jpg',
+        backgroundImage: AssetConstants.onboardingBg2,
         buttonText: localeProvider.translate('next'),
         onButtonPressed: () {
           _pageController.nextPage(
@@ -91,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ],
       ),
       OnboardingPageWidget(
-        backgroundImage: 'assets/images/order_bg_3.png',
+        backgroundImage: AssetConstants.onboardingBg3,
         buttonText: localeProvider.translate('start'),
         onButtonPressed: () {
           context.read<OnboardingProvider>().setHasSeenOnboarding(true);

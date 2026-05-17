@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../models/restaurant_model.dart';
+import '../models/common_models.dart';
 
 class SearchProvider extends ChangeNotifier {
   String _searchQuery = '';
@@ -31,16 +32,32 @@ class SearchProvider extends ChangeNotifier {
 
     try {
       final filteredRestaurants = restaurants.where((r) => 
-        r.name.hy.toLowerCase().contains(query.toLowerCase()) ||
-        r.name.en.toLowerCase().contains(query.toLowerCase()) ||
-        r.name.ru.toLowerCase().contains(query.toLowerCase())
+        r.isOpen && (
+          r.name.hy.toLowerCase().contains(query.toLowerCase()) ||
+          r.name.en.toLowerCase().contains(query.toLowerCase()) ||
+          r.name.ru.toLowerCase().contains(query.toLowerCase())
+        )
       ).toList();
 
-      final filteredProducts = products.where((p) => 
-        p.name.hy.toLowerCase().contains(query.toLowerCase()) ||
-        p.name.en.toLowerCase().contains(query.toLowerCase()) ||
-        p.name.ru.toLowerCase().contains(query.toLowerCase())
-      ).toList();
+      final filteredProducts = products.where((p) {
+        final restaurant = restaurants.firstWhere(
+          (r) => r.id == p.restaurantId,
+          orElse: () => RestaurantModel(
+            id: '', 
+            name: LocalizedString(hy: '', en: '', ru: ''), 
+            description: LocalizedString(hy: '', en: '', ru: ''),
+            workingHours: WorkingHours(open: '00:00', close: '00:00'),
+            delivery: DeliverySettings(basePrice: 0, multiCourierEnabled: false, freeDeliveryFrom: 0),
+            isActive: false,
+          ),
+        );
+        
+        return restaurant.isOpen && (
+          p.name.hy.toLowerCase().contains(query.toLowerCase()) ||
+          p.name.en.toLowerCase().contains(query.toLowerCase()) ||
+          p.name.ru.toLowerCase().contains(query.toLowerCase())
+        );
+      }).toList();
 
       _searchResults = [...filteredRestaurants, ...filteredProducts];
     } catch (e) {

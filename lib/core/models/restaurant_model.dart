@@ -55,6 +55,35 @@ class RestaurantModel {
           [],
     );
   }
+
+  bool get isOpen {
+    if (!isActive) return false;
+    return _isWithinWorkingHours();
+  }
+
+  bool _isWithinWorkingHours() {
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+
+    final openParts = workingHours.open.split(':');
+    final closeParts = workingHours.close.split(':');
+
+    if (openParts.length != 2 || closeParts.length != 2) return true;
+
+    try {
+      final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+      final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+
+      if (closeMinutes <= openMinutes) {
+        // Handle overnight (e.g., 22:00 to 02:00)
+        return nowMinutes >= openMinutes || nowMinutes < closeMinutes;
+      }
+
+      return nowMinutes >= openMinutes && nowMinutes < closeMinutes;
+    } catch (e) {
+      return true; // Default to open if parsing fails
+    }
+  }
 }
 
 

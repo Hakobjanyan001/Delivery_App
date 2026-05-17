@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/services/notification_service.dart';
 import 'core/localization/localization_provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/constants/app_constants.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/cart/providers/cart_provider.dart';
 import 'features/cart/providers/payment_provider.dart';
@@ -86,7 +87,7 @@ class _MasoorAppState extends State<MasoorApp> {
     return Consumer2<LocalizationProvider, ThemeProvider>(
       builder: (context, l10n, themeProvider, child) {
         return MaterialApp(
-          title: 'MASOOR',
+          title: AppConstants.appName,
           navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,

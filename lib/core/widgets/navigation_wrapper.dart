@@ -8,6 +8,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/cart/providers/cart_provider.dart';
 import '../../features/cart/screens/payment_screen.dart';
 import '../providers/main_tabs_controller.dart';
+import '../constants/route_constants.dart';
 
 // Figma specs (nav node 16:599):
 //   Outer:        gradient bg (transparent→black), px:16 py:8
@@ -30,11 +31,11 @@ class NavigationWrapper extends StatefulWidget {
 }
 
 class _NavigationWrapperState extends State<NavigationWrapper> {
-  String? _currentRoute = 'HomeScreen';
+  String? _currentRoute = RouteConstants.home;
 
   void updateRoute(String? routeName) {
     if (routeName == null || routeName.isEmpty) return;
-    String name = (routeName == '/') ? 'HomeScreen' : routeName;
+    String name = (routeName == '/') ? RouteConstants.home : routeName;
     if (name.startsWith('/')) name = name.substring(1);
     if (_currentRoute != name && mounted) {
       setState(() => _currentRoute = name);
@@ -50,11 +51,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     if (!tabs.isNavBarVisible) return false;
 
     const hidden = {
-      'OnboardingScreen', 'LoginScreen',
-      'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
-      'PaymentScreen', 'PaymentWebViewScreen', 'CheckoutScreen',
-      'SearchScreen', 'SupportChatScreen', 'PhoneAuthScreen',
-      'FoodDetail',
+      RouteConstants.onboarding, RouteConstants.login,
+      RouteConstants.register, RouteConstants.orders, RouteConstants.orderDetails,
+      RouteConstants.payment, RouteConstants.paymentWebView, RouteConstants.checkout,
+      RouteConstants.search, RouteConstants.supportChat, RouteConstants.phoneAuth,
+      RouteConstants.foodDetail,
     };
     return !hidden.contains(_currentRoute);
   }
@@ -122,13 +123,13 @@ class _NavBar extends StatelessWidget {
                         if (!isAuthenticated) {
                           final success = await navigatorKey.currentState
                               ?.push<bool>(MaterialPageRoute(
-                            settings: const RouteSettings(name: 'LoginScreen'),
+                            settings: const RouteSettings(name: RouteConstants.login),
                             builder: (_) => const LoginScreen(isCheckoutFlow: true),
                           ));
                           if (success != true) return;
                         }
                         navigatorKey.currentState?.push(MaterialPageRoute(
-                          settings: const RouteSettings(name: 'PaymentScreen'),
+                          settings: const RouteSettings(name: RouteConstants.payment),
                           builder: (_) => const PaymentScreen(),
                         ));
                       },
@@ -271,7 +272,7 @@ class _NavPill extends StatelessWidget {
                         icon: Icons.home_outlined,
                         label: l10n.translate('home'),
                         onTap: () {
-                          if (currentRoute == 'FoodDetail') {
+                          if (currentRoute == RouteConstants.foodDetail) {
                             navigatorKey.currentState?.pop();
                           }
                           tabs.switchTo(0);
@@ -281,7 +282,7 @@ class _NavPill extends StatelessWidget {
                         icon: Icons.shopping_cart_outlined,
                         label: l10n.translate('cart'),
                         onTap: () {
-                          if (currentRoute == 'FoodDetail') {
+                          if (currentRoute == RouteConstants.foodDetail) {
                             navigatorKey.currentState?.pop();
                           }
                           tabs.switchTo(1);
@@ -291,7 +292,7 @@ class _NavPill extends StatelessWidget {
                         icon: Icons.person_outline,
                         label: l10n.translate('profile'),
                         onTap: () {
-                          if (currentRoute == 'FoodDetail') {
+                          if (currentRoute == RouteConstants.foodDetail) {
                             navigatorKey.currentState?.pop();
                           }
                           tabs.switchTo(2);

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'custom_theme_extension.dart';
+
 
 class AppColors {
   // Dark Mode Colors
@@ -86,8 +88,10 @@ class AppTheme {
       iconTheme: const IconThemeData(color: AppColors.textSecondary),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       fontFamily: 'Roboto',
+      extensions: const [CustomColors.dark],
     );
   }
+
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -149,6 +153,8 @@ class AppTheme {
       iconTheme: const IconThemeData(color: AppColors.textSecondaryLight),
       visualDensity: VisualDensity.adaptivePlatformDensity,
       fontFamily: 'Roboto',
+      extensions: const [CustomColors.light],
     );
   }
+
 }

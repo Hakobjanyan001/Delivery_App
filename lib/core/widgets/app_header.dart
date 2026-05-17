@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:masoor/features/onboarding/providers/onboarding_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../constants/asset_constants.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
@@ -34,7 +35,7 @@ class AppHeader extends StatelessWidget {
                         );
                       }
                       return Image.asset(
-                        'assets/images/masoor_branch.png',
+                        AssetConstants.masoorBranch,
                         width: 72,
                         height: 48,
                         fit: BoxFit.contain,

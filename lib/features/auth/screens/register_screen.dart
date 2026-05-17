@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../../home/screens/home_screen.dart';
 import '../../../core/localization/localization_provider.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/constants/asset_constants.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isCheckoutFlow;
@@ -146,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 );
                               }
                               return Image.asset(
-                                'assets/images/masoor_branch.png',
+                                AssetConstants.masoorBranch,
                                 height: 165,
                                 width: 248,
                                 fit: BoxFit.contain,
