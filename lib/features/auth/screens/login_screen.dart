@@ -75,8 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              children: [
             // Custom Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -273,6 +276,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     ),
   );

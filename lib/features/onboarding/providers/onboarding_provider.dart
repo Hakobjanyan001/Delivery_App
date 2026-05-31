@@ -11,7 +11,15 @@ class OnboardingProvider with ChangeNotifier {
     static const String _onboardingKey = 'has_seen_onboarding';
 
     bool _hasSeenOnboarding = false;
-    bool get hasSeenOnboarding => _hasSeenOnboarding;
+    bool get hasSeenOnboarding {
+        if (kIsWeb) return true;
+        if (defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.linux) {
+            return true;
+        }
+        return _hasSeenOnboarding;
+    }
 
     PartnerModel? _partner;
     PartnerModel? get partner => _partner;
