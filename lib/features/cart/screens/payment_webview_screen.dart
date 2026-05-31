@@ -63,18 +63,17 @@ class _PaymentWebViewScreenState extends State<PaymentWebViewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Վճարում'),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.blue[900],
         elevation: 1,
       ),
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
           if (_isLoading)
-            Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)),
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
-
   }
 }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../onboarding/providers/onboarding_provider.dart';
 import 'package:video_player/video_player.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -47,8 +45,9 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
         height: widget.height,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
+          // border: Border.all(color: AppColors.border), // Removed to eliminate potential lines
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.15),
@@ -64,7 +63,7 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
                 alignment: Alignment.center,
                 children: [
                   Transform.scale(
-                    scale: 1.15,
+                    scale: 1.15, // Scale up slightly to hide the built-in logo on the right side of the video
                     child: FittedBox(
                       fit: BoxFit.cover,
                       clipBehavior: Clip.hardEdge,
@@ -75,6 +74,8 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
                       ),
                     ),
                   ),
+                  // Centered Branding Overlay
+                  // Semi-transparent Overlay for Text Clarity
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -89,32 +90,22 @@ class _PromoVideoWidgetState extends State<PromoVideoWidget> {
                     ),
                   ),
 
+                  // Centered Branding Logo (slightly below center)
                   Align(
                     alignment: const Alignment(0, 0.35),
-                    child: Consumer<OnboardingProvider>(
-                      builder: (context, onboarding, _) {
-                        final logo = onboarding.partner?.logo;
-                        if (logo != null && logo.isNotEmpty) {
-                          return Image.network(
-                            logo,
-                            width: 220,
-                            fit: BoxFit.contain,
-                          );
-                        }
-                        return Image.asset(
-                          'assets/images/masoor_branch.png',
-                          width: 220,
-                          fit: BoxFit.contain,
-                        );
-                      },
+                    child: Image.asset(
+                      'assets/images/masoor_branch.png',
+                      width: 220,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ],
               )
-            : Center(
-                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface),
-              ),
 
+
+            : const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
       ),
     );
   }

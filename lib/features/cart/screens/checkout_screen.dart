@@ -38,29 +38,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isProcessingPayment = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final cartProvider = Provider.of<CartProvider>(context, listen: false);
-      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
-      _checkAndCalculateDistance(cartProvider, addressProvider);
-    });
-  }
-
-  void _checkAndCalculateDistance(CartProvider cartProvider, AddressProvider addressProvider) {
-    final selected = addressProvider.selectedAddress;
-    
-    if (selected != null && selected.latitude != null && cartProvider.restaurantLat != null) {
-      if (cartProvider.distanceInKm == 0 && !cartProvider.isCalculatingDelivery) {
-        debugPrint('Triggering distance calculation for: ${selected.address}');
-        cartProvider.updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
-      }
-    } else if (selected != null && selected.latitude == null) {
-      debugPrint('WARNING: Selected address has NO coordinates: ${selected.address}');
-    }
-  }
-
-  @override
   void dispose() {
     _phoneController.dispose();
     _cashController.dispose();
@@ -81,10 +58,58 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
+  Future<void> _fetchLocationForAddress(LocalizationProvider l10n, TextEditingController addrController, Function(bool) setFetching) async {
+    setFetching(true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception(l10n.translate('locationPermissionDenied'));
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(l10n.translate('locationPermissionDenied'));
+      }
+
+      Position position = await Geolocator.getCurrentPosition();
+      
+      if (!mounted) return;
+      
+      // Open Map Picker Dialog
+      final LatLng? pickedLocation = await showDialog<LatLng>(
+        context: context,
+        builder: (ctx) => LocationPickerDialog(
+          initialPosition: LatLng(position.latitude, position.longitude),
+        ),
+      );
+
+      if (pickedLocation != null) {
+        final address = await GeocodingHelper.getAddressFromCoordinates(
+          pickedLocation.latitude,
+          pickedLocation.longitude,
+        );
+        addrController.text = address;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.translate('locationError'))),
+      );
+    } finally {
+      setFetching(false);
+    }
+  }
+
   void _showAddAddressDialog(BuildContext context, AddressProvider provider, LocalizationProvider l10n) {
     final titleController = TextEditingController();
     final addrController = TextEditingController();
-    LatLng? pickedCoords;
     bool isFetching = false;
 
     showDialog(
@@ -109,29 +134,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     suffixIcon: isFetching
                         ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
                         : IconButton(
-                            icon: Icon(Icons.my_location, color: Theme.of(context).colorScheme.onSurface),
-                            onPressed: () async {
-                              setStateBuilder(() => isFetching = true);
-                              try {
-                                Position position = await Geolocator.getCurrentPosition();
-                                if (!context.mounted) return;
-                                final LatLng? picked = await showDialog<LatLng>(
-                                  context: context,
-                                  builder: (ctx) => LocationPickerDialog(
-                                    initialPosition: LatLng(position.latitude, position.longitude),
-                                  ),
-                                );
-                                if (picked != null) {
-                                  pickedCoords = picked;
-                                  final address = await GeocodingHelper.getAddressFromCoordinates(picked.latitude, picked.longitude);
-                                  addrController.text = address;
-                                }
-                              } catch (e) {
-                                debugPrint('Location Error: $e');
-                              } finally {
-                                setStateBuilder(() => isFetching = false);
-                              }
-                            },
+                            icon: const Icon(Icons.my_location, color: AppColors.primary),
+                            onPressed: () => _fetchLocationForAddress(l10n, addrController, (val) => setStateBuilder(() => isFetching = val)),
                           ),
                   ),
                 ),
@@ -141,20 +145,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Չեղարկել')),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 if (addrController.text.isNotEmpty) {
-                  provider.addAddress(
-                    titleController.text, 
-                    addrController.text,
-                    lat: pickedCoords?.latitude,
-                    lng: pickedCoords?.longitude,
-                  );
-                  if (mounted) {
-                    final selected = provider.selectedAddress;
-                    if (selected != null && selected.latitude != null) {
-                      context.read<CartProvider>().updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
-                    }
-                  }
+                  provider.addAddress(titleController.text, addrController.text);
                   Navigator.pop(ctx);
                 }
               },
@@ -179,7 +172,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (_paymentMethod == 'cash') {
       final cash = double.tryParse(_cashController.text) ?? 0.0;
-      if (cash < cart.finalAmount) {
+      if (cash < cart.totalAmount) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.translate('insufficientCash'))),
@@ -189,7 +182,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (context.mounted) {
         final order = await Provider.of<OrdersProvider>(context, listen: false).addOrder(
           cart.items, 
-          cart.finalAmount,
+          cart.totalAmount,
           address: addressProvider.selectedAddress!.toJson(),
           phone: _phoneController.text,
           paymentMethod: _paymentMethod,
@@ -214,7 +207,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       try {
         final paymentUrl = await PaymentService.initiatePayment(
-          amount: cart.finalAmount,
+          amount: cart.totalAmount,
           currency: 'AMD',
           cardId: cardId,
         );
@@ -241,7 +234,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             if (context.mounted) {
               await Provider.of<OrdersProvider>(context, listen: false).addOrder(
                 cart.items, 
-                cart.finalAmount,
+                cart.totalAmount,
                 address: addressProvider.selectedAddress!.toJson(),
                 phone: _phoneController.text,
                 paymentMethod: _paymentMethod,
@@ -280,8 +273,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Navigator.of(ctx).pop();
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text('OK', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-
+            child: Text('OK', style: TextStyle(color: AppColors.primary)),
           )
         ],
       ),
@@ -294,22 +286,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // but localization is required for almost all labels.
     final l10n = context.watch<LocalizationProvider>();
 
-    // Trigger distance check on every build to be safe
-    final cartProv = Provider.of<CartProvider>(context, listen: false);
-    final addrProv = Provider.of<AddressProvider>(context, listen: false);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAndCalculateDistance(cartProv, addrProv));
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.translate('checkout'), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text(l10n.translate('checkout'), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.surface,
         elevation: 0,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
-
       body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-
+        color: AppColors.background,
         child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -366,7 +351,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     onChanged: (value) {
-                      final total = context.read<CartProvider>().finalAmount;
+                      final total = context.read<CartProvider>().totalAmount;
                       _calculateChange(total, value);
                     },
                     validator: (value) => _paymentMethod == 'cash' && (value == null || value.isEmpty) ? l10n.translate('requiredField') : null,
@@ -390,16 +375,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     _submitOrder(context, cart, l10n);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onSurface,
-                    foregroundColor: Theme.of(context).colorScheme.surface,
-
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     minimumSize: const Size(double.infinity, 50),
                   ),
                   child: _isProcessingPayment 
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Theme.of(context).colorScheme.surface, strokeWidth: 2))
-
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : Text(l10n.translate('confirmOrder'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ],
@@ -417,9 +400,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             builder: (context) => const SupportHubSheet(),
           );
         },
-        backgroundColor: Theme.of(context).colorScheme.onSurface,
-        child: Icon(Icons.support_agent, color: Theme.of(context).colorScheme.surface),
-
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.support_agent, color: Colors.white),
       ),
     );
   }
@@ -455,9 +437,8 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
       child: Text(
         title,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
       ),
-
     );
   }
 }
@@ -483,14 +464,12 @@ class AddressSelectionSection extends StatelessWidget {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
+                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                    border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
                   ),
-
                   child: ListTile(
-                    leading: Icon(Icons.location_on, color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-
+                    leading: Icon(Icons.location_on, color: isSelected ? AppColors.primary : AppColors.textSecondary),
                     title: Text(addr.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(addr.address),
                     trailing: Row(
@@ -500,19 +479,10 @@ class AddressSelectionSection extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, color: Colors.grey),
                           onPressed: () => addrProv.removeAddress(addr.id),
                         ),
-                        if (isSelected) Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSurface),
-
+                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.primary),
                       ],
                     ),
-                    onTap: () {
-                      debugPrint('Address selected: ${addr.title}, Lat: ${addr.latitude}');
-                      addrProv.selectAddress(addr.id);
-                      if (addr.latitude != null && addr.longitude != null) {
-                        context.read<CartProvider>().updateDeliveryPriceByDistance(addr.latitude!, addr.longitude!);
-                      } else {
-                        debugPrint('Cannot calculate distance: Address has no coordinates!');
-                      }
-                    },
+                    onTap: () => addrProv.selectAddress(addr.id),
                   ),
                 );
               }),
@@ -532,12 +502,11 @@ class AddressSelectionSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.location_on, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+                      Icon(Icons.location_on, color: AppColors.textSecondary),
                       const SizedBox(width: 10),
-                      Text('Ավելացրեք հասցե', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 16)),
+                      Text('Ավելացրեք հասցե', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                       const Spacer(),
-                      Icon(Icons.add_location_alt, color: Theme.of(context).colorScheme.onSurface),
-
+                      const Icon(Icons.add_location_alt, color: AppColors.primary),
                     ],
                   ),
                 ),
@@ -575,9 +544,8 @@ class PaymentMethodSection extends StatelessWidget {
                 label: Center(child: Text(l10n.translate('cash'))),
                 selected: selectedMethod == 'cash',
                 onSelected: (selected) => onChanged('cash'),
-                selectedColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                checkmarkColor: Theme.of(context).colorScheme.onSurface,
-
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primary,
               ),
             ),
             const SizedBox(width: 10),
@@ -586,9 +554,8 @@ class PaymentMethodSection extends StatelessWidget {
                 label: Center(child: Text(l10n.translate('card'))),
                 selected: selectedMethod == 'card',
                 onSelected: (selected) => onChanged('card'),
-                selectedColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                checkmarkColor: Theme.of(context).colorScheme.onSurface,
-
+                selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.primary,
               ),
             ),
           ],
@@ -632,14 +599,12 @@ class CardSelectionSection extends StatelessWidget {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1) : Theme.of(context).colorScheme.surface,
+                    color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                    border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
                   ),
-
                   child: ListTile(
-                    leading: Icon(Icons.credit_card, color: Theme.of(context).colorScheme.onSurface),
-
+                    leading: Icon(Icons.credit_card, color: AppColors.primary),
                     title: Text('**** **** **** ${card.last4}'),
                     subtitle: Text(card.expiryDate),
                     trailing: Row(
@@ -649,8 +614,7 @@ class CardSelectionSection extends StatelessWidget {
                           icon: const Icon(Icons.delete_outline, color: Colors.grey),
                           onPressed: () => onDeleteCard(payment, card),
                         ),
-                        if (isSelected) Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSurface),
-
+                        if (isSelected) const Icon(Icons.check_circle, color: AppColors.primary),
                       ],
                     ),
                     onTap: () => payment.selectCard(card.id),
@@ -672,11 +636,10 @@ class CardSelectionSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: AppColors.inputFill,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+                  border: Border.all(color: AppColors.border),
                 ),
-
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -763,52 +726,23 @@ class OrderSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (context, cartProv, child) {
+    return Selector<CartProvider, double>(
+      selector: (_, cartProv) => cartProv.totalAmount,
+      builder: (context, totalAmount, child) {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+            border: Border.all(color: AppColors.border),
           ),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.translate('subtotal') ?? 'Ապրանքներ', style: const TextStyle(fontSize: 16)),
-                  Text('${cartProv.totalAmount.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(l10n.translate('delivery') ?? 'Առաքում', style: const TextStyle(fontSize: 16)),
-                      if (cartProv.distanceInKm > 0)
-                        Text(' (${cartProv.distanceInKm.toStringAsFixed(1)} կմ)', 
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-                    ],
-                  ),
-                  if (cartProv.isCalculatingDelivery)
-                    Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
-                  else
-                    Text('${cartProv.deliveryPrice.toStringAsFixed(0)} ֏', style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-              const Divider(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Text(
-                    '${cartProv.finalAmount.toStringAsFixed(0)} ֏',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                ],
+              Text(l10n.translate('total'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                '${totalAmount.toStringAsFixed(0)} ֏',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ],
           ),

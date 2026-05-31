@@ -141,28 +141,35 @@ class AttributeOption {
 }
 
 class ProductVariant {
-  final String id;
   final LocalizedString name;
   final double price;
+  final double? discountPrice;
+  final String? id;
 
   ProductVariant({
-    required this.id,
+    this.id,
     required this.name,
     required this.price,
+    this.discountPrice,
   });
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
     return ProductVariant(
-      id: json['_id']?.toString() ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString(),
       name: LocalizedString.fromJson(json['name'] ?? {}),
       price: (json['price'] ?? 0).toDouble(),
+      discountPrice: json['discountPrice'] != null ? (json['discountPrice'] as num).toDouble() : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      if (id != null) '_id': id,
       'name': name.toJson(),
       'price': price,
+      'discountPrice': discountPrice,
     };
   }
+
+  double get displayPrice => (discountPrice != null && discountPrice! > 0) ? discountPrice! : price;
 }

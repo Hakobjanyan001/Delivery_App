@@ -22,11 +22,11 @@ class RestaurantRepository {
     }
   }
 
-  Future<RestaurantModel> getRestaurantById(String id) async {
+  Future<RestaurantModel> getRestaurantById(String id, String? token) async {
     try {
       final response = await http.get(
         Uri.parse('${ApiConstants.getRestaurantById}?id=$id'),
-        headers: ApiConstants.getHeaders(),
+        headers: ApiConstants.getHeaders(token),
       );
 
       if (response.statusCode == 200) {

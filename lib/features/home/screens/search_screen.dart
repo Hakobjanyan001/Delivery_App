@@ -47,8 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+      backgroundColor: Colors.black.withValues(alpha: 0.95),
       body: Column(
         children: [
           const AppHeader(),
@@ -78,19 +77,16 @@ class _SearchScreenState extends State<SearchScreen> {
                             height: 48,
                             margin: const EdgeInsets.only(left: 4),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _backHovered ? 0.15 : 0.08),
+                              color: Colors.white.withValues(alpha: _backHovered ? 0.15 : 0.08),
                               borderRadius: BorderRadius.circular(80),
                             ),
-
-                            child: Icon(Icons.arrow_back_rounded, color: Theme.of(context).colorScheme.onSurface, size: 20),
-
+                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
                       suffixIcon: searchProvider.searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
-
+                              icon: const Icon(Icons.close, color: Colors.white54),
                               onPressed: () {
                                 _controller.clear();
                                 searchProvider.updateQuery(
@@ -118,17 +114,15 @@ class _SearchScreenState extends State<SearchScreen> {
                                   children: [
                                     Icon(Icons.search,
                                         size: 60,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
-
+                                        color: Colors.white.withValues(alpha: 0.1)),
                                     const SizedBox(height: 16),
                                     Text(
                                       searchProvider.searchQuery.isEmpty
                                           ? 'Մուտքագրեք անունը...'
                                           : 'Ոչինչ չի գտնվել',
                                       style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+                                          color: Colors.white.withValues(alpha: 0.5)),
                                     ),
-
                                   ],
                                 ),
                               ),
@@ -178,22 +172,18 @@ class SearchResultTile extends StatelessWidget {
             image: NetworkImage(imageUrl),
             fit: BoxFit.cover,
           ) : null,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+          color: Colors.white10,
         ),
-
       ),
       title: Text(
         name,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
-
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12),
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
       ),
-
-      trailing: Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
-
+      trailing: const Icon(Icons.chevron_right, color: Colors.white24),
       onTap: () {
         // Այստեղ կարող եք ավելացնել անցումը դեպի մանրամասն էկրան
       },

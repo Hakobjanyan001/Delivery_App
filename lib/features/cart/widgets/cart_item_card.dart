@@ -27,8 +27,7 @@ class CartItemCard extends StatelessWidget {
         color: Colors.red,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onError, size: 28),
-
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
       onDismissed: (direction) {
         cartProvider.removeItem(cartItem.uniqueKey);
@@ -36,11 +35,10 @@ class CartItemCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: const Color(0xFF0F0F0F),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
-
         child: Row(
           children: [
             // Image - Square on the left
@@ -57,12 +55,11 @@ class CartItemCard extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) => Container(
                   width: 100,
                   // height: 100,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                  child: Icon(
+                  color: const Color(0xFF161616),
+                  child: const Icon(
                     Icons.fastfood_outlined,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                    color: Colors.white24,
                   ),
-
                 ),
               ),
             ),
@@ -78,12 +75,11 @@ class CartItemCard extends StatelessWidget {
                   children: [
                     Text(
                       item.name.getLocalized(lang),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
-
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -93,8 +89,7 @@ class CartItemCard extends StatelessWidget {
                         child: Text(
                           cartItem.note!,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
                           ),
@@ -108,8 +103,7 @@ class CartItemCard extends StatelessWidget {
                         Text(
                           'x${cartItem.quantity} `${cartItem.totalPrice.toStringAsFixed(0)}֏',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -131,13 +125,12 @@ class CartItemCard extends StatelessWidget {
                                   color: Colors.transparent,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                   ),
-
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.remove,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Colors.white,
                                   size: 18,
                                 ),
                               ),
@@ -145,12 +138,11 @@ class CartItemCard extends StatelessWidget {
                             const SizedBox(width: 16),
                             Text(
                               '${cartItem.quantity}',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
-
                             ),
                             const SizedBox(width: 16),
                             // Plus Button
@@ -166,16 +158,15 @@ class CartItemCard extends StatelessWidget {
                               child: Container(
                                 width: 36,
                                 height: 36,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.add,
-                                  color: Theme.of(context).colorScheme.surface,
+                                  color: Colors.black,
                                   size: 18,
                                 ),
-
                               ),
                             ),
                           ],

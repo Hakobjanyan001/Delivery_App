@@ -50,7 +50,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     if (!tabs.isNavBarVisible) return false;
 
     const hidden = {
-      'OnboardingScreen', 'LoginScreen',
+      'OnboardingScreen', 'FoodDetail', 'LoginScreen',
       'RegisterScreen', 'OrdersScreen', 'OrderDetailsScreen',
       'PaymentScreen', 'PaymentWebViewScreen', 'CheckoutScreen',
       'SearchScreen', 'SupportChatScreen', 'PhoneAuthScreen',
@@ -64,8 +64,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     context.watch<OnboardingProvider>();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+      backgroundColor: Colors.black,
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -78,7 +77,6 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
               child: _NavBar(
                 navigatorKey: widget.navigatorKey,
                 isAuthenticated: isAuthenticated,
-                currentRoute: _currentRoute,
               ),
             ),
         ],
@@ -90,12 +88,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 class _NavBar extends StatelessWidget {
   final GlobalKey<NavigatorState> navigatorKey;
   final bool isAuthenticated;
-  final String? currentRoute;
 
   const _NavBar({
     required this.navigatorKey,
     required this.isAuthenticated,
-    required this.currentRoute,
   });
 
   @override
@@ -135,27 +131,24 @@ class _NavBar extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(40),
-
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
-
                             ),
                           ],
                         ),
                         child: Center(
                           child: Text(
                             'Հաջորդ քայլ ${cart.totalAmount.toStringAsFixed(0)} ֏',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.surface,
+                            style: const TextStyle(
+                              color: Colors.black,
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
                             ),
-
                           ),
                         ),
                       ),
@@ -168,17 +161,13 @@ class _NavBar extends StatelessWidget {
 
         // Nav pill
         Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
-              ],
+              colors: [Colors.transparent, Colors.black],
             ),
           ),
-
           child: SafeArea(
             top: false,
             child: Center(
@@ -186,12 +175,7 @@ class _NavBar extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  child: _NavPill(
-                    tabs: tabs,
-                    l10n: l10n,
-                    currentRoute: currentRoute,
-                    navigatorKey: navigatorKey,
-                  ),
+                  child: _NavPill(tabs: tabs, l10n: l10n),
                 ),
               ),
             ),
@@ -208,15 +192,8 @@ class _NavBar extends StatelessWidget {
 class _NavPill extends StatelessWidget {
   final MainTabsController tabs;
   final LocalizationProvider l10n;
-  final String? currentRoute;
-  final GlobalKey<NavigatorState> navigatorKey;
 
-  const _NavPill({
-    required this.tabs,
-    required this.l10n,
-    required this.currentRoute,
-    required this.navigatorKey,
-  });
+  const _NavPill({required this.tabs, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -227,11 +204,10 @@ class _NavPill extends StatelessWidget {
         child: Container(
           height: 72,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+            color: const Color(0xFF0F0F0F).withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(48),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-
           child: LayoutBuilder(
             builder: (context, constraints) {
               final tabWidth = constraints.maxWidth / 3;
@@ -254,10 +230,9 @@ class _NavPill extends StatelessWidget {
                         width: tabWidth - 8,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(64),
                           ),
-
                         ),
                       );
                     },
@@ -269,32 +244,17 @@ class _NavPill extends StatelessWidget {
                       _NavTab(
                         icon: Icons.home_outlined,
                         label: l10n.translate('home'),
-                        onTap: () {
-                          if (currentRoute == 'FoodDetail') {
-                            navigatorKey.currentState?.pop();
-                          }
-                          tabs.switchTo(0);
-                        },
+                        onTap: () => tabs.switchTo(0),
                       ),
                       _NavTab(
                         icon: Icons.shopping_cart_outlined,
                         label: l10n.translate('cart'),
-                        onTap: () {
-                          if (currentRoute == 'FoodDetail') {
-                            navigatorKey.currentState?.pop();
-                          }
-                          tabs.switchTo(1);
-                        },
+                        onTap: () => tabs.switchTo(1),
                       ),
                       _NavTab(
                         icon: Icons.person_outline,
                         label: l10n.translate('profile'),
-                        onTap: () {
-                          if (currentRoute == 'FoodDetail') {
-                            navigatorKey.currentState?.pop();
-                          }
-                          tabs.switchTo(2);
-                        },
+                        onTap: () => tabs.switchTo(2),
                       ),
                     ],
                   ),
@@ -328,17 +288,15 @@ class _NavTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 24),
-
+            Icon(icon, color: Colors.white, size: 24),
             const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+              style: const TextStyle(
+                color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
-
             ),
           ],
         ),

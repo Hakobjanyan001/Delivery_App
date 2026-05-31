@@ -89,23 +89,20 @@ class _AppTextFieldState extends State<AppTextField> {
         enabled: widget.enabled,
         maxLines: widget.obscureText ? 1 : widget.maxLines,
         textInputAction: widget.textInputAction,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
+        style: const TextStyle(
+          color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
-
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             fontSize: 16,
             fontWeight: FontWeight.w400,
           ),
-
           filled: true,
-          fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-
+          fillColor: const Color(0xFF121212),
           contentPadding: EdgeInsets.symmetric(
             horizontal: 24,
             vertical: isMultiLine ? 16 : 20,
@@ -152,10 +149,9 @@ class _AppTextFieldState extends State<AppTextField> {
       return IconButton(
         icon: Icon(
           _isObscured ? Icons.visibility_off : Icons.visibility,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          color: Colors.white.withValues(alpha: 0.4),
           size: 20,
         ),
-
         onPressed: () => setState(() => _isObscured = !_isObscured),
       );
     }

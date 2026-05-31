@@ -57,13 +57,11 @@ class _CardEntryFormState extends State<CardEntryForm> {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottomInset + 24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-
+        color: const Color(0xFF111111),
         borderRadius: widget.isDialog
             ? BorderRadius.circular(28)
             : const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
-
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Form(
         key: _formKey,
@@ -77,8 +75,7 @@ class _CardEntryFormState extends State<CardEntryForm> {
                   child: Container(
                     width: 36, height: 4,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
-
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -89,8 +86,7 @@ class _CardEntryFormState extends State<CardEntryForm> {
                   Expanded(
                     child: Text(
                       l10n.translate('cardDetails'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.w900),
-
+                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                     ),
                   ),
                   if (widget.isDialog)
@@ -102,8 +98,7 @@ class _CardEntryFormState extends State<CardEntryForm> {
                           color: Colors.white.withValues(alpha: 0.07),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 16),
-
+                        child: const Icon(Icons.close, color: Colors.white54, size: 16),
                       ),
                     ),
                 ],
@@ -177,15 +172,13 @@ class _CardEntryFormState extends State<CardEntryForm> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
-
                   child: Center(
                     child: Text(
                       l10n.translate('save'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.surface, fontSize: 17, fontWeight: FontWeight.w900),
-
+                      style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w900),
                     ),
                   ),
                 ),
@@ -208,23 +201,19 @@ class _CardEntryFormState extends State<CardEntryForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), fontSize: 13, fontWeight: FontWeight.bold)),
-
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           validator: validator,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold),
-
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
-
+            hintStyle: const TextStyle(color: Colors.white12),
             filled: true,
-            fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-
+            fillColor: const Color(0xFF161616),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),

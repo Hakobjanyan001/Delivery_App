@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/auth_repository.dart';
 import '../models/user_model.dart';
 import '../models/address_model.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/constants/api_constants.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
@@ -19,6 +21,7 @@ class AuthProvider with ChangeNotifier {
     _user = _repository.currentUser;
     if (_user != null) {
       _loadUserData();
+      // _registerFcmToken();
     }
     _setLoading(false);
 
@@ -26,6 +29,7 @@ class AuthProvider with ChangeNotifier {
       _user = user;
       if (user != null) {
         _loadUserData();
+        // _registerFcmToken();
       } else {
         _firestoreName = null;
         _firestorePhone = null;
@@ -36,6 +40,16 @@ class AuthProvider with ChangeNotifier {
 
   String? _firestoreName;
   String? _firestorePhone;
+
+  // Future<void> _registerFcmToken() async {
+  //   final token = await _repository.getToken();
+  //   if (token != null) {
+  //     await NotificationService.registerTokenWithBackend(
+  //       ApiConstants.baseUrl.replaceAll('/api', ''),
+  //       token,
+  //     );
+  //   }
+  // }
 
   Future<void> _loadUserData() async {
     if (_user == null) return;

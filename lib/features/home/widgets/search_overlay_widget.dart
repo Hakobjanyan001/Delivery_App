@@ -79,12 +79,12 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
         width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF0F0F0F),
         borderRadius: BorderRadius.circular(35),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -93,7 +93,7 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: widget.onClose,
           ),
           Expanded(
@@ -102,15 +102,15 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
               focusNode: _focusNode,
               autofocus: true,
               onChanged: (value) => searchProvider.updateQuery(value, homeProvider.restaurants, homeProvider.products),
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
                 hintText: l10n.translate('searchHint'),
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), fontSize: 14),
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                 suffixIcon: searchProvider.searchQuery.isNotEmpty 
                   ? IconButton(
-                      icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 20),
+                      icon: const Icon(Icons.close, color: Colors.white54, size: 20),
                       onPressed: () {
                         _controller.clear();
                         searchProvider.updateQuery('', homeProvider.restaurants, homeProvider.products);
@@ -123,6 +123,5 @@ class _SearchOverlayWidgetState extends State<SearchOverlayWidget> {
         ],
       ),
     ));
-
   }
 }

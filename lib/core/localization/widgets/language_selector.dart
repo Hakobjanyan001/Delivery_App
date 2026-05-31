@@ -19,14 +19,13 @@ class LanguageSelector extends StatelessWidget {
       child: PopupMenuButton<Locale>(
         initialValue: l10n.currentLocale,
         offset: const Offset(0, -140), // Opens above the button
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF1F1F1F),
         elevation: 8,
         tooltip: '',
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), width: 1),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
         ),
-
         constraints: const BoxConstraints(minWidth: 76, maxWidth: 76),
         onSelected: (Locale locale) {
           l10n.setLocale(locale);
@@ -54,25 +53,23 @@ class LanguageSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: const Color(0xFF161616),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
-
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.language, color: color ?? Theme.of(context).colorScheme.onSurface, size: 18),
+              Icon(Icons.language, color: color ?? Colors.white, size: 18),
               const SizedBox(width: 8),
               Text(
                 l10n.currentLocale.languageCode.toUpperCase(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-
             ],
           ),
         ),

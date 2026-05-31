@@ -17,7 +17,6 @@ import 'package:latlong2/latlong.dart' as latlong;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../../core/widgets/universal_map.dart';
-import '../../../core/widgets/location_picker_modal.dart';
 import '../../home/providers/home_provider.dart';
 import '../../../core/models/restaurant_model.dart';
 
@@ -30,7 +29,6 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   UniversalMapController? _mapController;
-  String? _selectedSavedAddressId;
 
   @override
   void initState() {
@@ -74,14 +72,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
       ),
-
       child: Text(
         label,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+        style: const TextStyle(
+          color: Colors.white70,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -103,11 +100,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: const Color(0xFF10100F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
+        title: const Text(
           'Խմբագրել հասցեն',
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -132,9 +129,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
+            child: const Text(
               'Չեղարկել',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)),
+              style: TextStyle(color: Colors.white54),
             ),
           ),
           TextButton(
@@ -167,9 +164,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   floor: floorController.text,
                   apartment: apartmentController.text,
                 );
-                if (lat != null && lng != null) {
-                  context.read<CartProvider>().updateDeliveryPriceByDistance(lat, lng);
-                }
               } else {
                 addressProvider.addAddress(
                   'Առաքման վայր',
@@ -180,16 +174,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   floor: floorController.text,
                   apartment: apartmentController.text,
                 );
-                if (lat != null && lng != null) {
-                  context.read<CartProvider>().updateDeliveryPriceByDistance(lat, lng);
-                }
               }
               if (context.mounted) Navigator.pop(context);
             },
-            child: Text(
+            child: const Text(
               'Պահպանել',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -202,14 +193,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget _buildEditTextField(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
-      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24)),
+        hintStyle: const TextStyle(color: Colors.white24),
         filled: true,
-        fillColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-
+        fillColor: Colors.white.withValues(alpha: 0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -244,17 +233,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
+          color: isSelected ? Colors.white : const Color(0xFF10100F),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
-
         child: Row(
           children: [
             Icon(
               icon,
-              color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
-
+              color: isSelected ? Colors.black : Colors.white,
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -262,147 +249,130 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Text(
                 title,
                 style: TextStyle(
-                  color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
+                  color: isSelected ? Colors.black : Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-
                   fontFamily: 'Segoe UI',
                 ),
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.surface, size: 20),
-
+              const Icon(Icons.check_circle, color: Colors.black, size: 20),
           ],
         ),
       ),
     );
   }
 
-  void _showSavedAddressesBottomSheet(BuildContext context, AuthProvider authProvider, AddressProvider addressProvider, LocalizationProvider l10n) {
-    final savedAddresses = authProvider.user?.addresses ?? [];
+  void _showSavedAddressesBottomSheet(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          margin: const EdgeInsets.only(bottom: 0),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.24),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-
+      builder: (ctx) => Container(
+        margin: const EdgeInsets.only(bottom: 90),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F0F),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Text(
-                'Իմ հասցեները',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 20),
-              if (savedAddresses.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
-                  ),
-
-                  child: Text(
-                    'Պահպանված հասցեներ չկան',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 16),
-                  ),
-                )
-              else
-                ...savedAddresses.map((addr) {
-                  final isSelected = _selectedSavedAddressId == addr.id;
-                  return GestureDetector(
-                    onTap: () {
-                      if (addr.id != null) {
-                        setState(() => _selectedSavedAddressId = addr.id);
-                      }
-                      Navigator.pop(ctx);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
-
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-
-                            size: 24,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  addr.label ?? 'Հասցե',
-                                  style: TextStyle(
-                                    color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
-
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                if (addr.address != null && addr.address!.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    addr.address!,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Theme.of(context).colorScheme.surface.withOpacity(0.55)
-                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
-
-                                      fontSize: 13,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.surface, size: 22),
-
-                        ],
-                      ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Իմ հասցեները',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 24),
+            if (addressProvider.addresses.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF161616),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                ),
+                child: const Text(
+                  'Պահպանված հասցեներ չկան',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              )
+            else
+              ...addressProvider.addresses.map((addr) {
+                final isSelected = addressProvider.selectedAddressId == addr.id;
+                return GestureDetector(
+                  onTap: () {
+                    addressProvider.selectAddress(addr.id);
+                    if (addr.latitude != null && addr.longitude != null) {
+                      _mapController?.animateTo(addr.latitude!, addr.longitude!);
+                    }
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : const Color(0xFF161616),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  );
-                }),
-            ],
-          ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: isSelected ? Colors.black : Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                addr.title,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.black : Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              if (addr.address.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  addr.address,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.black.withOpacity(0.6) : Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(Icons.check_circle, color: Colors.black, size: 24),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          ],
         ),
       ),
     );
@@ -419,18 +389,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final orders = Provider.of<OrdersProvider>(context);
     final homeProvider = Provider.of<HomeProvider>(context);
 
-    // Trigger distance check on every build in Payment screen as well
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final selected = address.selectedAddress;
-      if (selected != null && selected.latitude != null && cart.restaurantLat != null) {
-        if (cart.distanceInKm == 0 && !cart.isCalculatingDelivery) {
-          cart.updateDeliveryPriceByDistance(selected.latitude!, selected.longitude!);
-        }
-      }
-    });
+    // Get restaurant info for delivery settings
+    RestaurantModel? restaurant;
+    if (cart.items.isNotEmpty) {
+      try {
+        final restaurantId = cart.items.first.product.restaurantId;
+        restaurant = homeProvider.restaurants.firstWhere((r) => r.id == restaurantId);
+      } catch (_) {}
+    }
 
-    final double deliveryFee = cart.deliveryPrice;
-    final double finalTotal = cart.finalAmount;
+    final double deliveryFee = (restaurant != null && cart.totalAmount < restaurant.delivery.freeDeliveryFrom) 
+        ? restaurant.delivery.basePrice 
+        : 0.0;
+    
+    final double finalTotal = cart.totalAmount + deliveryFee;
 
     final currentPos = address.selectedAddress?.latitude != null
         ? LatLng(
@@ -440,11 +412,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         : const LatLng(40.8142, 44.4842); // Default to Vanadzor
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+        backgroundColor: Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
@@ -452,18 +422,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
           children: [
             const SizedBox(width: 8),
             IconButton(
-              icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24),
-
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
               onPressed: () => Navigator.pop(context),
             ),
             const SizedBox(width: 4),
-            SizedBox(
+            const SizedBox(
               width: 266,
               height: 24,
               child: Text(
                 'Վճարում',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
                   fontFamily: 'Segoe UI',
                   fontWeight: FontWeight.w700,
                   fontSize: 20,
@@ -494,16 +463,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
             },
             child: Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+              decoration: const BoxDecoration(
+                color: Color(0xFF161616),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.person_outline,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.white,
                 size: 24,
               ),
-
             ),
           ),
           const SizedBox(width: 20),
@@ -515,31 +483,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 370,
                 height: 24,
                 child: Text(
                   'Ապրանքներ',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     fontFamily: 'Segoe UI',
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                     height: 1.2,
                   ),
                 ),
-
               ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
+                  color: const Color(0xFF10100F),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                   ),
-
                 ),
                 child: Column(
                   children: [
@@ -552,12 +518,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               flex: 3,
                               child: Text(
                                 item.product.name.getLocalized(lang),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
-
                                 maxLines: 1,
                               ),
                             ),
@@ -565,11 +530,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               flex: 2,
                               child: Text(
                                 '${item.quantity.toInt()} բաժին',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
+                                style: const TextStyle(
+                                  color: Colors.white54,
                                   fontSize: 14,
                                 ),
-
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -577,12 +541,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               flex: 2,
                               child: Text(
                                 '${item.totalPrice.toStringAsFixed(0)} ֏',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                 ),
-
                                 textAlign: TextAlign.right,
                               ),
                             ),
@@ -590,29 +553,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                       ),
                     ),
-                    Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), height: 32),
-
+                    const Divider(color: Colors.white24, height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Ապրանքներ',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: Colors.white70,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-
-
                         Text(
                           '${cart.totalAmount.toStringAsFixed(0)} ֏',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                           ),
-
                         ),
                       ],
                     ),
@@ -620,49 +579,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Առաքում',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: Colors.white70,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-
-                        if (cart.isCalculatingDelivery)
-                          Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
-                        else
-                          Text(
-                            deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
-                            style: TextStyle(
-                              color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
+                        Text(
+                          deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
+                          style: TextStyle(
+                            color: deliveryFee > 0 ? Colors.white : Colors.greenAccent,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
                           ),
+                        ),
                       ],
                     ),
-                    Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), height: 32),
-
+                    const Divider(color: Colors.white24, height: 32),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Ընդհանուր',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
                           '${finalTotal.toStringAsFixed(0)} ֏',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
                           ),
-
                         ),
                       ],
                     ),
@@ -670,14 +623,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
+              const SizedBox(
                 width: 370,
                 height: 24,
                 child: Text(
                   'Առաքում',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-
+                    color: Colors.white,
                     fontFamily: 'Segoe UI',
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
@@ -693,15 +645,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: Stack(
                     children: [
                       RepaintBoundary(
-                        child: IgnorePointer(
-                          child: UniversalMap(
-                            key: const ValueKey('payment_delivery_map'),
-                            initialPosition: currentPos,
-                            isReadOnly: true,
-                            onMapCreated: (controller) {
-                              _mapController = controller;
-                              // Night mode style only for Google Maps
-                              _mapController?.setMapStyle('''
+                        child: UniversalMap(
+                          key: const ValueKey('payment_delivery_map'),
+                          initialPosition: currentPos,
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                          // Night mode style only for Google Maps
+                          _mapController?.setMapStyle('''
 [
   {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
   {"elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
@@ -710,65 +660,118 @@ class _PaymentScreenState extends State<PaymentScreen> {
   {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#000000"}]}
 ]
 ''');
-                            },
-                            googleMarkers: {
-                              Marker(
-                                markerId: const MarkerId('selected_address'),
-                                position: currentPos,
-                              ),
-                            },
-                            osmMarkers: [
-                              osm.Marker(
-                                point: latlong.LatLng(currentPos.latitude, currentPos.longitude),
-                                width: 40,
-                                height: 40,
-                                child: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 40),
-                              ),
-                            ],
-                            myLocationEnabled: true,
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: GestureDetector(
-                          onTap: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LocationPickerModal(
-                                  initialPosition: currentPos,
-                                ),
-                              ),
+                        },
+                        onTap: (LatLng point) async {
+                          if (address.selectedAddressId != null) {
+                            address.updateAddressDetails(
+                              address.selectedAddressId!,
+                              address: 'Որոնվում է...',
                             );
+                          }
 
-                            if (result != null) {
-                              final LatLng point = result['position'];
-                              final String readableAddress = result['address'];
-
-                              if (address.selectedAddressId != null) {
-                                address.updateAddressDetails(
-                                  address.selectedAddressId!,
-                                  address: readableAddress,
-                                  lat: point.latitude,
-                                  lng: point.longitude,
+                          String readableAddress = 'Ընտրված հասցե';
+                          try {
+                            List<Placemark> placemarks =
+                                await placemarkFromCoordinates(
+                                  point.latitude,
+                                  point.longitude,
                                 );
-                                cart.updateDeliveryPriceByDistance(point.latitude, point.longitude);
-                              } else {
-                                address.addAddress(
-                                  'Առաքման վայր',
-                                  readableAddress,
-                                  lat: point.latitude,
-                                  lng: point.longitude,
-                                );
-                                cart.updateDeliveryPriceByDistance(point.latitude, point.longitude);
+                            if (placemarks.isNotEmpty) {
+                              Placemark place = placemarks.first;
+                              List<String> parts = [];
+                              String? street =
+                                  place.street ??
+                                  place.thoroughfare ??
+                                  place.name;
+                              if (street != null &&
+                                  street.isNotEmpty &&
+                                  street != place.locality) {
+                                parts.add(street);
                               }
-                              _mapController?.animateTo(point.latitude, point.longitude);
+                              String? city =
+                                  place.locality ??
+                                  place.subAdministrativeArea;
+                              if (city != null && city.isNotEmpty) {
+                                parts.add(city);
+                              }
+                              readableAddress =
+                                  parts.isNotEmpty
+                                      ? parts.join(', ')
+                                      : (place.locality ?? 'Ընտրված վայր');
                             }
-                          },
-                          behavior: HitTestBehavior.opaque,
-                        ),
+                          } catch (_) {
+                            // Fallback to OSM Nominatim API if native geocoding fails (e.g. on Web)
+                            try {
+                              final url = Uri.parse(
+                                'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&zoom=18&addressdetails=1',
+                              );
+                              final response = await http.get(url, headers: {
+                                'Accept-Language': 'hy',
+                              });
+                              if (response.statusCode == 200) {
+                                final data = json.decode(response.body);
+                                if (data['address'] != null) {
+                                  final addr = data['address'];
+                                  final road = addr['road'] ?? addr['pedestrian'] ?? addr['path'] ?? addr['suburb'];
+                                  final house = addr['house_number'];
+                                  final city = addr['city'] ?? addr['town'] ?? addr['village'];
+                                  
+                                  List<String> parts = [];
+                                  if (road != null) {
+                                    parts.add(house != null ? '$road $house' : road);
+                                  }
+                                  if (city != null && city != road) {
+                                    parts.add(city);
+                                  }
+                                  
+                                  if (parts.isNotEmpty) {
+                                    readableAddress = parts.join(', ');
+                                  } else {
+                                    readableAddress = data['display_name'] ?? 'Ընտրված վայր';
+                                  }
+                                }
+                              } else {
+                                readableAddress = 'Ընտրված վայր';
+                              }
+                            } catch (e) {
+                              readableAddress = 'Ընտրված վայր';
+                            }
+                          }
+
+                          if (address.selectedAddressId != null) {
+                            address.updateAddressDetails(
+                              address.selectedAddressId!,
+                              address: readableAddress,
+                              lat: point.latitude,
+                              lng: point.longitude,
+                            );
+                          } else {
+                            address.addAddress(
+                              'Առաքման վայր',
+                              readableAddress,
+                              lat: point.latitude,
+                              lng: point.longitude,
+                            );
+                          }
+                        },
+                        googleMarkers: {
+                          Marker(
+                            markerId: const MarkerId('selected_address'),
+                            position: currentPos,
+                          ),
+                        },
+                        osmMarkers: [
+                          osm.Marker(
+                            point: latlong.LatLng(currentPos.latitude, currentPos.longitude),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(Icons.location_on, color: Colors.white, size: 40),
+                          ),
+                        ],
+                        myLocationEnabled: true,
                       ),
-                      Positioned(
+                    ),
+                    Positioned(
                         top: 16,
                         right: 16,
                         child: GestureDetector(
@@ -777,7 +780,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.7),
-
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.2),
@@ -786,7 +788,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             child: const Icon(
                               Icons.my_location,
                               color: Colors.white,
-
                               size: 20,
                             ),
                           ),
@@ -802,8 +803,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0, left: 4),
                   child: Text(
                     address.selectedAddress!.address,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Segoe UI',
@@ -820,13 +821,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
+                    color: const Color(0xFF10100F),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                     ),
                   ),
-
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -837,30 +837,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             child: Text(
                               address.selectedAddress?.address ??
                                   'Վանաձոր, Վարդանանց 15/3',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontFamily: 'Segoe UI',
                                 fontWeight: FontWeight.w700,
                                 fontSize: 16,
                               ),
-
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          if (cart.isCalculatingDelivery)
-                            Text('Հաշվարկվում է...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary))
-                          else
-                            Text(
-                              deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
-                              style: TextStyle(
-                                color: deliveryFee > 0 ? Theme.of(context).colorScheme.onSurface : Colors.greenAccent,
-                                fontFamily: 'Segoe UI',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
+                          Text(
+                            deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ֏' : 'Անվճար',
+                            style: TextStyle(
+                              color: deliveryFee > 0 ? Colors.white : Colors.greenAccent,
+                              fontFamily: 'Segoe UI',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
+                          ),
                         ],
                       ),
                       if (address.selectedAddress != null &&
@@ -890,125 +886,53 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // Show selected saved address label
-              if (_selectedSavedAddressId != null)
-                Builder(builder: (context) {
-                  final saved = auth.user?.addresses.where((a) => a.id == _selectedSavedAddressId).firstOrNull;
-                  if (saved == null) return const SizedBox.shrink();
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.25)),
-                    ),
-
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                saved.label ?? 'Ընտրված հասցե',
-                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700),
-
-                              ),
-                              if (saved.address != null && saved.address!.isNotEmpty)
-                                Text(
-                                  saved.address!,
-                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 12),
-
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => setState(() => _selectedSavedAddressId = null),
-                          child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), size: 18),
-
-                        ),
-                      ],
-                    ),
-                  );
-                }),
               GestureDetector(
-                onTap: () => _showSavedAddressesBottomSheet(context, auth, address, l10n),
+                onTap: () => _showSavedAddressesBottomSheet(context, address, l10n),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: _selectedSavedAddressId != null
-                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
-                        : Theme.of(context).colorScheme.surface,
+                    color: const Color(0xFF10100F),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _selectedSavedAddressId != null
-                          ? Colors.greenAccent.withValues(alpha: 0.3)
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                    ),
-
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            _selectedSavedAddressId != null
-                                ? Icons.check_circle_outline
-                                : Icons.bookmark_border_outlined,
-                            color: _selectedSavedAddressId != null
-                                ? Colors.greenAccent
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _selectedSavedAddressId != null ? 'Ընտրված հասցեն' : 'Իմ հասցեները',
-                            style: TextStyle(
-                              color: _selectedSavedAddressId != null
-                                  ? Colors.greenAccent
-                                  : Theme.of(context).colorScheme.onSurface,
-
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Segoe UI',
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Իմ հասցեները',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Segoe UI',
+                        ),
                       ),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: _selectedSavedAddressId != null
-                            ? Colors.greenAccent.withValues(alpha: 0.7)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-
-                        size: 20,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
                       ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 32),
-              SizedBox(
+              const SizedBox(
                 width: 370,
                 height: 24,
                 child: Text(
                   'Վճարման Տարբերակներ',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     fontFamily: 'Segoe UI',
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
                     height: 1.2,
                   ),
                 ),
-
               ),
               const SizedBox(height: 16),
               _buildInlinePaymentItem(
@@ -1048,10 +972,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       deliveryPrice: deliveryFee,
                       paymentMethod: payment.selectedMethodType.name,
                       phone: auth.phone ?? '',
-                      address: _selectedSavedAddressId != null
-                          ? {} // Backend will resolve address from addressId
-                          : {'address': deliveryAddress?.address ?? ""},
-                      addressId: _selectedSavedAddressId,
+                      address: {'address': deliveryAddress?.address ?? ""},
                     );
                     await cart.clearCart();
                     if (context.mounted) {
@@ -1072,22 +993,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-
-                  child: Center(
+                  child: const Center(
                     child: Text(
                       'Հաստատել Պատվերը',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: Colors.black,
                         fontFamily: 'Segoe UI',
                         fontWeight: FontWeight.w900,
                         fontSize: 18,

@@ -10,8 +10,7 @@ class RestaurantModel {
   final bool isActive;
   final WorkingHours workingHours;
   final DeliverySettings delivery;
-  final double? latitude;
-  final double? longitude;
+  final LocationModel? location;
 
   RestaurantModel({
     required this.id,
@@ -23,9 +22,9 @@ class RestaurantModel {
     this.isActive = true,
     required this.workingHours,
     required this.delivery,
-    this.latitude,
-    this.longitude,
+    this.location,
   });
+
 
   factory RestaurantModel.fromJson(Map<String, dynamic> json) {
     return RestaurantModel(
@@ -38,8 +37,25 @@ class RestaurantModel {
       isActive: json['isActive'] ?? true,
       workingHours: WorkingHours.fromJson(json['workingHours'] ?? {}),
       delivery: DeliverySettings.fromJson(json['delivery'] ?? {}),
-      latitude: (json['latitude'] ?? json['lat'])?.toDouble(),
-      longitude: (json['longitude'] ?? json['lng'] ?? json['lon'])?.toDouble(),
+      location: LocationModel.fromJson(json['location'] ?? {}),
+    );
+  }
+}
+
+
+class LocationModel {
+  final double? lat;
+  final double? lng;
+
+  LocationModel({
+    this.lat,
+    this.lng,
+  });
+
+  factory LocationModel.fromJson(Map<String, dynamic> json) {
+    return LocationModel(
+      lat: (json['lat'] ?? json['latitude'])?.toDouble(),
+      lng: (json['lng'] ?? json['longitude'] ?? json['lon'])?.toDouble(),
     );
   }
 }

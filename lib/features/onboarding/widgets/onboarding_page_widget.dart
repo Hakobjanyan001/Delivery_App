@@ -1,8 +1,6 @@
 // havelvaci araji ejy + shablon ejeri hmara vor chkrknvi nujn kody amen ekrani hma 
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/onboarding_provider.dart';
 
 class OnboardingPageWidget extends StatelessWidget {
   final String backgroundImage;
@@ -25,8 +23,7 @@ class OnboardingPageWidget extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Theme.of(context).scaffoldBackgroundColor,
-
+      color: const Color(0xFF1A1A1A),
       child: Stack(
         children: [
           if (backgroundImage.startsWith('assets/'))
@@ -65,41 +62,27 @@ class OnboardingPageWidget extends StatelessWidget {
                     children: [
                       // Branch and MASOOR Logo
                       Center(
-                        child: Consumer<OnboardingProvider>(
-                          builder: (context, onboarding, _) {
-                            final logo = onboarding.partner?.logo;
-                            if (logo != null && logo.isNotEmpty) {
-                              return Image.network(
-                                logo,
-                                width: 248,
-                                height: 165,
-                                fit: BoxFit.contain,
-                              );
-                            }
-                            return Image.asset(
-                              'assets/images/masoor_branch.png',
-                              width: 248,
-                              height: 165,
-                              fit: BoxFit.contain,
-                            );
-                          },
+                        child: Image.asset(
+                          'assets/images/masoor_branch.png',
+                          width: 248,
+                          height: 165,
+                          fit: BoxFit.contain,
                         ),
                       ),
                       // "Welcome to" text positioned above the word MASOOR
-                      Positioned(
+                      const Positioned(
                         top: 100,
                         right: 20,
                         child: Text(
                           'Welcome to',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             fontStyle: FontStyle.italic,
                             fontFamily: 'Segoe UI',
                           ),
                         ),
-
                       ),
                     ],
                   ),
@@ -120,12 +103,11 @@ class OnboardingPageWidget extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onButtonPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onSurface,
-                    foregroundColor: Theme.of(context).colorScheme.surface,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     shape: const StadiumBorder(),
                     elevation: 0,
                   ),
-
                   child: Text(
                     buttonText,
                     style: const TextStyle(

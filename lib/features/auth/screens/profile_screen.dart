@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:masoor/features/auth/models/address_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../cart/providers/payment_provider.dart';
@@ -14,13 +13,6 @@ import '../widgets/guest_auth_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/screens/support_chat_screen.dart';
 import '../../../core/providers/main_tabs_controller.dart';
-import '../../../core/providers/theme_provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_map/flutter_map.dart' as osm;
-import 'package:latlong2/latlong.dart' as latlong;
-import '../../../core/widgets/universal_map.dart';
-import '../../../core/widgets/location_picker_modal.dart';
-
 
 // Active view within the profile screen
 enum _View { home, editProfile, orders, addresses }
@@ -56,12 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    // Ensure nav bar is restored when leaving this screen
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(true);
-      }
-    });
     super.dispose();
   }
 
@@ -73,23 +59,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!auth.isAuthenticated) return const GuestAuthView();
 
     final isDesktop = MediaQuery.of(context).size.width >= 900;
-    final content = PopScope(
-      canPop: _view == _View.home,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (_view != _View.home) {
-          context.read<MainTabsController>().setNavBarVisibility(true);
-          setState(() => _view = _View.home);
-        }
-      },
-      child: _buildCurrentView(context, auth, l10n, isDesktop),
-    );
+    final content = _buildCurrentView(context, auth, l10n, isDesktop);
 
     if (isDesktop) {
       return Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.black,
         body: Center(
-
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 680),
             child: content,
@@ -99,10 +74,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.black,
       body: content,
     );
-
   }
 
   Widget _buildCurrentView(
@@ -122,7 +96,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case _View.orders:
         return _buildOrdersView(context, ordersProvider, l10n);
       case _View.addresses:
-        return _buildAddressesView(context, auth, l10n);
+        return Consumer<AddressProvider>(
+          builder: (ctx, addressProvider, _) =>
+              _buildAddressesView(ctx, addressProvider, auth, l10n),
+        );
     }
   }
 
@@ -136,9 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     LocalizationProvider l10n,
     bool isDesktop,
   ) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return SingleChildScrollView(
-
       padding: EdgeInsets.fromLTRB(20, isDesktop ? 32 : 20, 20, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,19 +133,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildMenuRow(
               icon: Icons.receipt_long_outlined,
               label: l10n.translate('orders'),
-              onTap: () {
-                context.read<MainTabsController>().setNavBarVisibility(false);
-                setState(() => _view = _View.orders);
-              },
+              onTap: () => setState(() => _view = _View.orders),
             ),
             _buildDivider(),
             _buildMenuRow(
               icon: Icons.location_on_outlined,
               label: l10n.translate('myAddresses'),
-              onTap: () {
-                context.read<MainTabsController>().setNavBarVisibility(false);
-                setState(() => _view = _View.addresses);
-              },
+              onTap: () => setState(() => _view = _View.addresses),
             ),
           ]),
 
@@ -188,22 +157,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             _buildDivider(),
             _buildMenuRow(
-               icon: Icons.language_outlined,
+              icon: Icons.language_outlined,
               label: l10n.translate('language'),
-              trailing: LanguageSelector(color: Theme.of(context).colorScheme.onSurface),
-            ),
-
-            _buildDivider(),
-            _buildMenuRow(
-              icon: themeProvider.isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-              label: themeProvider.isDarkMode ? l10n.translate('darkMode') : l10n.translate('lightMode'),
-              trailing: Switch.adaptive(
-                value: themeProvider.isDarkMode,
-                onChanged: (val) => themeProvider.toggleTheme(),
-                activeColor: Theme.of(context).colorScheme.surface,
-                activeTrackColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54),
-
-              ),
+              trailing: const LanguageSelector(color: Colors.white),
             ),
             _buildDivider(),
             _buildMenuRow(
@@ -212,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _showSupportOptions(context, l10n),
             ),
           ]),
-
 
           const SizedBox(height: 28),
 
@@ -225,31 +180,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileCard(AuthProvider auth, LocalizationProvider l10n) {
     return GestureDetector(
-      onTap: () {
-        context.read<MainTabsController>().setNavBarVisibility(false);
-        setState(() => _view = _View.editProfile);
-      },
+      onTap: () => setState(() => _view = _View.editProfile),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: const Color(0xFF141414),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
         ),
-
         child: Row(
           children: [
             Container(
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-
-              child: Icon(Icons.person_outline, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 28),
+              child: const Icon(Icons.person_outline, color: Colors.white54, size: 28),
             ),
-
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -257,42 +206,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     auth.userName?.isNotEmpty == true ? auth.userName! : l10n.translate('user'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-
                   const SizedBox(height: 4),
                   Text(
                     auth.phone ?? '+374 -- -- -- --',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                      color: Colors.white.withValues(alpha: 0.45),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
                 ],
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
+                color: Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(20),
               ),
-
               child: Text(
                 l10n.translate('editShort'),
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-
             ),
           ],
         ),
@@ -333,37 +278,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-
       child: Row(
         children: [
-          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 22),
+          Icon(icon, color: Colors.white38, size: 22),
           const SizedBox(width: 12),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-
               Text(
                 label,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-
             ],
           ),
         ],
@@ -377,12 +318,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Text(
         text,
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+          color: Colors.white.withValues(alpha: 0.35),
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
         ),
-
       ),
     );
   }
@@ -390,11 +330,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-
       child: Column(children: children),
     );
   }
@@ -417,12 +356,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), size: 18),
+              child: Icon(icon, color: Colors.white70, size: 18),
             ),
-
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -430,24 +368,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                        color: Colors.white.withValues(alpha: 0.38),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-
                   ],
                 ],
               ),
@@ -455,9 +391,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             trailing ??
                 (onTap != null
                     ? Icon(Icons.chevron_right,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25), size: 20)
+                        color: Colors.white.withValues(alpha: 0.25), size: 20)
                     : const SizedBox.shrink()),
-
           ],
         ),
       ),
@@ -469,9 +404,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 1,
       indent: 70,
       endIndent: 0,
-      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+      color: Colors.white.withValues(alpha: 0.06),
     );
-
   }
 
   Widget _buildLogoutButton(AuthProvider auth, LocalizationProvider l10n) {
@@ -560,28 +494,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(40),
                     ),
-
-                      child: Center(
-                        child: auth.isLoading
-                            ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    color: Theme.of(context).colorScheme.primary, strokeWidth: 2),
-                              )
-
+                    child: Center(
+                      child: auth.isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.black, strokeWidth: 2),
+                            )
                           : Text(
                               l10n.translate('save'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
+                              style: const TextStyle(
+                                color: Colors.black,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-
                     ),
                   ),
                 ),
@@ -606,9 +537,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSubHeader(l10n.translate('orders')),
         Expanded(
           child: ordersProvider.isLoading
-              ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)))
+              ? const Center(child: CircularProgressIndicator(color: Colors.white54))
               : ordersProvider.orders.isEmpty
-
                   ? _buildEmptyState(l10n.translate('noOrders'), Icons.receipt_long_outlined)
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
@@ -633,48 +563,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: const Color(0xFF141414),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
-
         child: Row(
           children: [
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.shopping_bag_outlined, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
+              child: const Icon(Icons.shopping_bag_outlined, color: Colors.white38, size: 20),
             ),
-
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    Text(
-                      order.address,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    order.address,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
-
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
-                    Text(
-                      '#${order.id.substring(order.id.length - 6)}',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-                        fontSize: 12,
-                      ),
+                  Text(
+                    '#${order.id.substring(order.id.length - 6)}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: 12,
                     ),
-
+                  ),
                 ],
               ),
             ),
@@ -703,31 +629,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAddressesView(
     BuildContext context,
+    AddressProvider addressProvider,
     AuthProvider auth,
     LocalizationProvider l10n,
   ) {
-    final addresses = auth.user?.addresses ?? [];
+    final addresses = addressProvider.addresses;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSubHeader(l10n.translate('myAddresses'), action: GestureDetector(
-          onTap: () => _showAddNewAddressDialog(context, auth, l10n),
+          onTap: () => _showAddNewAddressDialog(context, addressProvider, l10n),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '+ ${l10n.translate('add')}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.surface,
+              style: const TextStyle(
+                color: Colors.black,
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
               ),
             ),
-
           ),
         )),
         Expanded(
@@ -742,47 +668,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: const Color(0xFF141414),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                       ),
-
                       child: Row(
                         children: [
                           Container(
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.location_on_outlined,
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 20),
+                            child: const Icon(Icons.location_on_outlined,
+                                color: Colors.white38, size: 20),
                           ),
-
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                  Text(
-                                    addr.label != null && addr.label!.isNotEmpty ? addr.label! : 'Հասցե',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                Text(
+                                  addr.title.isNotEmpty ? addr.title : 'Հասցե',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
                                   ),
-
-                                if (addr.address != null && addr.address!.isNotEmpty) ...[
+                                ),
+                                if (addr.address.isNotEmpty) ...[
                                   const SizedBox(height: 3),
                                   Text(
-                                    addr.address!,
+                                    addr.address,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+                                      color: Colors.white.withValues(alpha: 0.38),
                                       fontSize: 12,
                                     ),
-
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -792,18 +714,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           GestureDetector(
                             onTap: () =>
-                                _showAddressEditInline(ctx, auth, addr, l10n),
+                                _showAddressEditInline(ctx, addressProvider, addr, l10n),
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                                color: Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(Icons.edit_outlined,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), size: 16),
+                              child: const Icon(Icons.edit_outlined,
+                                  color: Colors.white38, size: 16),
                             ),
                           ),
-
                         ],
                       ),
                     );
@@ -824,34 +745,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () {
-                context.read<MainTabsController>().setNavBarVisibility(true);
-                setState(() => _view = _View.home);
-              },
+              onTap: () => setState(() => _view = _View.home),
               child: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
+                  color: Colors.white.withValues(alpha: 0.07),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 20),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
-
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-
             ),
-            if (action != null) action,
+            ?action,
           ],
         ),
       ),
@@ -863,13 +779,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1), size: 56),
-
+          Icon(icon, color: Colors.white10, size: 56),
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), fontSize: 15),
-
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 15),
           ),
         ],
       ),
@@ -904,8 +818,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       case 'on_way':    return Colors.purple;
       case 'delivered': return Colors.green;
       case 'cancelled': return Colors.red;
-      default:          return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
-
+      default:          return Colors.white38;
     }
   }
 
@@ -1064,10 +977,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               l10n.translate('howCanWeHelp'),
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 13,
               ),
-
             ),
             const SizedBox(height: 20),
             _SupportOption(
@@ -1112,11 +1024,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Address forms ─────────────────────────────────────────────────────────
 
-  void _showAddNewAddressDialog(BuildContext context, AuthProvider auth, LocalizationProvider l10n) {
+  void _showAddNewAddressDialog(BuildContext context, AddressProvider addressProvider, LocalizationProvider l10n) {
     final titleCtrl = TextEditingController();
     final addrCtrl = TextEditingController();
-    double lat = 40.8142; 
-    double lng = 44.4842;
 
     // Hide nav bar
     Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
@@ -1124,107 +1034,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
       return _SheetContainer(
         isDesktop: isDesktop,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SheetHeader(
-                title: l10n.translate('newAddress'),
-                isDesktop: isDesktop,
-                onClose: () => Navigator.pop(ctx),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SheetHeader(
+              title: l10n.translate('newAddress'),
+              isDesktop: isDesktop,
+              onClose: () => Navigator.pop(ctx),
+            ),
+            const SizedBox(height: 20),
+            _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
+            const SizedBox(height: 12),
+            _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+            if (!isDesktop)
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
               ),
-              const SizedBox(height: 20),
-              _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
-              const SizedBox(height: 12),
-              StatefulBuilder(
-                builder: (ctx, setSheetState) {
-                  final currentPos = LatLng(lat, lng);
-                  return Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: SizedBox(
-                          height: 160,
-                          child: Stack(
-                            children: [
-                              IgnorePointer(
-                                child: UniversalMap(
-                                  key: ValueKey('preview_${lat}_${lng}'),
-                                  initialPosition: currentPos,
-                                  isReadOnly: true,
-                                  googleMarkers: {
-                                    Marker(
-                                      markerId: const MarkerId('preview'),
-                                      position: currentPos,
-                                    ),
-                                  },
-                                  osmMarkers: [
-                                    osm.Marker(
-                                      point: latlong.LatLng(lat, lng),
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 40),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Positioned.fill(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => LocationPickerModal(
-                                          initialPosition: currentPos,
-                                        ),
-                                      ),
-                                    );
-                                    if (result != null) {
-                                      setSheetState(() {
-                                        lat = result['position'].latitude;
-                                        lng = result['position'].longitude;
-                                        addrCtrl.text = result['address'];
-                                      });
-                                    }
-                                  },
-                                  behavior: HitTestBehavior.opaque,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined, enabled: false,),
-                    ],
+            const SizedBox(height: 24),
+            _PrimaryButton(
+              label: l10n.translate('save'),
+              onTap: () {
+                if (addrCtrl.text.trim().isNotEmpty) {
+                  addressProvider.addAddress(
+                    titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
+                    addrCtrl.text.trim(),
                   );
-                },
-              ),
-              if (!isDesktop)
-                Padding(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-                  child: const SizedBox(height: 12),
-                ),
-              const SizedBox(height: 24),
-              _PrimaryButton(
-                label: l10n.translate('save'),
-                onTap: () async {
-                  if (addrCtrl.text.trim().isNotEmpty) {
-                    final success = await auth.addAddress(Address(
-                      label: titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
-                      address: addrCtrl.text.trim(),
-                      lat: lat,
-                      lng: lng,
-                    ));
-                    if (success && ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  }
-                },
-              ),
-            ],
-          ),
+                  Navigator.pop(ctx);
+                }
+              },
+            ),
+          ],
         ),
       );
     }).then((_) {
@@ -1235,11 +1076,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showAddressEditInline(
-      BuildContext context, AuthProvider auth, dynamic addr, LocalizationProvider l10n) {
-    final titleCtrl = TextEditingController(text: addr.label);
+      BuildContext context, AddressProvider addressProvider, dynamic addr, LocalizationProvider l10n) {
+    final titleCtrl = TextEditingController(text: addr.title);
     final addrCtrl = TextEditingController(text: addr.address);
-    double lat = addr.lat ?? 40.8142;
-    double lng = addr.lng ?? 44.4842;
 
     // Hide nav bar
     Provider.of<MainTabsController>(context, listen: false).setNavBarVisibility(false);
@@ -1247,138 +1086,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _showSheet(context, scrollControlled: true, builder: (ctx, isDesktop) {
       return _SheetContainer(
         isDesktop: isDesktop,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _SheetHeader(
-                      title: l10n.translate('editAddress'),
-                      isDesktop: isDesktop,
-                      onClose: () => Navigator.pop(ctx),
-                    ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _SheetHeader(
+                    title: l10n.translate('editAddress'),
+                    isDesktop: isDesktop,
+                    onClose: () => Navigator.pop(ctx),
                   ),
-                  GestureDetector(
-                    onTap: () async {
-                      if (addr.id != null) {
-                        final success = await auth.deleteAddress(addr.id!);
-                        if (success && ctx.mounted) {
-                          Navigator.pop(ctx);
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                      ),
-                      child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
-              const SizedBox(height: 12),
-              StatefulBuilder(
-                builder: (ctx, setSheetState) {
-                  final currentPos = LatLng(lat, lng);
-                  return Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: SizedBox(
-                          height: 160,
-                          child: Stack(
-                            children: [
-                              IgnorePointer(
-                                child: UniversalMap(
-                                  key: ValueKey('edit_preview_${lat}_${lng}'),
-                                  initialPosition: currentPos,
-                                  isReadOnly: true,
-                                  googleMarkers: {
-                                    Marker(
-                                      markerId: const MarkerId('preview'),
-                                      position: currentPos,
-                                    ),
-                                  },
-                                  osmMarkers: [
-                                    osm.Marker(
-                                      point: latlong.LatLng(lat, lng),
-                                      width: 40,
-                                      height: 40,
-                                      child: Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 40),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Positioned.fill(
-                                child: GestureDetector(
-                                  onTap: () async {
-                                    final result = await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => LocationPickerModal(
-                                          initialPosition: currentPos,
-                                        ),
-                                      ),
-                                    );
-                                    if (result != null) {
-                                      setSheetState(() {
-                                        lat = result['position'].latitude;
-                                        lng = result['position'].longitude;
-                                        addrCtrl.text = result['address'];
-                                      });
-                                    }
-                                  },
-                                  behavior: HitTestBehavior.opaque,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _AddressField(
-                        controller: addrCtrl, 
-                        hint: l10n.translate('addressFullHint'), 
-                        icon: Icons.location_on_outlined,
-                        enabled: false,
-                      ),
-                    ],
-                  );
-                },
-              ),
-              if (!isDesktop)
-                Padding(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-                  child: const SizedBox(height: 12),
                 ),
-              const SizedBox(height: 24),
-              _PrimaryButton(
-                label: l10n.translate('save'),
-                onTap: () async {
-                  if (addrCtrl.text.trim().isNotEmpty) {
-                    final success = await auth.updateAddress(Address(
-                      id: addr.id,
-                      label: titleCtrl.text.trim().isNotEmpty ? titleCtrl.text.trim() : l10n.translate('address'),
-                      address: addrCtrl.text.trim(),
-                      lat: lat,
-                      lng: lng,
-                    ));
-                    if (success && ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  }
-                },
+                GestureDetector(
+                  onTap: () {
+                    addressProvider.removeAddress(addr.id);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _AddressField(controller: titleCtrl, hint: l10n.translate('addressNameHint'), icon: Icons.label_outline),
+            const SizedBox(height: 12),
+            _AddressField(controller: addrCtrl, hint: l10n.translate('addressFullHint'), icon: Icons.location_on_outlined),
+            if (!isDesktop)
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
               ),
-            ],
-          ),
+            const SizedBox(height: 24),
+            _PrimaryButton(
+              label: l10n.translate('save'),
+              onTap: () {
+                addressProvider.updateAddressDetails(addr.id, address: addrCtrl.text.trim());
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
         ),
       );
     }).then((_) {
@@ -1400,17 +1155,14 @@ class _SheetContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: isDesktop
-          ? const EdgeInsets.fromLTRB(24, 20, 24, 24)
-          : const EdgeInsets.fromLTRB(24, 20, 24, 110),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF111111),
         borderRadius: isDesktop
             ? BorderRadius.circular(28)
             : const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
-
       child: child,
     );
   }
@@ -1429,50 +1181,48 @@ class _SheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: [
         if (!isDesktop) ...[
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(2),
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-
           ),
         ],
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-
-              ),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
             ),
-            if (isDesktop)
-              GestureDetector(
-                onTap: onClose,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 16),
-                ),
-
-              ),
-          ],
+          ),
         ),
+        if (isDesktop)
+          GestureDetector(
+            onTap: onClose,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.07),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white54, size: 16),
+            ),
+          ),
       ],
     );
   }
@@ -1503,13 +1253,12 @@ class _PaymentOption extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
+          color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.08),
           ),
         ),
-
         child: Row(
           children: [
             Container(
@@ -1517,12 +1266,11 @@ class _PaymentOption extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.08)
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07),
+                    ? Colors.black.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7), size: 20),
-
+              child: Icon(icon, color: isSelected ? Colors.black87 : Colors.white70, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1532,22 +1280,20 @@ class _PaymentOption extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
+                      color: isSelected ? Colors.black : Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
-
                   ),
                   const SizedBox(height: 2),
                   Text(
                     description,
                     style: TextStyle(
                       color: isSelected
-                          ? Theme.of(context).colorScheme.surface.withOpacity(0.55)
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+                          ? Colors.black.withValues(alpha: 0.45)
+                          : Colors.white.withValues(alpha: 0.35),
                       fontSize: 12,
                     ),
-
                   ),
                 ],
               ),
@@ -1557,18 +1303,17 @@ class _PaymentOption extends StatelessWidget {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? Theme.of(context).colorScheme.surface : Colors.transparent,
+                color: isSelected ? Colors.black : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? Theme.of(context).colorScheme.surface
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                      ? Colors.black
+                      : Colors.white.withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.onSurface, size: 13)
+                  ? const Icon(Icons.check, color: Colors.white, size: 13)
                   : null,
-
             ),
           ],
         ),
@@ -1601,11 +1346,10 @@ class _SupportOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         ),
-
         child: Row(
           children: [
             Container(
@@ -1620,20 +1364,17 @@ class _SupportOption extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w800)),
-
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 2),
                   Text(subtitle,
                       style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38), fontSize: 12)),
-
+                          color: Colors.white.withValues(alpha: 0.38), fontSize: 12)),
                 ],
               ),
             ),
             Icon(Icons.arrow_forward_ios_rounded,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2), size: 14),
-
+                color: Colors.white.withValues(alpha: 0.2), size: 14),
           ],
         ),
       ),
@@ -1645,43 +1386,32 @@ class _AddressField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
-  final bool enabled;
 
   const _AddressField({
     required this.controller,
     required this.hint,
     required this.icon,
-    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: enabled ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-
       child: Row(
         children: [
           const SizedBox(width: 16),
-          Icon(icon, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: enabled ? 0.3 : 0.1), size: 18),
-
+          Icon(icon, color: Colors.white30, size: 18),
           Expanded(
             child: TextField(
               controller: controller,
-              enabled: enabled,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: enabled ? 1.0 : 0.4), 
-                fontSize: 15, 
-                fontWeight: FontWeight.w600
-              ),
-
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25), fontSize: 14),
-
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25), fontSize: 14),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               ),
@@ -1707,15 +1437,13 @@ class _PrimaryButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onSurface,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(18),
         ),
-
         child: Center(
           child: Text(label,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.surface, fontSize: 16, fontWeight: FontWeight.w900)),
-
+              style: const TextStyle(
+                  color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900)),
         ),
       ),
     );

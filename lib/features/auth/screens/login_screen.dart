@@ -5,7 +5,6 @@ import '../../../core/localization/localization_provider.dart';
 import 'register_screen.dart';
 import '../../home/screens/home_screen.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../onboarding/providers/onboarding_provider.dart';
 import '../../../core/widgets/app_text_field.dart';
 import 'phone_auth_screen.dart';
 
@@ -74,8 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           children: [
@@ -89,23 +87,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: const Color(0xFF161616),
                         shape: BoxShape.circle,
                       ),
-
-                      child: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24),
-
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Text(
                     l10n.translate('login'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                     ),
-
                   ),
                 ],
               ),
@@ -115,8 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-
+                  color: Colors.black,
                   child: AutofillGroup(
                   child: Form(
                     key: _formKey,
@@ -125,24 +119,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 40),
                         // Logo
                         Center(
-                          child: Consumer<OnboardingProvider>(
-                            builder: (context, onboarding, _) {
-                              final logo = onboarding.partner?.logo;
-                              if (logo != null && logo.isNotEmpty) {
-                                return Image.network(
-                                  logo,
-                                  height: 165,
-                                  width: 248,
-                                  fit: BoxFit.contain,
-                                );
-                              }
-                              return Image.asset(
-                                'assets/images/masoor_branch.png',
-                                height: 165,
-                                width: 248,
-                                fit: BoxFit.contain,
-                              );
-                            },
+                          child: Image.asset(
+                            'assets/images/masoor_branch.png',
+                            height: 165,
+                            width: 248,
+                            fit: BoxFit.contain,
                           ),
                         ),
                         const SizedBox(height: 60),
@@ -153,8 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.only(bottom: 20),
                             child: Text(
                               authProvider.errorMessage!,
-                              style: TextStyle(color: Theme.of(context).colorScheme.error),
-
+                              style: const TextStyle(color: AppColors.error),
                             ),
                           ),
 
@@ -189,21 +169,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         // Login Button
                         if (authProvider.isLoading)
-                          CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface)
-
+                          const CircularProgressIndicator(color: Colors.white)
                         else
                           ElevatedButton(
                             onPressed: _submit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.onSurface,
-                              foregroundColor: Theme.of(context).colorScheme.surface,
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
                               minimumSize: const Size(double.infinity, 65),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(35),
                               ),
                               elevation: 0,
                             ),
-
                             child: Text(
                               l10n.translate('login'),
                               style: const TextStyle(
@@ -214,11 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                         const SizedBox(height: 24),
-                        Text(
+                        const Text(
                           'կամ',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                          style: TextStyle(color: Colors.white60, fontSize: 14),
                         ),
-
                         const SizedBox(height: 24),
 
                         // Social Logins
@@ -269,22 +246,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: RichText(
                             textAlign: TextAlign.center,
                             text: TextSpan(
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontSize: 13,
                                 fontFamily: 'Segoe UI',
                               ),
-
                               children: [
                                 TextSpan(
                                   text: '${l10n.translate('noAccount')} ',
-                                  style: TextStyle(fontWeight: FontWeight.w400, color: Theme.of(context).colorScheme.onSurface),
-
+                                  style: const TextStyle(fontWeight: FontWeight.w400),
                                 ),
                                 TextSpan(
                                   text: l10n.translate('register'),
-                                  style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface),
-
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
@@ -311,13 +285,11 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Container(
         width: 60,
         height: 60,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          color: Theme.of(context).colorScheme.surface,
+          color: Color(0xFF141414),
         ),
-
-        child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 28),
-
+        child: Icon(icon, color: Colors.white, size: 28),
       ),
     );
   }

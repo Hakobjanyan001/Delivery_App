@@ -28,37 +28,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final orders = ordersProvider.orders;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
+      backgroundColor: const Color(0xFF0F0F0F),
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Իմ պատվերները',
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: Colors.white,
             fontWeight: FontWeight.w900,
             fontSize: 20,
             letterSpacing: 0.3,
           ),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: const Color(0xFF0F0F0F),
         elevation: 0,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-
       body: ordersProvider.isLoading
-          ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.onSurface))
-
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : orders.isEmpty
           ? Center(
               child: Text(
                 'Պատվերներ դեռ չկան',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 16,
                 ),
               ),
             )
-
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -116,14 +112,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w800,
-        color: Theme.of(context).colorScheme.onSurface,
+        color: Colors.white,
       ),
     );
   }
-
 
   Widget _buildDetailedOrderCard(dynamic order) {
     final l10n = Provider.of<LocalizationProvider>(context, listen: false);
@@ -146,13 +141,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF10100F),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+          color: Colors.white.withValues(alpha: 0.06),
         ),
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -163,11 +157,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 '# $shortId',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
-
               ),
               Container(
                 padding:
@@ -190,16 +183,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
           const SizedBox(height: 10),
           Text(
             itemNames.isNotEmpty ? itemNames : 'Պատվեր',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Colors.white,
             ),
-
           ),
           const SizedBox(height: 10),
-          Divider(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06), height: 1),
-
+          Divider(color: Colors.white.withValues(alpha: 0.06), height: 1),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -208,19 +199,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 date,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                 ),
-
               ),
               Text(
                 '${order.totalAmount.toStringAsFixed(0)} ֏',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
                 ),
               ),
-
             ],
           ),
         ],
@@ -233,18 +222,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF10100F),
         borderRadius: BorderRadius.circular(14),
       ),
-
       child: Center(
         child: Text(
           message,
           style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+            color: Colors.white.withValues(alpha: 0.35),
             fontSize: 14,
           ),
-
         ),
       ),
     );

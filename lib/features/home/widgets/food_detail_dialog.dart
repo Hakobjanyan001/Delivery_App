@@ -12,8 +12,7 @@ void showFoodDetail(BuildContext context, ProductModel product) {
   if (isDesktop) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.7),
-      routeSettings: const RouteSettings(name: 'FoodDetail'),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (_) => _FoodDetailDesktop(product: product),
     );
   } else {
@@ -107,26 +106,22 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
           const SizedBox(width: 10),
           Expanded(
             child: Text('$name ${l10n.translate('addedToCart')}',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
           ),
         ]),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: const Color(0xFF1E1E1E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-
         duration: const Duration(seconds: 2),
       ));
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
       messenger.showSnackBar(SnackBar(
-        content: Text(e.toString(), style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onError)),
-
+        content: Text(e.toString(), style: const TextStyle(fontSize: 15)),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        backgroundColor: Theme.of(context).colorScheme.error,
-
+        backgroundColor: Colors.red.shade800,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         duration: const Duration(seconds: 3),
       ));
@@ -156,29 +151,26 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.surface,
+                  color: isSelected ? Colors.white : const Color(0xFF1C1C1C),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                    color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
-
                 child: Column(children: [
                   Text(vName,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
+                        color: isSelected ? Colors.black : Colors.white,
                       )),
-
                   Text('${variant.price.toStringAsFixed(0)} ֏',
                       style: TextStyle(
                         fontSize: 12,
                         color: isSelected
-                            ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.5)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                            ? Colors.black.withValues(alpha: 0.5)
+                            : Colors.white.withValues(alpha: 0.45),
                       )),
-
                 ]),
               ),
             );
@@ -198,33 +190,27 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
         TextField(
           controller: noteController,
           maxLines: 3,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
-
+          style: const TextStyle(color: Colors.white, fontSize: 15),
           decoration: InputDecoration(
             hintText: lang == 'hy'
                 ? 'Թողնել մեկնաբանություն...'
                 : (lang == 'en' ? 'Leave a note...' : 'Оставить комментарий...'),
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25)),
-
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
             filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-
+            fillColor: const Color(0xFF1C1C1C),
             contentPadding: const EdgeInsets.all(14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
             ),
-
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
             ),
-
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
             ),
-
           ),
         ),
       ],
@@ -238,11 +224,10 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
       Container(
         height: 52,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: const Color(0xFF1C1C1C),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           _StepperButton(
             icon: quantity == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded,
@@ -258,9 +243,8 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
             width: 36,
             child: Text('$quantity',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
-
+                style: const TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white)),
           ),
           _StepperButton(
             icon: Icons.add_rounded,
@@ -277,24 +261,21 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
             duration: const Duration(milliseconds: 150),
             height: 52,
             decoration: BoxDecoration(
-              color: isLoading ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7) : Theme.of(context).colorScheme.onSurface,
+              color: isLoading ? Colors.white.withValues(alpha: 0.7) : Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-
             child: Center(
               child: isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Theme.of(context).colorScheme.surface),
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
                     )
-
-                    : Text(
+                  : Text(
                       '${lang == 'hy' ? 'Ավելացնել' : (lang == 'en' ? 'Add' : 'Добавить')}  •  $totalPrice ֏',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.surface),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black),
                     ),
-
             ),
           ),
         ),
@@ -307,19 +288,17 @@ mixin _FoodDetailMixin<T extends StatefulWidget> on State<T> {
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           letterSpacing: 0.4,
         ),
-
       );
 
   Widget imagePlaceholder() => Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: Icon(Icons.fastfood_rounded, size: 56, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
+        color: const Color(0xFF1C1C1C),
+        child: const Center(
+          child: Icon(Icons.fastfood_rounded, size: 56, color: Colors.white12),
         ),
       );
-
 }
 
 // ─── mobile bottom sheet ─────────────────────────────────────────────────────
@@ -350,11 +329,10 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMix
       minChildSize: 0.5,
       builder: (ctx, scrollController) {
         return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F0F0F),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-
           child: Column(children: [
             const SizedBox(height: 12),
             Center(
@@ -362,10 +340,9 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMix
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
-
               ),
             ),
             const SizedBox(height: 12),
@@ -392,28 +369,25 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMix
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(product.name.getLocalized(lang),
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w900,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Colors.white,
                                 height: 1.2)),
-
                         if (product.description.getLocalized(lang).isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(product.description.getLocalized(lang),
                               style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                  color: Colors.white.withValues(alpha: 0.5),
                                   height: 1.4)),
-
                         ],
                       ]),
                     ),
                     const SizedBox(width: 12),
                     Text('${product.displayPrice.toStringAsFixed(0)} ֏',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white)),
                   ]),
                   const SizedBox(height: 20),
                   buildVariants(lang),
@@ -426,10 +400,9 @@ class _FoodDetailDialogState extends State<FoodDetailDialog> with _FoodDetailMix
             Container(
               padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(ctx).padding.bottom + 16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06))),
+                color: const Color(0xFF0F0F0F),
+                border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
               ),
-
               child: buildCta(ctx, lang),
             ),
           ]),
@@ -472,8 +445,7 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
             // ── left: image ──────────────────────────────────
             Container(
               width: 340,
-              color: Theme.of(context).colorScheme.surface,
-
+              color: const Color(0xFF1C1C1C),
               child: Stack(fit: StackFit.expand, children: [
                 product.mainImageUrl.isNotEmpty
                     ? Image.network(product.mainImageUrl,
@@ -487,8 +459,7 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
                       gradient: LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
-                        colors: [Colors.transparent, Theme.of(context).colorScheme.surface.withValues(alpha: 0.15)],
-
+                        colors: [Colors.transparent, const Color(0xFF0F0F0F).withValues(alpha: 0.15)],
                       ),
                     ),
                   ),
@@ -499,8 +470,7 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
             // ── right: details ───────────────────────────────
             Expanded(
               child: Container(
-                color: Theme.of(context).colorScheme.surface,
-
+                color: const Color(0xFF0F0F0F),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   // close button row
                   Align(
@@ -509,11 +479,9 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
                       padding: const EdgeInsets.fromLTRB(0, 12, 12, 0),
                       child: IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54), size: 22),
-
+                        icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 22),
                         style: IconButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-
+                          backgroundColor: Colors.white.withValues(alpha: 0.06),
                           shape: const CircleBorder(),
                         ),
                       ),
@@ -527,34 +495,30 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         // name
                         Text(product.name.getLocalized(lang),
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w900,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Colors.white,
                                 height: 1.2)),
-
                         if (product.description.getLocalized(lang).isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(product.description.getLocalized(lang),
                               style: TextStyle(
                                   fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                  color: Colors.white.withValues(alpha: 0.5),
                                   height: 1.5)),
-
                         ],
                         const SizedBox(height: 10),
                         // price badge
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
-
                           child: Text('${product.displayPrice.toStringAsFixed(0)} ֏',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
-
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
                         ),
                         const SizedBox(height: 20),
                         buildVariants(lang),
@@ -568,10 +532,9 @@ class _FoodDetailDesktopState extends State<_FoodDetailDesktop> with _FoodDetail
                   Container(
                     padding: const EdgeInsets.fromLTRB(28, 12, 28, 24),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06))),
+                      color: const Color(0xFF0F0F0F),
+                      border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.06))),
                     ),
-
                     child: buildCta(context, lang),
                   ),
                 ]),
@@ -599,8 +562,7 @@ class _StepperButton extends StatelessWidget {
       child: SizedBox(
         width: 44,
         height: 52,
-        child: Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 20),
-
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }

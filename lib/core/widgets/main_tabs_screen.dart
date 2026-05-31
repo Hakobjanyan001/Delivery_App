@@ -17,7 +17,7 @@ class MainTabsScreen extends StatelessWidget {
     final tabs = context.watch<MainTabsController>();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.black,
       body: Column(
         children: [
           const AppHeader(),
