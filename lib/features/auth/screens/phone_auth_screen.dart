@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/localization/localization_provider.dart';
@@ -116,7 +117,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+          constraints: BoxConstraints(
+            maxWidth: kIsWeb ? 400 : 600,
+          ),
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20.0),

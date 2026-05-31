@@ -88,9 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: kIsWeb
-                  ? MediaQuery.of(context).size.width * 0.45
-                  : 600,
+              maxWidth: kIsWeb ? 400 : 600,
             ),
             child: Column(
               children: [
